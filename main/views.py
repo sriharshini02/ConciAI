@@ -29,8 +29,6 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GOOGLE_API_KEY}"
 
     # Define Conci's persona and provide room number context
-    # This will be part of the first message in the chat history
-    # IMPORTANT: Modified prompt to request specific text output for parsing.
     initial_persona_prompt = (
         f"You are Conci, a helpful and polite AI hotel assistant for Room {room_number}. "
         "Your goal is to assist guests with their requests and provide information about the hotel. "
@@ -39,6 +37,12 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
         "determine the primary intent and any relevant entities. "
         "If it's a request for an amenity, identify the 'item' (e.g., 'towel') and 'quantity' (default to 1 if not specified). "
         "If it's a request for information, identify the 'info_type' (e.g., 'wifi_password', 'checkout_time'). "
+        "If the guest asks for a menu (e.g., 'send menu', 'food menu', 'restaurant menu'), "
+        "the intent should be 'request_menu'. Do NOT mention a 'room service tablet' or 'sending menu electronically'. "
+        "Instead, for menu requests, respond that staff will bring a physical copy shortly. "
+        "If the guest's message is purely a clarification or part of an ongoing request, and does not represent a *new* distinct request, "
+        "you should re-affirm the *previous* primary intent or state 'general_chat' if it's just a simple acknowledgement. "
+        "If after clarifications, an actionable request is confirmed, then use the appropriate intent like 'request_amenity' or 'request_menu'. "  # More explicit guidance
         "If it's a general greeting, farewell, or casual chat, use 'general_chat'. "
         "If you cannot determine a clear intent, use 'unknown_query'.\n\n"
         "Format your response like this:\n"
@@ -49,18 +53,14 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
 
     # Construct the full conversation payload for Gemini
     contents = []
-    # Add initial persona and first model response to guide the conversation flow
     contents.append({"role": "user", "parts": [{"text": initial_persona_prompt}]})
     contents.append(
         {"role": "model", "parts": [{"text": "Hello! How may I assist you today?"}]}
     )
 
-    # Add the actual chat history provided by the frontend
-    # Note: frontend chat history now contains actual conversation, not system instructions
     for turn in chat_history:
         contents.append(turn)
 
-    # Add the current user's prompt as the last turn
     contents.append({"role": "user", "parts": [{"text": prompt_text}]})
 
     payload = {
@@ -70,7 +70,6 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
             "topP": 0.9,
             "topK": 40,
             "maxOutputTokens": 200,
-            # Removed responseMimeType and responseSchema to avoid 400 errors
         },
     }
 
@@ -78,7 +77,7 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
         response = requests.post(
             api_url, headers={"Content-Type": "application/json"}, json=payload
         )
-        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+        response.raise_for_status()
 
         result = response.json()
 
@@ -109,15 +108,12 @@ def call_gemini_api(prompt_text, room_number, chat_history=[]):
                         ai_entities = json.loads(entities_str)
                     except json.JSONDecodeError:
                         print(f"Warning: Could not parse entities JSON: {entities_str}")
-                        ai_entities = {}  # Default to empty on parse error
+                        ai_entities = {}
 
-            # Fallback if parsing fails or structure isn't followed
             if not conci_response_text or not any(
                 line.startswith("RESPONSE:") for line in lines
             ):
-                conci_response_text = gemini_raw_response_text.split("\n")[
-                    0
-                ].strip()  # Take first line as fallback response
+                conci_response_text = gemini_raw_response_text.split("\n")[0].strip()
 
             return {
                 "success": True,
@@ -214,6 +210,7 @@ def process_guest_command(request):
     """
     Receives guest commands from the simulated device, processes with AI,
     saves to DB conditionally based on intent, and returns AI response text.
+    Handles updating existing requests for ongoing conversations.
     """
     if request.content_type == "application/json":
         try:
@@ -245,17 +242,15 @@ def process_guest_command(request):
         hotel = get_object_or_404(Hotel, id=hotel_id)
 
         # --- Check for specific hotel information requests before calling Gemini ---
-        # This allows us to provide accurate, specific hotel data.
         raw_text_lower = raw_text.lower()
         if "checkout" in raw_text_lower or "check out" in raw_text_lower:
             checkout_config = HotelConfiguration.objects.filter(
                 hotel=hotel, key="checkout_time"
             ).first()
             if checkout_config:
-                conci_response_text = f"The checkout time for {hotel.name} is {checkout_config.value}. Is there anything else I can assist you with?"
+                conci_response_text = f"The standard checkout time for {hotel.name} is {checkout_config.value}. Your specific checkout time might vary based on your booking. Would you like me to confirm it with the front desk?"
                 ai_intent = "get_info"
                 ai_entities = {"info_type": "checkout_time"}
-                # We save this request immediately as it's an actionable info lookup
                 GuestRequest.objects.create(
                     hotel=hotel,
                     room_number=room_number,
@@ -263,7 +258,7 @@ def process_guest_command(request):
                     ai_intent=ai_intent,
                     ai_entities=ai_entities,
                     conci_response_text=conci_response_text,
-                    status="completed",  # Info requests can often be immediately completed
+                    status="completed",
                     timestamp=timezone.now(),
                 )
                 print(
@@ -324,22 +319,62 @@ def process_guest_command(request):
         ai_entities = gemini_response_data["ai_entities"]
         conci_response_text = gemini_response_data["conci_response_text"]
 
-        # --- Conditional Saving to Database ---
-        # Updated actionable_intents to match Gemini's output
-        actionable_intents = ["request_amenity", "get_info", "amenity_request"]
+        # --- Conditional Saving/Updating to Database ---
+        actionable_intents = [
+            "request_amenity",
+            "get_info",
+            "amenity_request",
+            "request_menu",
+        ]
 
         if ai_intent in actionable_intents:
-            GuestRequest.objects.create(
-                hotel=hotel,
-                room_number=room_number,
-                raw_text=raw_text,
-                ai_intent=ai_intent,
-                ai_entities=ai_entities,
-                conci_response_text=conci_response_text,
-                status="pending",  # Amenity requests start as pending
-                timestamp=timezone.now(),
-            )
-            print(f"Saved GuestRequest for Room {room_number} with intent: {ai_intent}")
+            # Try to find an existing pending request for this room and intent
+            # This logic assumes only ONE active request of a given actionable_intent per room at a time.
+            # For more complex scenarios (e.g., multiple pending amenity requests), a unique conversation ID
+            # would be needed to group related turns.
+            existing_request = (
+                GuestRequest.objects.filter(
+                    hotel=hotel,
+                    room_number=room_number,
+                    ai_intent=ai_intent,
+                    status="pending",
+                )
+                .order_by("-timestamp")
+                .first()
+            )  # Get the most recent pending request
+
+            if existing_request:
+                # Update existing request
+                existing_request.raw_text = (
+                    raw_text  # Update with the latest guest query
+                )
+                existing_request.conci_response_text = (
+                    conci_response_text  # Update with the latest Conci response
+                )
+                existing_request.ai_entities = ai_entities  # Update entities
+                existing_request.save()
+                print(
+                    f"Updated existing GuestRequest (ID: {existing_request.id}) for Room {room_number} with intent: {ai_intent}"
+                )
+            else:
+                # Create a new request if no matching pending one is found
+                status_to_save = "pending"
+                if ai_intent == "get_info":
+                    status_to_save = "completed"  # Info requests can often be immediately completed if AI handles them
+
+                GuestRequest.objects.create(
+                    hotel=hotel,
+                    room_number=room_number,
+                    raw_text=raw_text,
+                    ai_intent=ai_intent,
+                    ai_entities=ai_entities,
+                    conci_response_text=conci_response_text,
+                    status=status_to_save,
+                    timestamp=timezone.now(),
+                )
+                print(
+                    f"Created new GuestRequest for Room {room_number} with intent: {ai_intent}"
+                )
         else:
             print(
                 f"Not saving GuestRequest for Room {room_number}. Intent: {ai_intent}"

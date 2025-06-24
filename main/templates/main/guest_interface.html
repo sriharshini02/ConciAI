@@ -26,6 +26,9 @@
         max-width: 500px;
         text-align: center;
         border: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        gap: 15px; /* Spacing between elements */
       }
       h1 {
         color: #2c3e50;
@@ -35,14 +38,14 @@
       p {
         font-size: 1.1em;
         color: #555;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
       }
       .conci-status-light {
         width: 30px;
         height: 30px;
         border-radius: 50%;
         background-color: #ccc; /* Default idle color */
-        margin: 20px auto;
+        margin: 10px auto;
         border: 2px solid #bbb;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         transition: background-color 0.3s ease, box-shadow 0.3s ease;
@@ -66,33 +69,72 @@
 
       .input-group {
         display: flex;
-        margin-top: 20px;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        flex-direction: column; /* Stack input and button vertically for clarity */
+        gap: 10px;
+        margin-top: 10px;
       }
       #guestInput {
         flex-grow: 1;
         padding: 12px 15px;
-        border: none;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
         outline: none;
         font-size: 1em;
         background-color: #f9f9f9;
       }
-      #sendButton {
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      #sendButton,
+      #listenButton {
         padding: 12px 20px;
         background-color: #007bff;
         color: white;
         border: none;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 1em;
-        transition: background-color 0.2s ease;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        flex: 1; /* Distribute space equally */
       }
-      #sendButton:hover {
+      #sendButton:hover,
+      #listenButton:hover {
         background-color: #0056b3;
+        transform: translateY(-2px);
       }
+      #sendButton:active,
+      #listenButton:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      #listenButton {
+        background-color: #28a745; /* Green for listen */
+      }
+      #listenButton:hover {
+        background-color: #218838;
+      }
+      #listenButton.active {
+        /* Style when listening */
+        background-color: #dc3545; /* Red when active (to stop) */
+        animation: pulse 1s infinite alternate;
+      }
+      @keyframes pulse {
+        from {
+          box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        }
+        to {
+          box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+        }
+      }
+      #listenButton.active:hover {
+        background-color: #c82333;
+      }
+
       .response-area {
-        margin-top: 25px;
+        margin-top: 15px;
         background-color: #e9ecef;
         border-radius: 8px;
         padding: 15px;
@@ -105,6 +147,12 @@
         border: 1px dashed #ced4da;
         text-align: center;
         line-height: 1.5;
+        word-wrap: break-word; /* Ensure long words wrap */
+      }
+      .mic-unavailable-message {
+        color: #dc3545;
+        font-size: 0.9em;
+        margin-top: 10px;
       }
     </style>
   </head>
@@ -121,9 +169,19 @@
         <input
           type="text"
           id="guestInput"
-          placeholder="Type your request here (e.g., 'I need more towels')"
+          placeholder="Type your request or click Listen"
         />
-        <button id="sendButton">Send</button>
+        <div class="button-group">
+          <button id="listenButton">Listen</button>
+          <button id="sendButton">Send</button>
+        </div>
+      </div>
+      <div
+        id="micUnavailable"
+        class="mic-unavailable-message"
+        style="display: none"
+      >
+        Speech recognition is not available in this browser or requires HTTPS.
       </div>
 
       <div id="responseArea" class="response-area">
@@ -134,22 +192,40 @@
     <script>
       const guestInput = document.getElementById("guestInput");
       const sendButton = document.getElementById("sendButton");
+      const listenButton = document.getElementById("listenButton");
       const responseArea = document.getElementById("responseArea");
       const conciStatusLight = document.getElementById("conciStatusLight");
+      const micUnavailableMessage = document.getElementById("micUnavailable");
 
-      // Get room_number and hotel_id from Django template context
       const roomNumber = "{{ room_number_str }}";
       const hotelId = "{{ hotel_id }}";
 
-      // Web Speech API - SpeechSynthesis instance
       const synth = window.speechSynthesis;
       let selectedVoice = null;
+      let recognition = null;
 
-      // Array to store chat history: [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
       let chatHistory = [];
-      const MAX_HISTORY_LENGTH = 6; // Keep last 3 user and 3 model turns (total 6)
+      const MAX_HISTORY_LENGTH = 6;
 
-      // Populate voices once they are loaded
+      // --- Helper function to control UI elements ---
+      function setUIState(listening, sending) {
+        isListening = listening; // Update the global listening state
+        guestInput.disabled = listening || sending; // Disable input if listening or sending
+        sendButton.disabled = listening || sending; // Disable send if listening or sending
+        listenButton.disabled = sending; // Disable listen if sending (can stop if just listening)
+
+        if (listening) {
+          listenButton.textContent = "Stop Listening";
+          listenButton.classList.add("active");
+          guestInput.placeholder = "Speaking...";
+        } else {
+          listenButton.textContent = "Listen";
+          listenButton.classList.remove("active");
+          guestInput.placeholder = "Type your request or click Listen";
+        }
+      }
+
+      // --- Web Speech API (SpeechSynthesis - for Conci's Voice) ---
       function populateVoiceList() {
         if (typeof synth === "undefined") {
           return;
@@ -195,7 +271,79 @@
         synth.speak(utterance);
       }
 
-      sendButton.addEventListener("click", sendCommand);
+      // --- Web Speech API (SpeechRecognition - for Guest's Voice Input) ---
+      if ("webkitSpeechRecognition" in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "en-US";
+
+        let isListening = false; // Internal state for recognition instance
+
+        recognition.onstart = () => {
+          setUIState(true, false); // Listening, not sending
+          updateStatusLight("listening");
+          responseArea.textContent = "Listening... Please speak now.";
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          guestInput.value = transcript;
+          // Leave setUIState as listening; user needs to click Send
+        };
+
+        recognition.onerror = (event) => {
+          console.error("SpeechRecognitionError:", event.error);
+          // Only reset UI if not already transitioned by sendCommand
+          if (
+            !["thinking", "speaking"].includes(
+              conciStatusLight.className.replace("conci-status-light ", "")
+            )
+          ) {
+            updateStatusLight("idle");
+            responseArea.textContent =
+              "Voice input error. Please try typing or click Listen again.";
+          }
+          setUIState(false, false); // Not listening, not sending
+        };
+
+        recognition.onend = () => {
+          // This fires whether recognition stops normally or is explicitly stopped.
+          // Only reset UI if `sendCommand` hasn't taken over control.
+          if (isListening) {
+            // If still in listening state before onend
+            setUIState(false, false); // Not listening, not sending
+            updateStatusLight("idle");
+            responseArea.textContent = "Awaiting your command...";
+          }
+        };
+
+        listenButton.addEventListener("click", () => {
+          if (isListening) {
+            recognition.stop();
+          } else {
+            guestInput.value = ""; // Clear input field when starting voice input
+            recognition.start();
+          }
+        });
+      } else {
+        listenButton.disabled = true;
+        listenButton.textContent = "Voice N/A";
+        micUnavailableMessage.style.display = "block";
+        console.warn(
+          "Web Speech API (SpeechRecognition) not supported in this browser."
+        );
+      }
+
+      // --- Send Command (for both typed and voice input) ---
+      sendButton.addEventListener("click", () => {
+        if (guestInput.value.trim() !== "") {
+          sendCommand();
+        } else {
+          responseArea.textContent = "Please type or speak a command first.";
+        }
+      });
+
       guestInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -210,27 +358,30 @@
           return;
         }
 
-        updateStatusLight("listening");
-        responseArea.textContent = "Conci is listening...";
-        guestInput.value = "";
-        sendButton.disabled = true;
+        // Stop recognition if it's running, and transfer UI control to sendCommand
+        if (recognition && isListening) {
+          recognition.onend = null; // Prevent onend from interfering with sendCommand's UI reset
+          recognition.stop(); // Stop the recognition process
+        }
+
+        setUIState(false, true); // Not listening, now sending
+        updateStatusLight("listening"); // Indicate processing starts
+        responseArea.textContent = "Processing your request...";
 
         try {
           updateStatusLight("thinking");
           responseArea.textContent = "Conci is thinking...";
 
-          // Add current user command to chat history
           chatHistory.push({ role: "user", parts: [{ text: command }] });
-          // Trim history to avoid sending excessively long context
           if (chatHistory.length > MAX_HISTORY_LENGTH) {
             chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
           }
 
           const data = {
             room_number: roomNumber,
-            command: command, // Current command
+            command: command,
             hotel_id: hotelId,
-            history: chatHistory, // Send the full chat history
+            history: chatHistory,
           };
 
           const response = await fetch("/api/process_command/", {
@@ -249,7 +400,6 @@
             if (result.response_text) {
               speakText(result.response_text);
             }
-            // Add Conci's response to chat history
             chatHistory.push({
               role: "model",
               parts: [{ text: result.response_text }],
@@ -258,7 +408,6 @@
             responseArea.textContent =
               result.error || "An unknown error occurred.";
             console.error("API Error:", result.error);
-            // On error, remove the last user message from history if no model response
             if (
               chatHistory.length > 0 &&
               chatHistory[chatHistory.length - 1].role === "user"
@@ -267,22 +416,26 @@
             }
           }
 
+          guestInput.value = ""; // Clear input field after successful processing
+
+          // Handle re-enabling buttons after Conci has finished speaking or timeout
           const utteranceDuration = result.response_text
             ? result.response_text.length * 50
-            : 3000;
+            : 2000; // Shorter default delay
           let speechEndedTimeout = null;
 
           const onUtteranceEnd = () => {
             clearTimeout(speechEndedTimeout);
             updateStatusLight("idle");
             responseArea.textContent = "Awaiting your command...";
-            sendButton.disabled = false;
+            setUIState(false, false); // Not listening, not sending
             synth.removeEventListener("end", onUtteranceEnd);
           };
 
           if (
-            synth.speaking &&
-            typeof SpeechSynthesisUtterance !== "undefined"
+            result.response_text &&
+            typeof SpeechSynthesisUtterance !== "undefined" &&
+            synth.speaking
           ) {
             const utterance = new SpeechSynthesisUtterance(
               result.response_text
@@ -290,22 +443,22 @@
             utterance.addEventListener("end", onUtteranceEnd);
             speechEndedTimeout = setTimeout(
               onUtteranceEnd,
-              utteranceDuration + 2000
-            );
+              utteranceDuration + 1000
+            ); // Add buffer
           } else {
+            // If no text to speak, or TTS not supported, go idle after a short delay
             setTimeout(() => {
               updateStatusLight("idle");
               responseArea.textContent = "Awaiting your command...";
-              sendButton.disabled = false;
-            }, utteranceDuration + 2000);
+              setUIState(false, false); // Not listening, not sending
+            }, 2000); // Default short delay
           }
         } catch (error) {
           console.error("Error sending command:", error);
           responseArea.textContent =
             "Sorry, there was a network error. Please try again.";
           updateStatusLight("idle");
-          sendButton.disabled = false;
-          // On network error, remove the last user message from history
+          setUIState(false, false); // Re-enable all on error
           if (
             chatHistory.length > 0 &&
             chatHistory[chatHistory.length - 1].role === "user"
@@ -318,6 +471,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         updateStatusLight("idle");
         responseArea.textContent = "Awaiting your command...";
+        setUIState(false, false); // Initial state
       });
     </script>
   </body>
