@@ -1,0 +1,33 @@
+# Python
+*.pyc
+__pycache__/
+*.so
+*.egg
+*.egg-info
+.Python
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Django specific
+*.log
+*.pot
+*.mo
+local_settings.py  # If you use a separate local settings file
+db.sqlite3         # SQLite database file (if using it locally)
+/media/            # User-uploaded media files
+/staticfiles/      # Collected static files (Django's collectstatic output)
+/static_root/      # Another common name for collected static files
+
+# IDEs
+.idea/             # JetBrains IDEs (e.g., PyCharm)
+.vscode/           # Visual Studio Code
+
+# Environment variables
+.env               # Common file for local environment variables
+
+# Operating System files
+.DS_Store
+Thumbs.db
