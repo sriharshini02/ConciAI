@@ -10,7 +10,17 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv  # type: ignore
+
+load_dotenv()  # NEW: Load environment variables from .env file
+
+# ... rest of your settings.py ...
+
+# Add this line to access your API key later
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,11 +33,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-u29l*ju170#gp9b_oyg$ba%r-q9k_6*n0okg=av%l#5z408ozg"
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# For hackathon/development, we'll keep it True for now.
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]  # Allows all hosts for development.
+# IMPORTANT: CHANGE THIS TO SPECIFIC DOMAINS/IPs IN PRODUCTION!
+
+# ... (find STATIC_URL, usually around line 118-120) ...
+
+STATIC_URL = "static/"
+
+# Add this to tell Django where to look for your static files (CSS, JS, images)
+# This will be where you put your CSS framework files (e.g., Bootstrap/Tailwind)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
+# When you run `python manage.py collectstatic`, Django will gather all static files
+# from your apps and STATICFILES_DIRS into this single directory.
+# This should be outside of your project's main codebase.
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles_cdn")
 
 
+# Optional: Media files (for user uploads, though less critical for MVP)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media_cdn")
+
+
+# Add 'main' to your INSTALLED_APPS (if you haven't already from previous step)
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -35,7 +68,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "main",
+    "main",  # Make sure your 'main' app is listed here!
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

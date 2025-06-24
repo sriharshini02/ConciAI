@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page_title }}</title>
+    <!-- Basic styling for the simulated Conci device -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif; /* Using Inter font */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f2f5; /* Light grey background */
+        margin: 0;
+        color: #333;
+      }
+      .conci-container {
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+      }
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 5px;
+        font-size: 1.8em;
+      }
+      p {
+        font-size: 1.1em;
+        color: #555;
+        margin-bottom: 20px;
+      }
+      .conci-status-light {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #ccc; /* Default idle color */
+        margin: 20px auto;
+        border: 2px solid #bbb;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .conci-status-light.idle {
+        background-color: #d1d1d1;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .conci-status-light.listening {
+        background-color: #4a90e2;
+        box-shadow: 0 0 15px #4a90e2;
+      } /* Blue */
+      .conci-status-light.thinking {
+        background-color: #f5a623;
+        box-shadow: 0 0 15px #f5a623;
+      } /* Orange */
+      .conci-status-light.speaking {
+        background-color: #7ed321;
+        box-shadow: 0 0 15px #7ed321;
+      } /* Green */
+
+      .input-group {
+        display: flex;
+        margin-top: 20px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      #guestInput {
+        flex-grow: 1;
+        padding: 12px 15px;
+        border: none;
+        outline: none;
+        font-size: 1em;
+        background-color: #f9f9f9;
+      }
+      #sendButton {
+        padding: 12px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s ease;
+      }
+      #sendButton:hover {
+        background-color: #0056b3;
+      }
+      .response-area {
+        margin-top: 25px;
+        background-color: #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1em;
+        color: #343a40;
+        border: 1px dashed #ced4da;
+        text-align: center;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="conci-container">
+      <h1>Welcome to Conci</h1>
+      <p>
+        Your intelligent assistant for {{ hotel_name }} - Room {{ room_number }}
+      </p>
+
+      <div id="conciStatusLight" class="conci-status-light idle"></div>
+
+      <div class="input-group">
+        <input
+          type="text"
+          id="guestInput"
+          placeholder="Type your request here (e.g., 'I need more towels')"
+        />
+        <button id="sendButton">Send</button>
+      </div>
+
+      <div id="responseArea" class="response-area">
+        Awaiting your command...
+      </div>
+    </div>
+
+    <script>
+      const guestInput = document.getElementById("guestInput");
+      const sendButton = document.getElementById("sendButton");
+      const responseArea = document.getElementById("responseArea");
+      const conciStatusLight = document.getElementById("conciStatusLight");
+
+      // Get room_number and hotel_id from Django template context
+      const roomNumber = "{{ room_number_str }}";
+      const hotelId = "{{ hotel_id }}";
+
+      // Web Speech API - SpeechSynthesis instance
+      const synth = window.speechSynthesis;
+      let selectedVoice = null;
+
+      // Array to store chat history: [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
+      let chatHistory = [];
+      const MAX_HISTORY_LENGTH = 6; // Keep last 3 user and 3 model turns (total 6)
+
+      // Populate voices once they are loaded
+      function populateVoiceList() {
+        if (typeof synth === "undefined") {
+          return;
+        }
+        const voices = synth.getVoices();
+        selectedVoice =
+          voices.find(
+            (voice) =>
+              voice.lang === "en-US" &&
+              voice.name.includes("Google") &&
+              voice.name.includes("Female")
+          ) ||
+          voices.find(
+            (voice) => voice.lang === "en-US" && voice.name.includes("Female")
+          ) ||
+          voices.find((voice) => voice.lang === "en-US") ||
+          voices[0];
+      }
+
+      if (typeof synth !== "undefined" && synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoiceList;
+      }
+      populateVoiceList();
+
+      function updateStatusLight(status) {
+        conciStatusLight.className = "conci-status-light " + status;
+      }
+
+      function speakText(text) {
+        if (synth.speaking) {
+          synth.cancel();
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = selectedVoice;
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        utterance.onerror = (event) => {
+          console.error("SpeechSynthesisUtterance.onerror", event);
+          responseArea.textContent = "Error speaking: " + text;
+        };
+
+        synth.speak(utterance);
+      }
+
+      sendButton.addEventListener("click", sendCommand);
+      guestInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          sendCommand();
+        }
+      });
+
+      async function sendCommand() {
+        const command = guestInput.value.trim();
+        if (command === "") {
+          responseArea.textContent = "Please type a command.";
+          return;
+        }
+
+        updateStatusLight("listening");
+        responseArea.textContent = "Conci is listening...";
+        guestInput.value = "";
+        sendButton.disabled = true;
+
+        try {
+          updateStatusLight("thinking");
+          responseArea.textContent = "Conci is thinking...";
+
+          // Add current user command to chat history
+          chatHistory.push({ role: "user", parts: [{ text: command }] });
+          // Trim history to avoid sending excessively long context
+          if (chatHistory.length > MAX_HISTORY_LENGTH) {
+            chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
+          }
+
+          const data = {
+            room_number: roomNumber,
+            command: command, // Current command
+            hotel_id: hotelId,
+            history: chatHistory, // Send the full chat history
+          };
+
+          const response = await fetch("/api/process_command/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            updateStatusLight("speaking");
+            responseArea.textContent = result.response_text;
+            if (result.response_text) {
+              speakText(result.response_text);
+            }
+            // Add Conci's response to chat history
+            chatHistory.push({
+              role: "model",
+              parts: [{ text: result.response_text }],
+            });
+          } else {
+            responseArea.textContent =
+              result.error || "An unknown error occurred.";
+            console.error("API Error:", result.error);
+            // On error, remove the last user message from history if no model response
+            if (
+              chatHistory.length > 0 &&
+              chatHistory[chatHistory.length - 1].role === "user"
+            ) {
+              chatHistory.pop();
+            }
+          }
+
+          const utteranceDuration = result.response_text
+            ? result.response_text.length * 50
+            : 3000;
+          let speechEndedTimeout = null;
+
+          const onUtteranceEnd = () => {
+            clearTimeout(speechEndedTimeout);
+            updateStatusLight("idle");
+            responseArea.textContent = "Awaiting your command...";
+            sendButton.disabled = false;
+            synth.removeEventListener("end", onUtteranceEnd);
+          };
+
+          if (
+            synth.speaking &&
+            typeof SpeechSynthesisUtterance !== "undefined"
+          ) {
+            const utterance = new SpeechSynthesisUtterance(
+              result.response_text
+            );
+            utterance.addEventListener("end", onUtteranceEnd);
+            speechEndedTimeout = setTimeout(
+              onUtteranceEnd,
+              utteranceDuration + 2000
+            );
+          } else {
+            setTimeout(() => {
+              updateStatusLight("idle");
+              responseArea.textContent = "Awaiting your command...";
+              sendButton.disabled = false;
+            }, utteranceDuration + 2000);
+          }
+        } catch (error) {
+          console.error("Error sending command:", error);
+          responseArea.textContent =
+            "Sorry, there was a network error. Please try again.";
+          updateStatusLight("idle");
+          sendButton.disabled = false;
+          // On network error, remove the last user message from history
+          if (
+            chatHistory.length > 0 &&
+            chatHistory[chatHistory.length - 1].role === "user"
+          ) {
+            chatHistory.pop();
+          }
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        updateStatusLight("idle");
+        responseArea.textContent = "Awaiting your command...";
+      });
+    </script>
+  </body>
+</html>
