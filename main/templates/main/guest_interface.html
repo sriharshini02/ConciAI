@@ -207,14 +207,23 @@
       let chatHistory = [];
       const MAX_HISTORY_LENGTH = 6;
 
-      // --- Helper function to control UI elements ---
-      function setUIState(listening, sending) {
-        isListening = listening; // Update the global listening state
-        guestInput.disabled = listening || sending; // Disable input if listening or sending
-        sendButton.disabled = listening || sending; // Disable send if listening or sending
-        listenButton.disabled = sending; // Disable listen if sending (can stop if just listening)
+      let isRecognizing = false; // Flag to track if speech recognition is active
+      let isProcessingCommand = false; // Flag to track if sendCommand is active
 
-        if (listening) {
+      // --- Helper function to control UI elements ---
+      function setUIState() {
+        const inputDisabled = isRecognizing || isProcessingCommand;
+        const sendDisabled =
+          isRecognizing ||
+          isProcessingCommand ||
+          guestInput.value.trim() === ""; // Send requires input
+        const listenDisabled = isProcessingCommand; // Can always stop listening if recognizing
+
+        guestInput.disabled = inputDisabled;
+        sendButton.disabled = sendDisabled;
+        listenButton.disabled = listenDisabled;
+
+        if (isRecognizing) {
           listenButton.textContent = "Stop Listening";
           listenButton.classList.add("active");
           guestInput.placeholder = "Speaking...";
@@ -278,10 +287,10 @@
         recognition.interimResults = false;
         recognition.lang = "en-US";
 
-        let isListening = false; // Internal state for recognition instance
-
         recognition.onstart = () => {
-          setUIState(true, false); // Listening, not sending
+          isRecognizing = true;
+          isProcessingCommand = false; // Ensure this is false
+          setUIState();
           updateStatusLight("listening");
           responseArea.textContent = "Listening... Please speak now.";
         };
@@ -289,39 +298,40 @@
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
           guestInput.value = transcript;
-          // Leave setUIState as listening; user needs to click Send
+          setUIState(); // Update send button state based on new input value
         };
 
         recognition.onerror = (event) => {
           console.error("SpeechRecognitionError:", event.error);
           // Only reset UI if not already transitioned by sendCommand
-          if (
-            !["thinking", "speaking"].includes(
-              conciStatusLight.className.replace("conci-status-light ", "")
-            )
-          ) {
+          if (!isProcessingCommand) {
             updateStatusLight("idle");
             responseArea.textContent =
               "Voice input error. Please try typing or click Listen again.";
           }
-          setUIState(false, false); // Not listening, not sending
+          isRecognizing = false;
+          setUIState(); // Final UI state after error
         };
 
         recognition.onend = () => {
           // This fires whether recognition stops normally or is explicitly stopped.
           // Only reset UI if `sendCommand` hasn't taken over control.
-          if (isListening) {
-            // If still in listening state before onend
-            setUIState(false, false); // Not listening, not sending
+          if (isRecognizing && !isProcessingCommand) {
+            isRecognizing = false;
+            setUIState(); // Final UI state after normal recognition end
             updateStatusLight("idle");
             responseArea.textContent = "Awaiting your command...";
           }
         };
 
         listenButton.addEventListener("click", () => {
-          if (isListening) {
+          if (isRecognizing) {
+            // If currently recognizing, stop
             recognition.stop();
+            isRecognizing = false;
+            setUIState(); // Immediately update state after manual stop
           } else {
+            // If not recognizing, start
             guestInput.value = ""; // Clear input field when starting voice input
             recognition.start();
           }
@@ -341,6 +351,7 @@
           sendCommand();
         } else {
           responseArea.textContent = "Please type or speak a command first.";
+          setUIState(); // Re-evaluate state
         }
       });
 
@@ -355,16 +366,21 @@
         const command = guestInput.value.trim();
         if (command === "") {
           responseArea.textContent = "Please type a command.";
+          setUIState(); // Re-evaluate state
           return;
         }
 
-        // Stop recognition if it's running, and transfer UI control to sendCommand
-        if (recognition && isListening) {
-          recognition.onend = null; // Prevent onend from interfering with sendCommand's UI reset
+        // If recognition is active, stop it as command is being sent
+        if (recognition && isRecognizing) {
+          recognition.onend = null; // Detach onend to prevent interference with sendCommand's UI reset
+          recognition.onerror = null; // Also detach onerror
           recognition.stop(); // Stop the recognition process
         }
 
-        setUIState(false, true); // Not listening, now sending
+        isRecognizing = false; // Ensure this is false now
+        isProcessingCommand = true; // Mark as processing
+        setUIState(); // Update UI to sending state
+
         updateStatusLight("listening"); // Indicate processing starts
         responseArea.textContent = "Processing your request...";
 
@@ -421,44 +437,48 @@
           // Handle re-enabling buttons after Conci has finished speaking or timeout
           const utteranceDuration = result.response_text
             ? result.response_text.length * 50
-            : 2000; // Shorter default delay
+            : 2000;
           let speechEndedTimeout = null;
 
           const onUtteranceEnd = () => {
             clearTimeout(speechEndedTimeout);
             updateStatusLight("idle");
             responseArea.textContent = "Awaiting your command...";
-            setUIState(false, false); // Not listening, not sending
+            isProcessingCommand = false; // Processing finished
+            setUIState(); // Re-enable all
             synth.removeEventListener("end", onUtteranceEnd);
           };
 
+          // Attach event listener only if speech is expected and synth is available
           if (
             result.response_text &&
-            typeof SpeechSynthesisUtterance !== "undefined" &&
-            synth.speaking
+            typeof SpeechSynthesisUtterance !== "undefined"
           ) {
             const utterance = new SpeechSynthesisUtterance(
               result.response_text
             );
             utterance.addEventListener("end", onUtteranceEnd);
+            speakText(result.response_text); // Ensure speakText is called here
             speechEndedTimeout = setTimeout(
               onUtteranceEnd,
               utteranceDuration + 1000
-            ); // Add buffer
+            );
           } else {
-            // If no text to speak, or TTS not supported, go idle after a short delay
+            // If no text to speak, or TTS not supported/available, go idle after a short delay
             setTimeout(() => {
               updateStatusLight("idle");
               responseArea.textContent = "Awaiting your command...";
-              setUIState(false, false); // Not listening, not sending
-            }, 2000); // Default short delay
+              isProcessingCommand = false; // Processing finished
+              setUIState(); // Re-enable all
+            }, 2000);
           }
         } catch (error) {
           console.error("Error sending command:", error);
           responseArea.textContent =
             "Sorry, there was a network error. Please try again.";
           updateStatusLight("idle");
-          setUIState(false, false); // Re-enable all on error
+          isProcessingCommand = false; // Processing finished (on error)
+          setUIState(); // Re-enable all on error
           if (
             chatHistory.length > 0 &&
             chatHistory[chatHistory.length - 1].role === "user"
@@ -471,7 +491,9 @@
       document.addEventListener("DOMContentLoaded", () => {
         updateStatusLight("idle");
         responseArea.textContent = "Awaiting your command...";
-        setUIState(false, false); // Initial state
+        setUIState(); // Initial state
+        // Add a listener to guestInput to enable send button when text is typed
+        guestInput.addEventListener("input", setUIState);
       });
     </script>
   </body>

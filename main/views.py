@@ -170,7 +170,7 @@ def update_request_status(request, request_id):
         return JsonResponse(
             {
                 "success": True,
-                "message": f"Status for Room {guest_request.room_number} updated to {guest_request.get_status_display()}.",
+                "message": f"Status for Room {guest_request.room_number} updated to {guest_request.get_status_display()}.",  # type: ignore
             }
         )
     else:
@@ -198,7 +198,7 @@ def guest_interface(request, room_number):
         "room_number": room_number,
         "page_title": f"Conci Device - Room {room_number}",
         "current_status": "idle",
-        "hotel_id": hotel.id,
+        "hotel_id": hotel.id,  # type: ignore
         "room_number_str": room_number,
     }
     return render(request, "main/guest_interface.html", context)
@@ -354,7 +354,7 @@ def process_guest_command(request):
                 existing_request.ai_entities = ai_entities  # Update entities
                 existing_request.save()
                 print(
-                    f"Updated existing GuestRequest (ID: {existing_request.id}) for Room {room_number} with intent: {ai_intent}"
+                    f"Updated existing GuestRequest (ID: {existing_request.id}) for Room {room_number} with intent: {ai_intent}"  # type: ignore
                 )
             else:
                 # Create a new request if no matching pending one is found
