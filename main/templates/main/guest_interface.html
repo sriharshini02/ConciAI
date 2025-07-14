@@ -1,500 +1,612 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
     <!-- Basic styling for the simulated Conci device -->
     <style>
-      body {
-        font-family: "Inter", sans-serif; /* Using Inter font */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background-color: #f0f2f5; /* Light grey background */
-        margin: 0;
-        color: #333;
-      }
-      .conci-container {
-        background-color: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        width: 90%;
-        max-width: 500px;
-        text-align: center;
-        border: 1px solid #e0e0e0;
-        display: flex;
-        flex-direction: column;
-        gap: 15px; /* Spacing between elements */
-      }
-      h1 {
-        color: #2c3e50;
-        margin-bottom: 5px;
-        font-size: 1.8em;
-      }
-      p {
-        font-size: 1.1em;
-        color: #555;
-        margin-bottom: 5px;
-      }
-      .conci-status-light {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background-color: #ccc; /* Default idle color */
-        margin: 10px auto;
-        border: 2px solid #bbb;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-      }
-      .conci-status-light.idle {
-        background-color: #d1d1d1;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-      .conci-status-light.listening {
-        background-color: #4a90e2;
-        box-shadow: 0 0 15px #4a90e2;
-      } /* Blue */
-      .conci-status-light.thinking {
-        background-color: #f5a623;
-        box-shadow: 0 0 15px #f5a623;
-      } /* Orange */
-      .conci-status-light.speaking {
-        background-color: #7ed321;
-        box-shadow: 0 0 15px #7ed321;
-      } /* Green */
-
-      .input-group {
-        display: flex;
-        flex-direction: column; /* Stack input and button vertically for clarity */
-        gap: 10px;
-        margin-top: 10px;
-      }
-      #guestInput {
-        flex-grow: 1;
-        padding: 12px 15px;
-        border: 1px solid #ced4da;
-        border-radius: 8px;
-        outline: none;
-        font-size: 1em;
-        background-color: #f9f9f9;
-      }
-      .button-group {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-      }
-      #sendButton,
-      #listenButton {
-        padding: 12px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1em;
-        transition: background-color 0.2s ease, transform 0.1s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        flex: 1; /* Distribute space equally */
-      }
-      #sendButton:hover,
-      #listenButton:hover {
-        background-color: #0056b3;
-        transform: translateY(-2px);
-      }
-      #sendButton:active,
-      #listenButton:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      #listenButton {
-        background-color: #28a745; /* Green for listen */
-      }
-      #listenButton:hover {
-        background-color: #218838;
-      }
-      #listenButton.active {
-        /* Style when listening */
-        background-color: #dc3545; /* Red when active (to stop) */
-        animation: pulse 1s infinite alternate;
-      }
-      @keyframes pulse {
-        from {
-          box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5; /* Light grey background */
+            margin: 0;
+            color: #333;
         }
-        to {
-          box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+        .conci-container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Spacing between elements */
         }
-      }
-      #listenButton.active:hover {
-        background-color: #c82333;
-      }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-size: 1.8em;
+        }
+        p {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .conci-status-light {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #ccc; /* Default idle color */
+            margin: 10px auto;
+            border: 2px solid #bbb;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .conci-status-light.idle { background-color: #d1d1d1; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .conci-status-light.listening { background-color: #4A90E2; box-shadow: 0 0 15px #4A90E2; } /* Blue */
+        .conci-status-light.thinking { background-color: #F5A623; box-shadow: 0 0 15px #F5A623; } /* Orange */
+        .conci-status-light.speaking { background-color: #7ED321; box-shadow: 0 0 15px #7ED321; } /* Green */
 
-      .response-area {
-        margin-top: 15px;
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 15px;
-        min-height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1em;
-        color: #343a40;
-        border: 1px dashed #ced4da;
-        text-align: center;
-        line-height: 1.5;
-        word-wrap: break-word; /* Ensure long words wrap */
-      }
-      .mic-unavailable-message {
-        color: #dc3545;
-        font-size: 0.9em;
-        margin-top: 10px;
-      }
+        .input-group {
+            display: flex;
+            flex-direction: column; /* Stack input and button vertically for clarity */
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #guestInput {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            outline: none;
+            font-size: 1em;
+            background-color: #f9f9f9;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        #sendButton, #listenButton, #confirmSendButton { /* Added confirmSendButton */
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1; /* Distribute space equally */
+        }
+        #sendButton:hover, #listenButton:hover, #confirmSendButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #sendButton:active, #listenButton:active, #confirmSendButton:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #listenButton {
+            background-color: #28a745; /* Green for listen */
+        }
+        #listenButton:hover {
+            background-color: #218838;
+        }
+        #listenButton.active { /* Style when listening */
+            background-color: #dc3545; /* Red when active (to stop) */
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { box-shadow: 0 0 0 0 rgba(40,167,69, 0.7); }
+            to { box-shadow: 0 0 0 10px rgba(40,167,69, 0); }
+        }
+        #listenButton.active:hover {
+             background-color: #c82333;
+        }
+        #confirmSendButton {
+            background-color: #6f42c1; /* Purple for confirmation */
+            margin-top: 15px; /* Separate from other buttons */
+            display: none; /* Hidden by default */
+        }
+        #confirmSendButton:hover {
+            background-color: #563d7c;
+        }
+
+        .response-area {
+            margin-top: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            color: #343a40;
+            border: 1px dashed #ced4da;
+            text-align: center;
+            line-height: 1.5;
+            word-wrap: break-word; /* Ensure long words wrap */
+        }
+        .mic-unavailable-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .pending-requests-area {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+        .pending-requests-area h3 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .pending-requests-area ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+        .pending-requests-area li {
+            margin-bottom: 5px;
+            color: #6c757d;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="conci-container">
-      <h1>Welcome to Conci</h1>
-      <p>
-        Your intelligent assistant for {{ hotel_name }} - Room {{ room_number }}
-      </p>
+        <h1>Welcome to Conci</h1>
+        <p>Your intelligent assistant for {{ hotel_name }} - Room {{ room_number }}</p>
 
-      <div id="conciStatusLight" class="conci-status-light idle"></div>
+        <div id="conciStatusLight" class="conci-status-light idle"></div>
 
-      <div class="input-group">
-        <input
-          type="text"
-          id="guestInput"
-          placeholder="Type your request or click Listen"
-        />
-        <div class="button-group">
-          <button id="listenButton">Listen</button>
-          <button id="sendButton">Send</button>
+        <div class="input-group">
+            <input type="text" id="guestInput" placeholder="Type your request or click Listen">
+            <div class="button-group">
+                <button id="listenButton">Listen</button>
+                <button id="sendButton">Send</button>
+            </div>
         </div>
-      </div>
-      <div
-        id="micUnavailable"
-        class="mic-unavailable-message"
-        style="display: none"
-      >
-        Speech recognition is not available in this browser or requires HTTPS.
-      </div>
+        <div id="micUnavailable" class="mic-unavailable-message" style="display: none;">
+            Speech recognition is not available in this browser or requires HTTPS.
+        </div>
 
-      <div id="responseArea" class="response-area">
-        Awaiting your command...
-      </div>
+        <div id="responseArea" class="response-area">
+            Awaiting your command...
+        </div>
+
+        <div id="pendingRequestsArea" class="pending-requests-area">
+            <h3>Your Pending Requests:</h3>
+            <ul id="pendingRequestsList">
+                <!-- Draft requests will be listed here -->
+            </ul>
+        </div>
+        <button id="confirmSendButton">Confirm & Send All Requests</button>
     </div>
 
     <script>
-      const guestInput = document.getElementById("guestInput");
-      const sendButton = document.getElementById("sendButton");
-      const listenButton = document.getElementById("listenButton");
-      const responseArea = document.getElementById("responseArea");
-      const conciStatusLight = document.getElementById("conciStatusLight");
-      const micUnavailableMessage = document.getElementById("micUnavailable");
+        const guestInput = document.getElementById('guestInput');
+        const sendButton = document.getElementById('sendButton');
+        const listenButton = document.getElementById('listenButton');
+        const responseArea = document.getElementById('responseArea');
+        const conciStatusLight = document.getElementById('conciStatusLight');
+        const micUnavailableMessage = document.getElementById('micUnavailable');
+        const pendingRequestsArea = document.getElementById('pendingRequestsArea'); // New
+        const pendingRequestsList = document.getElementById('pendingRequestsList'); // New
+        const confirmSendButton = document.getElementById('confirmSendButton'); // New
 
-      const roomNumber = "{{ room_number_str }}";
-      const hotelId = "{{ hotel_id }}";
+        const roomNumber = "{{ room_number_str }}";
+        const hotelId = "{{ hotel_id }}";
 
-      const synth = window.speechSynthesis;
-      let selectedVoice = null;
-      let recognition = null;
+        const synth = window.speechSynthesis;
+        let selectedVoice = null;
+        let recognition = null;
 
-      let chatHistory = [];
-      const MAX_HISTORY_LENGTH = 6;
+        let chatHistory = [];
+        const MAX_HISTORY_LENGTH = 6;
 
-      let isRecognizing = false; // Flag to track if speech recognition is active
-      let isProcessingCommand = false; // Flag to track if sendCommand is active
+        let isRecognizing = false;
+        let isProcessingCommand = false;
 
-      // --- Helper function to control UI elements ---
-      function setUIState() {
-        const inputDisabled = isRecognizing || isProcessingCommand;
-        const sendDisabled =
-          isRecognizing ||
-          isProcessingCommand ||
-          guestInput.value.trim() === ""; // Send requires input
-        const listenDisabled = isProcessingCommand; // Can always stop listening if recognizing
+        // NEW: Array to hold requests that are pending confirmation
+        let draftRequests = [];
 
-        guestInput.disabled = inputDisabled;
-        sendButton.disabled = sendDisabled;
-        listenButton.disabled = listenDisabled;
+        function setUIState() {
+            const inputDisabled = isRecognizing || isProcessingCommand;
+            const sendDisabled = isRecognizing || isProcessingCommand || guestInput.value.trim() === '';
+            const listenDisabled = isProcessingCommand;
 
-        if (isRecognizing) {
-          listenButton.textContent = "Stop Listening";
-          listenButton.classList.add("active");
-          guestInput.placeholder = "Speaking...";
-        } else {
-          listenButton.textContent = "Listen";
-          listenButton.classList.remove("active");
-          guestInput.placeholder = "Type your request or click Listen";
-        }
-      }
+            guestInput.disabled = inputDisabled;
+            sendButton.disabled = sendDisabled;
+            listenButton.disabled = listenDisabled;
 
-      // --- Web Speech API (SpeechSynthesis - for Conci's Voice) ---
-      function populateVoiceList() {
-        if (typeof synth === "undefined") {
-          return;
-        }
-        const voices = synth.getVoices();
-        selectedVoice =
-          voices.find(
-            (voice) =>
-              voice.lang === "en-US" &&
-              voice.name.includes("Google") &&
-              voice.name.includes("Female")
-          ) ||
-          voices.find(
-            (voice) => voice.lang === "en-US" && voice.name.includes("Female")
-          ) ||
-          voices.find((voice) => voice.lang === "en-US") ||
-          voices[0];
-      }
-
-      if (typeof synth !== "undefined" && synth.onvoiceschanged !== undefined) {
-        synth.onvoiceschanged = populateVoiceList;
-      }
-      populateVoiceList();
-
-      function updateStatusLight(status) {
-        conciStatusLight.className = "conci-status-light " + status;
-      }
-
-      function speakText(text) {
-        if (synth.speaking) {
-          synth.cancel();
-        }
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.voice = selectedVoice;
-        utterance.rate = 1;
-        utterance.pitch = 1;
-
-        utterance.onerror = (event) => {
-          console.error("SpeechSynthesisUtterance.onerror", event);
-          responseArea.textContent = "Error speaking: " + text;
-        };
-
-        synth.speak(utterance);
-      }
-
-      // --- Web Speech API (SpeechRecognition - for Guest's Voice Input) ---
-      if ("webkitSpeechRecognition" in window) {
-        recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = "en-US";
-
-        recognition.onstart = () => {
-          isRecognizing = true;
-          isProcessingCommand = false; // Ensure this is false
-          setUIState();
-          updateStatusLight("listening");
-          responseArea.textContent = "Listening... Please speak now.";
-        };
-
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          guestInput.value = transcript;
-          setUIState(); // Update send button state based on new input value
-        };
-
-        recognition.onerror = (event) => {
-          console.error("SpeechRecognitionError:", event.error);
-          // Only reset UI if not already transitioned by sendCommand
-          if (!isProcessingCommand) {
-            updateStatusLight("idle");
-            responseArea.textContent =
-              "Voice input error. Please try typing or click Listen again.";
-          }
-          isRecognizing = false;
-          setUIState(); // Final UI state after error
-        };
-
-        recognition.onend = () => {
-          // This fires whether recognition stops normally or is explicitly stopped.
-          // Only reset UI if `sendCommand` hasn't taken over control.
-          if (isRecognizing && !isProcessingCommand) {
-            isRecognizing = false;
-            setUIState(); // Final UI state after normal recognition end
-            updateStatusLight("idle");
-            responseArea.textContent = "Awaiting your command...";
-          }
-        };
-
-        listenButton.addEventListener("click", () => {
-          if (isRecognizing) {
-            // If currently recognizing, stop
-            recognition.stop();
-            isRecognizing = false;
-            setUIState(); // Immediately update state after manual stop
-          } else {
-            // If not recognizing, start
-            guestInput.value = ""; // Clear input field when starting voice input
-            recognition.start();
-          }
-        });
-      } else {
-        listenButton.disabled = true;
-        listenButton.textContent = "Voice N/A";
-        micUnavailableMessage.style.display = "block";
-        console.warn(
-          "Web Speech API (SpeechRecognition) not supported in this browser."
-        );
-      }
-
-      // --- Send Command (for both typed and voice input) ---
-      sendButton.addEventListener("click", () => {
-        if (guestInput.value.trim() !== "") {
-          sendCommand();
-        } else {
-          responseArea.textContent = "Please type or speak a command first.";
-          setUIState(); // Re-evaluate state
-        }
-      });
-
-      guestInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          sendCommand();
-        }
-      });
-
-      async function sendCommand() {
-        const command = guestInput.value.trim();
-        if (command === "") {
-          responseArea.textContent = "Please type a command.";
-          setUIState(); // Re-evaluate state
-          return;
-        }
-
-        // If recognition is active, stop it as command is being sent
-        if (recognition && isRecognizing) {
-          recognition.onend = null; // Detach onend to prevent interference with sendCommand's UI reset
-          recognition.onerror = null; // Also detach onerror
-          recognition.stop(); // Stop the recognition process
-        }
-
-        isRecognizing = false; // Ensure this is false now
-        isProcessingCommand = true; // Mark as processing
-        setUIState(); // Update UI to sending state
-
-        updateStatusLight("listening"); // Indicate processing starts
-        responseArea.textContent = "Processing your request...";
-
-        try {
-          updateStatusLight("thinking");
-          responseArea.textContent = "Conci is thinking...";
-
-          chatHistory.push({ role: "user", parts: [{ text: command }] });
-          if (chatHistory.length > MAX_HISTORY_LENGTH) {
-            chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
-          }
-
-          const data = {
-            room_number: roomNumber,
-            command: command,
-            hotel_id: hotelId,
-            history: chatHistory,
-          };
-
-          const response = await fetch("/api/process_command/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-
-          const result = await response.json();
-
-          if (response.ok && result.success) {
-            updateStatusLight("speaking");
-            responseArea.textContent = result.response_text;
-            if (result.response_text) {
-              speakText(result.response_text);
+            if (isRecognizing) {
+                listenButton.textContent = "Stop Listening";
+                listenButton.classList.add('active');
+                guestInput.placeholder = "Speaking...";
+            } else {
+                listenButton.textContent = "Listen";
+                listenButton.classList.remove('active');
+                guestInput.placeholder = "Type your request or click Listen";
             }
-            chatHistory.push({
-              role: "model",
-              parts: [{ text: result.response_text }],
+
+            // NEW: Control visibility of pending requests area and confirm button
+            if (draftRequests.length > 0) {
+                pendingRequestsArea.style.display = 'block';
+                confirmSendButton.style.display = 'block';
+            } else {
+                pendingRequestsArea.style.display = 'none';
+                confirmSendButton.style.display = 'none';
+            }
+        }
+
+        // NEW: Function to update the displayed list of pending requests
+        function updatePendingRequestsDisplay() {
+            pendingRequestsList.innerHTML = ''; // Clear previous list
+            if (draftRequests.length === 0) {
+                pendingRequestsArea.style.display = 'none';
+                confirmSendButton.style.display = 'none';
+                return;
+            }
+
+            draftRequests.forEach(req => {
+                const listItem = document.createElement('li');
+                let displayString = req.raw_text; // Default to raw text
+                
+                // Make it more readable based on intent if possible
+                if (req.ai_intent === 'request_amenity' && req.ai_entities && req.ai_entities.item) {
+                    displayString = `Request: ${req.ai_entities.item}`;
+                    if (req.ai_entities.quantity) {
+                        displayString += ` (Quantity: ${req.ai_entities.quantity})`;
+                    }
+                } else if (req.ai_intent === 'request_menu') {
+                    displayString = `Request: Menu`;
+                } else if (req.ai_intent === 'get_info' && req.ai_entities && req.ai_entities.info_type) {
+                    displayString = `Info: ${req.ai_entities.info_type.replace('_', ' ')}`;
+                }
+                listItem.textContent = displayString;
+                pendingRequestsList.appendChild(listItem);
             });
-          } else {
-            responseArea.textContent =
-              result.error || "An unknown error occurred.";
-            console.error("API Error:", result.error);
-            if (
-              chatHistory.length > 0 &&
-              chatHistory[chatHistory.length - 1].role === "user"
-            ) {
-              chatHistory.pop();
-            }
-          }
-
-          guestInput.value = ""; // Clear input field after successful processing
-
-          // Handle re-enabling buttons after Conci has finished speaking or timeout
-          const utteranceDuration = result.response_text
-            ? result.response_text.length * 50
-            : 2000;
-          let speechEndedTimeout = null;
-
-          const onUtteranceEnd = () => {
-            clearTimeout(speechEndedTimeout);
-            updateStatusLight("idle");
-            responseArea.textContent = "Awaiting your command...";
-            isProcessingCommand = false; // Processing finished
-            setUIState(); // Re-enable all
-            synth.removeEventListener("end", onUtteranceEnd);
-          };
-
-          // Attach event listener only if speech is expected and synth is available
-          if (
-            result.response_text &&
-            typeof SpeechSynthesisUtterance !== "undefined"
-          ) {
-            const utterance = new SpeechSynthesisUtterance(
-              result.response_text
-            );
-            utterance.addEventListener("end", onUtteranceEnd);
-            speakText(result.response_text); // Ensure speakText is called here
-            speechEndedTimeout = setTimeout(
-              onUtteranceEnd,
-              utteranceDuration + 1000
-            );
-          } else {
-            // If no text to speak, or TTS not supported/available, go idle after a short delay
-            setTimeout(() => {
-              updateStatusLight("idle");
-              responseArea.textContent = "Awaiting your command...";
-              isProcessingCommand = false; // Processing finished
-              setUIState(); // Re-enable all
-            }, 2000);
-          }
-        } catch (error) {
-          console.error("Error sending command:", error);
-          responseArea.textContent =
-            "Sorry, there was a network error. Please try again.";
-          updateStatusLight("idle");
-          isProcessingCommand = false; // Processing finished (on error)
-          setUIState(); // Re-enable all on error
-          if (
-            chatHistory.length > 0 &&
-            chatHistory[chatHistory.length - 1].role === "user"
-          ) {
-            chatHistory.pop();
-          }
+            setUIState(); // Update visibility based on new draftRequests length
         }
-      }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        updateStatusLight("idle");
-        responseArea.textContent = "Awaiting your command...";
-        setUIState(); // Initial state
-        // Add a listener to guestInput to enable send button when text is typed
-        guestInput.addEventListener("input", setUIState);
-      });
+
+        function populateVoiceList() {
+            if (typeof synth === 'undefined') { return; }
+            const voices = synth.getVoices();
+            selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Google') && voice.name.includes('Female')) ||
+                            voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Female')) ||
+                            voices.find(voice => voice.lang === 'en-US') ||
+                            voices[0];
+        }
+
+        if (typeof synth !== 'undefined' && synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = populateVoiceList;
+        }
+        populateVoiceList();
+
+        function updateStatusLight(status) {
+            conciStatusLight.className = 'conci-status-light ' + status;
+        }
+
+        function speakText(text) {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = selectedVoice;
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
+            utterance.onerror = (event) => {
+                console.error('SpeechSynthesisUtterance.onerror', event);
+                responseArea.textContent = "Error speaking: " + text;
+            };
+
+            synth.speak(utterance);
+        }
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isRecognizing = true;
+                isProcessingCommand = false;
+                setUIState();
+                updateStatusLight('listening');
+                responseArea.textContent = "Listening... Please speak now.";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                guestInput.value = transcript;
+                setUIState();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('SpeechRecognitionError:', event.error);
+                if (!isProcessingCommand) {
+                    updateStatusLight('idle');
+                    responseArea.textContent = "Voice input error. Please try typing or click Listen again.";
+                }
+                isRecognizing = false;
+                setUIState();
+            };
+
+            recognition.onend = () => {
+                if (isRecognizing && !isProcessingCommand) {
+                    isRecognizing = false;
+                    setUIState();
+                    updateStatusLight('idle');
+                    responseArea.textContent = "Awaiting your command...";
+                }
+            };
+
+            listenButton.addEventListener('click', () => {
+                if (isRecognizing) {
+                    recognition.stop();
+                    isRecognizing = false;
+                    setUIState();
+                } else {
+                    guestInput.value = '';
+                    recognition.start();
+                }
+            });
+
+        } else {
+            listenButton.disabled = true;
+            listenButton.textContent = "Voice N/A";
+            micUnavailableMessage.style.display = 'block';
+            console.warn("Web Speech API (SpeechRecognition) not supported in this browser.");
+        }
+
+        sendButton.addEventListener('click', () => {
+            if (guestInput.value.trim() !== '') {
+                sendCommand();
+            } else {
+                responseArea.textContent = "Please type or speak a command first.";
+                setUIState();
+            }
+        });
+
+        guestInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendCommand();
+            }
+        });
+
+        // NEW: Event listener for the "Confirm & Send All Requests" button
+        confirmSendButton.addEventListener('click', submitDraftRequests);
+
+        async function sendCommand() {
+            const command = guestInput.value.trim();
+            if (command === '') {
+                responseArea.textContent = "Please type a command.";
+                setUIState();
+                return;
+            }
+
+            if (recognition && isRecognizing) {
+                recognition.onend = null;
+                recognition.onerror = null;
+                recognition.stop();
+            }
+            
+            isRecognizing = false;
+            isProcessingCommand = true;
+            setUIState();
+            
+            updateStatusLight('listening');
+            responseArea.textContent = "Processing your request...";
+            
+            try {
+                updateStatusLight('thinking');
+                responseArea.textContent = "Conci is thinking...";
+
+                chatHistory.push({ role: 'user', parts: [{ text: command }] });
+                if (chatHistory.length > MAX_HISTORY_LENGTH) {
+                    chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
+                }
+
+                const data = {
+                    room_number: roomNumber,
+                    command: command,
+                    hotel_id: hotelId,
+                    history: chatHistory
+                };
+
+                // Send command to the backend for AI processing (but NOT direct DB save)
+                const response = await fetch('/api/process_command/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    updateStatusLight('speaking');
+                    responseArea.textContent = result.response_text;
+                    if (result.response_text) {
+                        speakText(result.response_text);
+                    }
+                    chatHistory.push({ role: 'model', parts: [{ text: result.response_text }] });
+
+                    // NEW: If AI identified an actionable intent, add it to draftRequests
+                    // The backend will now return ai_intent and ai_entities
+                    if (['request_amenity', 'amenity_request', 'request_menu', 'get_info'].includes(result.ai_intent)) {
+                        // Check for existing draft of the same type/item to update
+                        let existingDraftIndex = -1;
+                        if (result.ai_intent === 'request_amenity' && result.ai_entities && result.ai_entities.item) {
+                            existingDraftIndex = draftRequests.findIndex(
+                                d => d.ai_intent === result.ai_intent && 
+                                     d.ai_entities && d.ai_entities.item === result.ai_entities.item
+                            );
+                        } else if (result.ai_intent === 'request_menu') {
+                            existingDraftIndex = draftRequests.findIndex(d => d.ai_intent === result.ai_intent);
+                        } else if (result.ai_intent === 'get_info' && result.ai_entities && result.ai_entities.info_type) {
+                            existingDraftIndex = draftRequests.findIndex(
+                                d => d.ai_intent === result.ai_intent && 
+                                     d.ai_entities && d.ai_entities.info_type === result.ai_entities.info_type
+                            );
+                        }
+
+                        if (existingDraftIndex !== -1) {
+                            // Update existing draft by appending raw text and updating entities
+                            draftRequests[existingDraftIndex].raw_text += `\nGuest: ${command}`;
+                            draftRequests[existingDraftIndex].conci_response_text += `\nConci: ${result.response_text}`;
+                            Object.assign(draftRequests[existingDraftIndex].ai_entities, result.ai_entities); // Merge entities
+                            console.log("Updated existing draft request:", draftRequests[existingDraftIndex]);
+                        } else {
+                            // Add new draft request
+                            draftRequests.push({
+                                room_number: roomNumber,
+                                raw_text: command,
+                                ai_intent: result.ai_intent,
+                                ai_entities: result.ai_entities,
+                                conci_response_text: result.response_text,
+                                status: (result.ai_intent === 'get_info' ? 'completed' : 'pending'), // Info requests are 'completed' immediately
+                                timestamp: new Date().toISOString() // ISO string for easy transfer
+                            });
+                            console.log("Added new draft request:", draftRequests[draftRequests.length - 1]);
+                        }
+                        updatePendingRequestsDisplay(); // Update the UI list
+                    }
+
+                } else {
+                    responseArea.textContent = result.error || 'An unknown error occurred.';
+                    console.error('API Error:', result.error);
+                    if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+                        chatHistory.pop();
+                    }
+                }
+
+                guestInput.value = '';
+
+                const utteranceDuration = result.response_text ? result.response_text.length * 50 : 2000;
+                let speechEndedTimeout = null;
+
+                const onUtteranceEnd = () => {
+                    clearTimeout(speechEndedTimeout);
+                    updateStatusLight('idle');
+                    // responseArea.textContent = "Awaiting your command..."; // Conci will prompt for more
+                    isProcessingCommand = false;
+                    setUIState();
+                    synth.removeEventListener('end', onUtteranceEnd);
+                };
+
+                if (result.response_text && typeof SpeechSynthesisUtterance !== 'undefined') {
+                    const utterance = new SpeechSynthesisUtterance(result.response_text);
+                    utterance.addEventListener('end', onUtteranceEnd);
+                    // speakText is already called above, no need to call again here
+                    speechEndedTimeout = setTimeout(onUtteranceEnd, utteranceDuration + 1000);
+                } else {
+                    setTimeout(() => {
+                        updateStatusLight('idle');
+                        // responseArea.textContent = "Awaiting your command..."; // Conci will prompt for more
+                        isProcessingCommand = false;
+                        setUIState();
+                    }, 2000);
+                }
+
+
+            } catch (error) {
+                console.error("Error sending command:", error);
+                responseArea.textContent = "Sorry, there was a network error. Please try again.";
+                updateStatusLight('idle');
+                isProcessingCommand = false;
+                setUIState();
+                if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+                    chatHistory.pop();
+                }
+            }
+        }
+
+        // NEW: Function to submit all draft requests to the backend
+        async function submitDraftRequests() {
+            if (draftRequests.length === 0) {
+                responseArea.textContent = "No requests to send.";
+                return;
+            }
+
+            isProcessingCommand = true;
+            setUIState();
+            updateStatusLight('thinking');
+            responseArea.textContent = "Sending your requests to staff...";
+
+            try {
+                const data = {
+                    hotel_id: hotelId,
+                    requests: draftRequests // Send the array of draft requests
+                };
+
+                const response = await fetch('/api/submit_draft_requests/', { // NEW API ENDPOINT
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    updateStatusLight('speaking');
+                    responseArea.textContent = "All your requests have been sent to the staff. Is there anything else?";
+                    speakText("All your requests have been sent to the staff. Is there anything else?");
+                    draftRequests = []; // Clear drafts after successful submission
+                    updatePendingRequestsDisplay(); // Update UI
+                    chatHistory = []; // Optionally clear chat history after submission
+                } else {
+                    responseArea.textContent = result.error || 'Failed to send requests.';
+                    console.error('Submission API Error:', result.error);
+                }
+
+                setTimeout(() => {
+                    updateStatusLight('idle');
+                    responseArea.textContent = "Awaiting your command...";
+                    isProcessingCommand = false;
+                    setUIState();
+                }, 3000);
+
+            } catch (error) {
+                console.error("Error submitting draft requests:", error);
+                responseArea.textContent = "Network error while sending requests. Please try again.";
+                updateStatusLight('idle');
+                isProcessingCommand = false;
+                setUIState();
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatusLight('idle');
+            responseArea.textContent = "Awaiting your command...";
+            setUIState();
+            guestInput.addEventListener('input', setUIState);
+            updatePendingRequestsDisplay(); // Initial display check
+        });
     </script>
-  </body>
+</body>
 </html>

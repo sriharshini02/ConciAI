@@ -1,15 +1,44 @@
 <!DOCTYPE html>
+{% load main_filters %} {# Load your custom filters here #}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
-    <!-- We will add CSS framework (e.g., Bootstrap/Tailwind) links here later -->
     <style>
-        body { font-family: sans-serif; margin: 20px; }
-        h1 { color: #333; }
+        body { font-family: sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: #555;
+            text-align: right;
+        }
+        .user-info strong {
+            color: #2c3e50;
+        }
+        .user-info a {
+            margin-left: 15px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .user-info a:hover {
+            text-decoration: underline;
+        }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
         th { background-color: #f2f2f2; }
         .status-pending { background-color: #fff3cd; } /* Light yellow */
         .status-in_progress { background-color: #d1ecf1; } /* Light blue */
@@ -40,124 +69,220 @@
             display: block;
             opacity: 1;
         }
+        /* Styles for tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .tab-button:hover {
+            background-color: #e9ecef;
+        }
+        .tab-button.active {
+            background-color: white;
+            color: #2c3e50;
+            border-color: #e0e0e0;
+            border-bottom: 2px solid white; /* Overlap the bottom border */
+            position: relative;
+            z-index: 1;
+        }
+        .tab-content {
+            background-color: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-top: -2px; /* Pull content up to overlap tab border */
+        }
+        /* New styles for analytics section */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+        }
+        .analytic-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        .analytic-card h3 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .analytic-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .analytic-card.filled .value { color: #28a745; } /* Green for filled */
+        .analytic-card.available .value { color: #17a2b8; } /* Info blue for available */
     </style>
 </head>
 <body>
-    <h1>{{ page_title }}</h1>
+    <header>
+        <h1>{{ page_title }} {% if staff_hotel_name %}- {{ staff_hotel_name }}{% endif %}</h1>
+        <div class="user-info">
+            Welcome, <strong>{{ user.username }}</strong>!
+            <a href="{% url 'logout' %}">Logout</a> {# NEW: Logout button #}
+        </div>
+    </header>
 
-    <h2>Guest Requests</h2>
+    <div class="tabs">
+        <a href="{% url 'main:active_requests' %}" class="tab-button {% if 'pending' in current_tab_status and 'in_progress' in current_tab_status %}active{% endif %}">Active Requests</a>
+        <a href="{% url 'main:archive_requests' %}" class="tab-button {% if 'completed' in current_tab_status or 'cancelled' in current_tab_status %}active{% endif %}">Archived Requests</a>
+        <a href="{% url 'main:guest_management' %}" class="tab-button {% if request.resolver_match.url_name == 'guest_management' %}active{% endif %}" target="_blank">Guest Management</a>
+    </div>
 
-    <!-- Message Box for Feedback -->
-    <div id="messageBox" class="message-box"></div>
+    <div class="tab-content">
+        <!-- Message Box for Feedback -->
+        <div id="messageBox" class="message-box"></div>
 
-    {% if requests %}
-    <table>
-        <thead>
-            <tr>
-                <th>Hotel</th>
-                <th>Room No.</th>
-                <th>Time</th>
-                <th>Raw Request</th>
-                <th>AI Intent</th>
-                <th>Conci Response</th>
-                <th>Status</th>
-                <th>Staff Notes</th>
-                <th>Last Updated</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for req in requests %}
-            <tr class="status-{{ req.status }}">
-                <td>{{ req.hotel.name }}</td>
-                <td>{{ req.room_number }}</td>
-                <td>{{ req.timestamp|date:"M d, H:i" }}</td> {# Format date/time nicely #}
-                <td>{{ req.raw_text }}</td>
-                <td>{{ req.ai_intent }}</td>
-                <td>{{ req.conci_response_text }}</td>
-                <td>{{ req.get_status_display }}</td> {# Displays the human-readable status #}
-                <td>{{ req.staff_notes|default:"-" }}</td> {# Display '-' if no notes #}
-                <td>{{ req.last_updated_by_staff|date:"M d, H:i" }}</td>
-                <td>
-                    <form method="post" action="{% url 'main:update_request_status' request_id=req.id %}">
-                        {% csrf_token %} {# Django's protection against Cross-Site Request Forgery #}
-                        <select name="new_status">
-                            {% for choice_value, choice_label in req.STATUS_CHOICES %}
-                                <option value="{{ choice_value }}" {% if choice_value == req.status %}selected{% endif %}>
-                                    {{ choice_label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit">Update</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No guest requests yet.</p>
-    {% endif %}
+        {# Only show the requests table if this is one of the request tabs #}
+        {% if request.resolver_match.url_name != 'guest_management' %}
+            <h2>Hotel Overview</h2>
+            <div class="analytics-grid">
+                <div class="analytic-card total">
+                    <h3>Total Rooms</h3>
+                    <div class="value">{{ total_rooms }}</div> {# Uses total_rooms from context #}
+                </div>
+                <div class="analytic-card filled">
+                    <h3>Rooms Filled</h3>
+                    <div class="value">{{ filled_rooms }}</div>
+                </div>
+                <div class="analytic-card available">
+                    <h3>Rooms Available</h3>
+                    <div class="value">{{ available_rooms }}</div>
+                </div>
+            </div>
+
+            <h2>Guest Requests</h2>
+            {% if requests_with_details %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hotel</th>
+                        <th>Room No.</th>
+                        <th>Guest Names (Current)</th>
+                        <th>Check-in (Current)</th>
+                        <th>Check-out (Current)</th>
+                        <th>Time of Request</th>
+                        <th>Raw Request</th>
+                        <th>AI Intent</th>
+                        <th>Conci Response</th>
+                        <th>Status</th>
+                        <th>Staff Notes</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in requests_with_details %}
+                    <tr class="status-{{ item.request.status }}">
+                        <td>{{ item.request.hotel.name }}</td>
+                        <td>{{ item.request.room_number }}</td>
+                        <td>{{ item.assignment.guest_names|default:"N/A" }}</td>
+                        <td>{{ item.assignment.check_in_time|date:"M d, H:i"|default:"N/A" }}</td>
+                        <td>{{ item.assignment.check_out_time|date:"M d, H:i"|default:"N/A" }}</td>
+                        <td>{{ item.request.timestamp|date:"M d, H:i" }}</td>
+                        <td>{{ item.request.raw_text }}</td>
+                        <td>{{ item.request.ai_intent }}</td>
+                        <td>{{ item.request.conci_response_text }}</td>
+                        <td>{{ item.request.get_status_display }}</td>
+                        <td>{{ item.request.staff_notes|default:"-" }}</td>
+                        <td>{{ item.request.last_updated_by_staff|date:"M d, H:i"|default:"N/A" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'main:update_request_status' request_id=item.request.id %}">
+                                {% csrf_token %}
+                                <select name="new_status">
+                                    {% for choice_value, choice_label in item.request.STATUS_CHOICES %}
+                                        <option value="{{ choice_value }}" {% if choice_value == item.request.status %}selected{% endif %}>
+                                            {{ choice_label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No requests found for this filter.</p>
+            {% endif %}
+        {% else %}
+            <p>Please navigate to the "Guest Management" page directly for guest assignment forms.</p>
+        {% endif %}
+    </div>
 
     <script>
-        // JavaScript for displaying messages (e.g., success/error)
         function showMessage(message, type = 'success') {
             const messageBox = document.getElementById('messageBox');
             messageBox.textContent = message;
-            messageBox.className = 'message-box show'; // Reset classes and add 'show'
+            messageBox.className = 'message-box show';
             if (type === 'error') {
                 messageBox.classList.add('error');
             } else {
                 messageBox.classList.remove('error');
             }
-
-            // Automatically hide after 3 seconds
             setTimeout(() => {
                 messageBox.classList.remove('show');
-                // Allow transition to complete before hiding completely
                 setTimeout(() => {
                     messageBox.style.display = 'none';
                 }, 500); 
             }, 3000);
         }
-
-        // Check for messages passed from Django (if using Django's messages framework)
-        // For now, we're not using it directly but this is where it would go.
-        // If you want to use it, uncomment below and ensure messages are added in views.py
-        /*
-        document.addEventListener('DOMContentLoaded', () => {
-            const messages = document.querySelectorAll('.messages li');
-            if (messages.length > 0) {
-                messages.forEach(msg => {
-                    const type = msg.classList.contains('error') ? 'error' : 'success';
-                    showMessage(msg.textContent, type);
-                });
-            }
-        });
-        */
         
-        // Basic form submission handler to show success/error (without full AJAX yet)
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', async (e) => {
-                e.preventDefault(); // Prevent default form submission for now
-
+                e.preventDefault();
                 const formData = new FormData(form);
                 try {
                     const response = await fetch(form.action, {
                         method: 'POST',
                         body: formData,
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest', // Helps Django identify AJAX requests
+                            'X-Requested-With': 'XMLHttpRequest',
                         }
                     });
-                    const result = await response.json(); // Expecting JSON response
-
+                    const result = await response.json();
                     if (response.ok) {
                         showMessage(result.message, 'success');
-                        // Simple refresh to see changes (will be improved with real-time later)
                         setTimeout(() => location.reload(), 1000); 
                     } else {
-                        showMessage(result.error || 'An error occurred.', 'error');
+                        let errorMessage = 'An error occurred. Please check your input.';
+                        if (result.errors) {
+                            const errors = JSON.parse(result.errors);
+                            errorMessage = ''; // Reset to build new error string
+                            for (const field in errors) {
+                                errors[field].forEach(error => {
+                                    errorMessage += `<li><strong>${field}:</strong> ${error.message}</li>`;
+                                });
+                            }
+                            showMessage(errorMessage, 'error'); 
+                        } else if (result.error) {
+                             errorMessage = result.error;
+                        }
+                        showMessage(errorMessage, 'error');
                     }
                 } catch (error) {
                     console.error('Error updating status:', error);

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font for modern look */
+            margin: 0; /* Remove default body margin */
+            background-color: #f0f2f5; /* Light grey background */
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Full viewport height */
+        }
+        
+        .main-content {
+            flex-grow: 1; /* Allows main content to take available space */
+            padding: 20px;
+            max-width: 1200px; /* Max width for content */
+            margin: 0 auto; /* Center content */
+            width: 100%; /* Ensure it takes full width up to max-width */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+
+        header {
+            background-color: #ffffff; /* White header background */
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.8em;
+            font-weight: 600; /* Slightly bolder */
+        }
+        .user-info {
+            font-size: 0.9em;
+            color: #555;
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .user-info a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .user-info a:hover {
+            background-color: #e9f2ff; /* Light blue hover for logout */
+            text-decoration: none;
+        }
+
+        /* Tabs Styling - EXACTLY Consistent with Dashboard */
+        .tabs {
+            background-color: #343a40; /* Dark background for the tab bar */
+            padding: 0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-start; /* Align tabs to the left */
+            align-items: stretch; /* Stretch tabs to fill height */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tab-button {
+            padding: 15px 25px; /* Generous padding */
+            text-decoration: none;
+            color: #adb5bd; /* Light grey for inactive tabs */
+            font-weight: 600;
+            font-size: 1.05em; /* Slightly larger font */
+            transition: background-color 0.3s ease, color 0.3s ease;
+            white-space: nowrap; /* Prevent wrapping */
+            border-bottom: 3px solid transparent; /* For active indicator */
+        }
+
+        .tab-button:hover {
+            background-color: #495057; /* Darker grey on hover */
+            color: #e9ecef; /* Lighter text on hover */
+        }
+
+        .tab-button.active {
+            background-color: #212529; /* Even darker for active tab background */
+            color: #ffffff; /* White text for active tab */
+            border-bottom: 3px solid #007bff; /* Blue underline for active tab */
+        }
+
+
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Softer shadow */
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0; /* Subtle border */
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 25px; /* More space below heading */
+            font-size: 1.8em;
+            font-weight: 600;
+            border-bottom: 1px solid #f0f0f0; /* Lighter border */
+            padding-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px; /* More space between form groups */
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px; /* More space below label */
+            font-weight: bold;
+            color: #555;
+            font-size: 0.95em;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px; /* More padding */
+            border: 1px solid #ced4da;
+            border-radius: 8px; /* More rounded inputs */
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px; /* Slightly taller textarea */
+        }
+        .button-group {
+            margin-top: 30px; /* More space above buttons */
+            display: flex;
+            gap: 15px; /* More space between buttons */
+            justify-content: flex-end;
+        }
+        .button-group button {
+            padding: 12px 25px; /* More padding */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .button-group button.primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .button-group button.primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .button-group button.primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button-group button.secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .button-group button.secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .button-group button.secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+
+        .errorlist {
+            color: #dc3545;
+            list-style-type: none;
+            padding: 0;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Green for success */
+            color: white;
+            padding: 15px 25px; /* More padding */
+            border-radius: 8px; /* More rounded */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Stronger shadow */
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: translateY(-20px); /* Start slightly above */
+        }
+        .message-box.error {
+            background-color: #f44336; /* Red for error */
+        }
+        .message-box.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0); /* Slide into view */
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px; /* More space above table */
+            background-color: white;
+            border-radius: 12px; /* More rounded table corners */
+            overflow: hidden; 
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08); /* Softer, larger shadow */
+        }
+        th, td {
+            border: 1px solid #e9ecef;
+            padding: 15px 20px; /* More padding */
+            text-align: left;
+            vertical-align: middle; /* Vertically align content */
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #fcfcfc; /* Very light alternate row */
+        }
+        tbody tr:hover {
+            background-color: #eef4f9; /* Lighter hover effect */
+        }
+        .action-buttons {
+            white-space: nowrap; /* Prevent buttons from wrapping */
+        }
+        .action-buttons button {
+            padding: 8px 15px; /* More padding */
+            margin-right: 8px; /* More space between buttons */
+            border-radius: 8px; /* More rounded buttons */
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+        .action-buttons button.edit-btn {
+            background-color: #ffc107; /* Yellow */
+            color: #333;
+        }
+        .action-buttons button.edit-btn:hover {
+            background-color: #e0a800;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+        .action-buttons button.delete-btn {
+            background-color: #dc3545; /* Red */
+            color: white;
+        }
+        .action-buttons button.delete-btn:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6); /* Darker overlay */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 35px; /* More padding */
+            border-radius: 18px; /* More rounded */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3); /* Stronger shadow */
+            width: 90%;
+            max-width: 650px; /* Slightly wider modal */
+            position: relative;
+            animation-name: animatetop;
+            animation-duration: 0.4s;
+        }
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 32px; /* Larger close button */
+            font-weight: bold;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            line-height: 1; /* Align 'x' properly */
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .user-info {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            .tabs {
+                flex-direction: column;
+                max-width: 100%;
+                padding: 0;
+                border-radius: 0; /* No border-radius for stacked tabs */
+            }
+            .tab-button {
+                border-radius: 0;
+                margin: 0;
+                border-bottom: 1px solid #e0e0e0; /* Separator for stacked tabs */
+            }
+            .tab-button:last-child {
+                border-bottom: none;
+            }
+            .container {
+                padding: 20px;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .button-group button {
+                width: 100%;
+            }
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr { border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
+            td {
+                border: none;
+                border-bottom: 1px solid #e9ecef;
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+            }
+            td:last-child { border-bottom: none; }
+            td:before {
+                position: absolute;
+                top: 0;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+            td:nth-of-type(1):before { content: "Room No."; }
+            td:nth-of-type(2):before { content: "Guest Names"; }
+            td:nth-of-type(3):before { content: "Check-in"; }
+            td:nth-of-type(4):before { content: "Check-out"; }
+            td:nth-of-type(5):before { content: "Bill Amount"; }
+            td:nth-of-type(6):before { content: "Amount Paid"; }
+            td:nth-of-type(7):before { content: "Actions"; }
+
+            .modal-content {
+                padding: 25px;
+            }
+            .close-button {
+                font-size: 24px;
+                top: 10px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ page_title }} {% if staff_hotel_name %}- {{ staff_hotel_name }}{% endif %}</h1>
+        <div class="user-info">
+            Welcome, <strong>{{ user.username }}</strong>!
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </header>
+
+    <div class="tabs">
+        <a href="{% url 'main:active_requests' %}" class="tab-button">Active Requests</a>
+        <a href="{% url 'main:archive_requests' %}" class="tab-button">Archived Requests</a>
+        <a href="{% url 'main:guest_management' %}" class="tab-button active">Guest Management</a>
+    </div>
+
+    <div class="main-content">
+        <!-- Message Box for Feedback -->
+        <div id="messageBox" class="message-box"></div>
+
+        <div class="container">
+            <h2>Add New Guest Assignment</h2>
+            <form id="addAssignmentForm" method="post" action="{% url 'main:guest_management' %}">
+                {% csrf_token %}
+                <div id="addFormErrors" class="errorlist"></div> {# For non-field errors #}
+
+                {% for field in form %}
+                    {# Exclude the hidden check_in_time and check_out_time fields from rendering #}
+                    {% if field.name != 'check_in_time' and field.name != 'check_out_time' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small class="helptext">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% if field.errors %}
+                                <ul class="errorlist">
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div class="button-group">
+                    <button type="submit" class="primary">Add Assignment</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="container">
+            <h2>Existing Guest Assignments</h2>
+            {% if all_assignments %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Room No.</th>
+                        <th>Guest Names</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Bill Amount</th>
+                        <th>Amount Paid</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in all_assignments %}
+                    <tr>
+                        <td>{{ assignment.room_number }}</td>
+                        <td>{{ assignment.guest_names }}</td>
+                        <td>{{ assignment.check_in_time|date:"M d, Y H:i" }}</td>
+                        <td>{{ assignment.check_out_time|date:"M d, Y H:i" }}</td>
+                        <td>${{ assignment.bill_amount|floatformat:2 }}</td>
+                        <td>${{ assignment.amount_paid|floatformat:2 }}</td>
+                        <td class="action-buttons">
+                            <button class="edit-btn" data-id="{{ assignment.id }}"
+                                    data-hotel-id="{{ assignment.hotel.id }}"
+                                    data-room-number="{{ assignment.room_number }}"
+                                    data-guest-names="{{ assignment.guest_names }}"
+                                    data-check-in-date="{{ assignment.check_in_time|date:'Y-m-d' }}"
+                                    data-check-in-time="{{ assignment.check_in_time|date:'H:i' }}"
+                                    data-check-out-date="{{ assignment.check_out_time|date:'Y-m-d' }}"
+                                    data-check-out-time="{{ assignment.check_out_time|date:'H:i' }}"
+                                    data-bill-amount="{{ assignment.bill_amount|floatformat:2 }}"
+                                    data-amount-paid="{{ assignment.amount_paid|floatformat:2 }}">
+                                Edit
+                            </button>
+                            <button class="delete-btn" data-id="{{ assignment.id }}">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No guest assignments found for this hotel.</p>
+            {% endif %}
+        </div>
+    </div> {# End main-content #}
+
+    <!-- The Modal for Editing -->
+    <div id="editAssignmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Edit Guest Assignment</h2>
+            <form id="editAssignmentForm" method="post">
+                {% csrf_token %}
+                <div id="editFormErrors" class="errorlist"></div> {# For non-field errors #}
+                
+                {# Hidden input for assignment ID #}
+                <input type="hidden" name="assignment_id" id="editAssignmentId">
+
+                {# Manually render each field needed for editing #}
+                <div class="form-group">
+                    <label for="edit_id_room_number">Room Number:</label>
+                    <input type="text" id="edit_id_room_number" name="room_number" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_guest_names">Guest Names:</label>
+                    <textarea id="edit_id_guest_names" name="guest_names" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Check-in Date & Time:</label>
+                    <input type="date" id="edit_check_in_date" name="check_in_date" class="form-control">
+                    <input type="time" id="edit_check_in_time_input" name="check_in_time_input" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Check-out Date & Time:</label>
+                    <input type="date" id="edit_check_out_date" name="check_out_date" class="form-control">
+                    <input type="time" id="edit_check_out_time_input" name="check_out_time_input" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_bill_amount">Bill Amount:</label>
+                    <input type="number" step="0.01" id="edit_id_bill_amount" name="bill_amount" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_amount_paid">Amount Paid:</label>
+                    <input type="number" step="0.01" id="edit_id_amount_paid" name="amount_paid" class="form-control">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="primary">Save Changes</button>
+                    <button type="button" class="secondary" id="cancelEditButton">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Message Box Functions
+        function showMessage(message, type = 'success') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.innerHTML = message; 
+            messageBox.className = 'message-box show';
+            if (type === 'error') {
+                messageBox.classList.add('error');
+            } else {
+                messageBox.classList.remove('error');
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 500); 
+            }, 3000);
+        }
+        
+        // --- Add Assignment Form Submission ---
+        document.getElementById('addAssignmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const addFormErrorsDiv = document.getElementById('addFormErrors');
+            addFormErrorsDiv.innerHTML = ''; 
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(result.message, 'success');
+                    form.reset(); 
+                    setTimeout(() => location.reload(), 1000); 
+                } else {
+                    let errorMessage = 'An error occurred. Please check your input.';
+                    if (result.errors) {
+                        const errors = JSON.parse(result.errors);
+                        let errorHtml = '';
+                        // Handle non-field errors (e.g., overlapping assignments)
+                        if (errors.null) {
+                            errors.null.forEach(error => {
+                                errorHtml += `<li><strong>Form Error:</strong> ${error.message}</li>`;
+                            });
+                            delete errors.null; 
+                        }
+                        // Handle field-specific errors
+                        for (const field in errors) {
+                            errors[field].forEach(error => {
+                                // Find the corresponding input field and add error class
+                                const inputElement = document.getElementById(`id_${field}`);
+                                if (inputElement) {
+                                    inputElement.classList.add('input-error');
+                                }
+                                errorHtml += `<li><strong>${field}:</strong> ${error.message}</li>`;
+                            });
+                        }
+                        addFormErrorsDiv.innerHTML = errorHtml; 
+                        showMessage('Please correct the errors in the form.', 'error');
+                    } else if (result.error) {
+                        showMessage(result.error, 'error');
+                    } else {
+                        showMessage(errorMessage, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error adding assignment:', error);
+                showMessage('Network error or server issue.', 'error');
+            }
+        });
+
+        // --- Edit Modal Logic ---
+        const editModal = document.getElementById('editAssignmentModal');
+        const closeButton = document.querySelector('.close-button');
+        const cancelEditButton = document.getElementById('cancelEditButton');
+        const editAssignmentForm = document.getElementById('editAssignmentForm');
+        const editFormErrorsDiv = document.getElementById('editFormErrors');
+
+        // Get the CSRF token from the page
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Function to open the modal and populate form
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const id = e.target.dataset.id;
+                const roomNumber = e.target.dataset.roomNumber;
+                const guestNames = e.target.dataset.guestNames;
+                const checkInDate = e.target.dataset.checkInDate;
+                const checkInTime = e.target.dataset.checkInTime;
+                const checkOutDate = e.target.dataset.checkOutDate;
+                const checkOutTime = e.target.dataset.checkOutTime;
+                const billAmount = e.target.dataset.billAmount;
+                const amountPaid = e.target.dataset.amountPaid;
+
+                // Populate the hidden ID field
+                document.getElementById('editAssignmentId').value = id;
+
+                // Populate form fields in the modal
+                document.getElementById('edit_id_room_number').value = roomNumber;
+                document.getElementById('edit_id_guest_names').value = guestNames;
+                document.getElementById('edit_check_in_date').value = checkInDate;
+                document.getElementById('edit_check_in_time_input').value = checkInTime;
+                document.getElementById('edit_check_out_date').value = checkOutDate;
+                document.getElementById('edit_check_out_time_input').value = checkOutTime;
+                
+                // FIXED: Directly assign the string value from data-attribute for amount fields
+                document.getElementById('edit_id_bill_amount').value = billAmount;
+                document.getElementById('edit_id_amount_paid').value = amountPaid;
+
+                // Clear previous errors
+                editFormErrorsDiv.innerHTML = '';
+                document.querySelectorAll('#editAssignmentForm .errorlist').forEach(el => el.innerHTML = '');
+
+                editModal.style.display = 'flex'; 
+            });
+        });
+
+        // Close modal functions
+        closeButton.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+        cancelEditButton.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+        window.addEventListener('click', (event) => {
+            if (event.target == editModal) {
+                editModal.style.display = 'none';
+            }
+        });
+
+        // --- Edit Assignment Form Submission ---
+        editAssignmentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const assignmentId = document.getElementById('editAssignmentId').value;
+            const formData = new FormData(form);
+            
+            editFormErrorsDiv.innerHTML = ''; 
+
+            try {
+                const response = await fetch(`/api/assignments/${assignmentId}/edit/`, { 
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken, 
+                    }
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showMessage(result.message, 'success');
+                    editModal.style.display = 'none'; 
+                    setTimeout(() => location.reload(), 1000); 
+                } else {
+                    let errorMessage = 'An error occurred. Please check your input.';
+                    if (result.errors) {
+                        const errors = JSON.parse(result.errors);
+                        let errorHtml = '';
+                        // Handle non-field errors (e.g., overlapping assignments)
+                        if (errors.null) {
+                            errors.null.forEach(error => {
+                                errorHtml += `<li><strong>Form Error:</strong> ${error.message}</li>`;
+                            });
+                            delete errors.null; 
+                        }
+                        // Handle field-specific errors
+                        for (const field in errors) {
+                            errors[field].forEach(error => {
+                                // Find the corresponding input field and add error class
+                                const inputElement = document.getElementById(`edit_id_${field}`);
+                                if (inputElement) {
+                                    inputElement.classList.add('input-error');
+                                }
+                                errorHtml += `<li><strong>${field}:</strong> ${error.message}</li>`;
+                            });
+                        }
+                        editFormErrorsDiv.innerHTML = errorHtml; 
+                        showMessage('Please correct the errors in the form.', 'error');
+                    } else if (result.error) {
+                        showMessage(result.error, 'error');
+                    } else {
+                        showMessage(errorMessage, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error editing assignment:', error);
+                showMessage('Network error or server issue.', 'error');
+            }
+        });
+
+        // --- Delete Assignment Logic ---
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                if (confirm('Are you sure you want to delete this assignment? This action cannot be undone.')) {
+                    try {
+                        const response = await fetch(`/api/assignments/${id}/delete/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': csrfToken, 
+                            }
+                        });
+                        const result = await response.json();
+                        if (response.ok && result.success) {
+                            showMessage(result.message, 'success');
+                            setTimeout(() => location.reload(), 1000); 
+                        } else {
+                            showMessage(result.error || 'Failed to delete assignment.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting assignment:', error);
+                        showMessage('Network error or server issue.', 'error');
+                    }
+                }
+            });
+        });
+
+        // Initial setup for the hotel field in the add form
+        document.addEventListener('DOMContentLoaded', () => {
+            const hotelField = document.getElementById('id_hotel');
+            if (hotelField) {
+                // Ensure the disabled hotel field's value is correctly set if it's the only option
+                // This is a common workaround for disabled fields not sending values in forms
+                if (hotelField.options.length === 1) {
+                    hotelField.value = hotelField.options[0].value;
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
