@@ -128,10 +128,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- NEW: Authentication Settings ---
-LOGIN_REDIRECT_URL = '/dashboard/' # URL to redirect to after successful login
-LOGIN_URL = '/accounts/login/'     # URL for the login page
-LOGOUT_REDIRECT_URL = '/'          # URL to redirect to after logout (e.g., homepage or login)
 
+LOGIN_REDIRECT_URL = '/dashboard/' # Redirect to dashboard after successful login
+LOGOUT_REDIRECT_URL = '/login/'    # Redirect to login page after successful logout (NEW)
+LOGIN_URL = '/login/'
 # Add this line to access your API key later
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 

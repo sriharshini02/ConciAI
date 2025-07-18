@@ -6,7 +6,7 @@
     <title>{{ page_title }}</title>
     <style>
         body {
-            font-family: 'Inter', sans-serif; /* Using Inter font for modern look */
+            font-family: sans-serif; /* Consistent with dashboard snippet */
             margin: 0; /* Remove default body margin */
             background-color: #f0f2f5; /* Light grey background */
             color: #333;
@@ -52,50 +52,58 @@
             color: #2c3e50;
             font-weight: 600;
         }
-        .user-info a {
+        .user-info form { /* Style the form containing the logout button */
+            display: inline-block; /* Keep it in line with other user info */
+            margin: 0;
+        }
+        .user-info button { /* Style the logout button */
+            background: none;
+            border: none;
             color: #007bff;
             text-decoration: none;
             font-weight: bold;
             padding: 8px 12px;
             border-radius: 8px;
+            cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        .user-info a:hover {
+        .user-info button:hover {
             background-color: #e9f2ff; /* Light blue hover for logout */
             text-decoration: none;
         }
 
-        /* Tabs Styling - EXACTLY Consistent with Dashboard */
+        /* Tabs Styling - EXACTLY matching the provided dashboard CSS */
         .tabs {
-            background-color: #343a40; /* Dark background for the tab bar */
-            padding: 0;
-            margin-bottom: 20px;
             display: flex;
-            justify-content: flex-start; /* Align tabs to the left */
-            align-items: stretch; /* Stretch tabs to fill height */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px; /* Space below tabs */
+            border-bottom: 2px solid #e0e0e0; /* The bottom line of the tab bar */
+            /* No background-color here, as per dashboard snippet */
+            /* No border-radius or box-shadow here, as per dashboard snippet */
         }
 
         .tab-button {
-            padding: 15px 25px; /* Generous padding */
+            padding: 10px 15px;
             text-decoration: none;
-            color: #adb5bd; /* Light grey for inactive tabs */
-            font-weight: 600;
-            font-size: 1.05em; /* Slightly larger font */
+            color: #555;
+            font-weight: bold;
+            border: 1px solid transparent; /* Default transparent border */
+            border-bottom: none; /* No bottom border for individual buttons */
+            border-radius: 8px 8px 0 0; /* Rounded top corners */
             transition: background-color 0.3s ease, color 0.3s ease;
-            white-space: nowrap; /* Prevent wrapping */
-            border-bottom: 3px solid transparent; /* For active indicator */
+            white-space: nowrap; /* Prevent text wrapping */
         }
 
         .tab-button:hover {
-            background-color: #495057; /* Darker grey on hover */
-            color: #e9ecef; /* Lighter text on hover */
+            background-color: #e9ecef; /* Light grey on hover */
         }
 
         .tab-button.active {
-            background-color: #212529; /* Even darker for active tab background */
-            color: #ffffff; /* White text for active tab */
-            border-bottom: 3px solid #007bff; /* Blue underline for active tab */
+            background-color: white; /* Active tab background is white */
+            color: #2c3e50; /* Darker text for active tab */
+            border-color: #e0e0e0; /* Border color for active tab */
+            border-bottom: 2px solid white; /* Overlap the bottom border of .tabs */
+            position: relative; /* Needed for z-index */
+            z-index: 1; /* To make it overlap the .tabs border */
         }
 
 
@@ -106,6 +114,9 @@
             padding: 30px;
             margin-bottom: 30px;
             border: 1px solid #e0e0e0; /* Subtle border */
+            margin-top: -2px; /* Pulls container up to overlap the tabs border */
+            position: relative;
+            z-index: 0; /* Lower z-index than active tab */
         }
         h2 {
             color: #34495e;
@@ -369,13 +380,6 @@
             h2 {
                 font-size: 1.5em;
             }
-            .button-group {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .button-group button {
-                width: 100%;
-            }
             table, thead, tbody, th, td, tr {
                 display: block;
             }
@@ -428,7 +432,11 @@
         <h1>{{ page_title }} {% if staff_hotel_name %}- {{ staff_hotel_name }}{% endif %}</h1>
         <div class="user-info">
             Welcome, <strong>{{ user.username }}</strong>!
-            <a href="{% url 'logout' %}">Logout</a>
+            {# Logout button as a form for POST request #}
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit">Logout</button>
+            </form>
         </div>
     </header>
 

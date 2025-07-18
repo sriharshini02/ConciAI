@@ -122,8 +122,8 @@ class Migration(migrations.Migration):
                 ('guest_names', models.TextField(blank=True, help_text='Names of all guests assigned to this room (e.g., comma-separated).', null=True)),
                 ('check_in_time', models.DateTimeField(help_text='Actual or scheduled check-in date and time.')),
                 ('check_out_time', models.DateTimeField(help_text='Actual or scheduled check-out date and time.')),
-                ('bill_amount', models.DecimalField(decimal_places=2, default=0.0, help_text='Total bill amount for this assignment.', max_digits=10)),
-                ('amount_paid', models.DecimalField(decimal_places=2, default=0.0, help_text='Amount paid by the guest so far.', max_digits=10)),
+                ('bill_amount', models.DecimalField(decimal_places=2, default=0.0, help_text='Total bill amount for this assignment.', max_digits=10)), # type: ignore
+                ('amount_paid', models.DecimalField(decimal_places=2, default=0.0, help_text='Amount paid by the guest so far.', max_digits=10)), # type: ignore
                 ('hotel', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='room_assignments', to='main.hotel')),
             ],
             options={

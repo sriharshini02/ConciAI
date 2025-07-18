@@ -3,610 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page_title }}</title>
-    <!-- Basic styling for the simulated Conci device -->
+    <title>Conci Guest Interface - Room {{ room_number }}</title>
+    <!-- Google Fonts - Inter for a modern, clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            font-family: 'Inter', sans-serif; /* Using Inter font */
+            font-family: 'Inter', sans-serif;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            background-color: #f0f2f5; /* Light grey background */
+            background-color: #f3f4f6; /* Light gray background */
+            padding: 1rem; /* Padding around the content */
             margin: 0;
-            color: #333;
+            box-sizing: border-box; /* Include padding in element's total width and height */
         }
-        .conci-container {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            width: 90%;
-            max-width: 500px;
+        .card {
+            background-color: #ffffff; /* White background for the card */
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            padding: 2rem; /* Inner padding */
+            max-width: 28rem; /* Max width for responsiveness */
+            width: 100%; /* Full width on smaller screens */
             text-align: center;
-            border: 1px solid #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            gap: 15px; /* Spacing between elements */
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 5px;
-            font-size: 1.8em;
+        .title {
+            font-size: 1.875rem; /* Large title font size */
+            font-weight: 700; /* Bold font */
+            color: #1f2937; /* Dark gray text */
+            margin-bottom: 0.5rem; /* Space below title */
         }
-        p {
-            font-size: 1.1em;
-            color: #555;
-            margin-bottom: 5px;
+        .subtitle {
+            font-size: 1.125rem; /* Subtitle font size */
+            color: #4b5563; /* Medium gray text */
+            margin-bottom: 1.5rem; /* Space below subtitle */
         }
-        .conci-status-light {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: #ccc; /* Default idle color */
-            margin: 10px auto;
-            border: 2px solid #bbb;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        .sun-icon {
+            color: #f59e0b; /* Yellow color for sun icon */
+            font-size: 3.75rem; /* Large icon size */
+            margin-bottom: 2rem; /* Space below icon */
+            display: block; /* Ensures it's centered if parent is text-align: center */
         }
-        .conci-status-light.idle { background-color: #d1d1d1; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .conci-status-light.listening { background-color: #4A90E2; box-shadow: 0 0 15px #4A90E2; } /* Blue */
-        .conci-status-light.thinking { background-color: #F5A623; box-shadow: 0 0 15px #F5A623; } /* Orange */
-        .conci-status-light.speaking { background-color: #7ED321; box-shadow: 0 0 15px #7ED321; } /* Green */
-
         .input-group {
             display: flex;
-            flex-direction: column; /* Stack input and button vertically for clarity */
-            gap: 10px;
-            margin-top: 10px;
+            gap: 0.75rem; /* Space between input and buttons */
+            margin-bottom: 1rem; /* Space below input group */
         }
-        #guestInput {
-            flex-grow: 1;
-            padding: 12px 15px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            outline: none;
-            font-size: 1em;
-            background-color: #f9f9f9;
+        .input-group input {
+            flex-grow: 1; /* Input takes available space */
+            padding: 0.75rem; /* Padding inside input */
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 0.5rem; /* Rounded corners for input */
+            outline: none; /* Remove default outline */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition on focus */
         }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
+        .input-group input:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5); /* Blue glow on focus */
         }
-        #sendButton, #listenButton, #confirmSendButton { /* Added confirmSendButton */
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
+        .input-group button {
+            padding: 0.75rem 1.5rem; /* Padding for buttons */
+            border-radius: 0.5rem; /* Rounded corners for buttons */
+            font-weight: 600; /* Semi-bold font */
+            transition: background-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition on hover */
             cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            flex: 1; /* Distribute space equally */
+            border: none; /* Remove default button border */
         }
-        #sendButton:hover, #listenButton:hover, #confirmSendButton:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
+        .input-group .btn-listen {
+            background-color: #22c55e; /* Green background */
+            color: #ffffff; /* White text */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
         }
-        #sendButton:active, #listenButton:active, #confirmSendButton:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .input-group .btn-listen:hover {
+            background-color: #16a34a; /* Darker green on hover */
         }
-        #listenButton {
-            background-color: #28a745; /* Green for listen */
+        .input-group .btn-listen.listening {
+            background-color: #f59e0b; /* Orange when listening */
         }
-        #listenButton:hover {
-            background-color: #218838;
+        .input-group .btn-send {
+            background-color: #2563eb; /* Blue background */
+            color: #ffffff; /* White text */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
         }
-        #listenButton.active { /* Style when listening */
-            background-color: #dc3545; /* Red when active (to stop) */
-            animation: pulse 1s infinite alternate;
+        .input-group .btn-send:hover {
+            background-color: #1d4ed8; /* Darker blue on hover */
         }
-        @keyframes pulse {
-            from { box-shadow: 0 0 0 0 rgba(40,167,69, 0.7); }
-            to { box-shadow: 0 0 0 10px rgba(40,167,69, 0); }
+        .message-box {
+            background-color: #f3f4f6; /* Light gray background */
+            color: #374151; /* Dark gray text */
+            padding: 1rem; /* Padding */
+            border-radius: 0.5rem; /* Rounded corners */
+            margin-bottom: 1rem; /* Space below */
+            font-size: 0.875rem; /* Small font size */
+            text-align: left;
         }
-        #listenButton.active:hover {
-             background-color: #c82333;
+        .pending-requests-section {
+            text-align: left;
+            margin-bottom: 1.5rem; /* Space below */
         }
-        #confirmSendButton {
-            background-color: #6f42c1; /* Purple for confirmation */
-            margin-top: 15px; /* Separate from other buttons */
-            display: none; /* Hidden by default */
+        .pending-requests-section h3 {
+            font-size: 1.125rem; /* Medium title font size */
+            font-weight: 600; /* Semi-bold */
+            color: #1f2937; /* Dark gray text */
+            margin-bottom: 0.5rem; /* Space below heading */
         }
-        #confirmSendButton:hover {
-            background-color: #563d7c;
+        .pending-requests-section ul {
+            list-style: disc; /* Bullet points */
+            list-style-position: inside; /* Bullets inside content flow */
+            color: #374151; /* Dark gray text */
+            padding-left: 0; /* Remove default padding for list */
+        }
+        .pending-requests-section li {
+            margin-bottom: 0.25rem; /* Small space between list items */
+        }
+        .btn-confirm-all {
+            width: 100%; /* Full width button */
+            padding: 0.75rem 1.5rem; /* Padding */
+            border-radius: 0.5rem; /* Rounded corners */
+            font-weight: 600; /* Semi-bold */
+            background-color: #9333ea; /* Purple background */
+            color: #ffffff; /* White text */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
+            transition: background-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
+            cursor: pointer;
+            border: none; /* Remove default button border */
+        }
+        .btn-confirm-all:hover {
+            background-color: #7e22ce; /* Darker purple on hover */
         }
 
-        .response-area {
-            margin-top: 15px;
-            background-color: #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1em;
-            color: #343a40;
-            border: 1px dashed #ced4da;
-            text-align: center;
-            line-height: 1.5;
-            word-wrap: break-word; /* Ensure long words wrap */
-        }
-        .mic-unavailable-message {
-            color: #dc3545;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        .pending-requests-area {
-            margin-top: 20px;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: left;
+        /* Message Box for Feedback (for success/error notifications) */
+        .feedback-message-box {
+            position: fixed;
+            top: 1rem; /* Distance from top */
+            right: 1rem; /* Distance from right */
+            background-color: #22c55e; /* Green background */
+            color: #ffffff; /* White text */
+            padding: 0.75rem 1.5rem; /* Padding */
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Larger shadow */
+            z-index: 50; /* Ensure it's on top */
             display: none; /* Hidden by default */
+            opacity: 0; /* Start invisible */
+            transform: translateY(-20px); /* Start slightly above */
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Smooth animation */
         }
-        .pending-requests-area h3 {
-            color: #495057;
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.2em;
+        .feedback-message-box.error {
+            background-color: #ef4444; /* Red background for errors */
         }
-        .pending-requests-area ul {
-            list-style-type: disc;
-            padding-left: 20px;
-            margin: 0;
-        }
-        .pending-requests-area li {
-            margin-bottom: 5px;
-            color: #6c757d;
+        .feedback-message-box.show {
+            display: block; /* Show when 'show' class is added */
+            opacity: 1; /* Fully visible */
+            transform: translateY(0); /* Slide into place */
         }
     </style>
 </head>
 <body>
-    <div class="conci-container">
-        <h1>Welcome to Conci</h1>
-        <p>Your intelligent assistant for {{ hotel_name }} - Room {{ room_number }}</p>
-
-        <div id="conciStatusLight" class="conci-status-light idle"></div>
+    <div class="card">
+        <h1 class="title">Welcome to Conci</h1>
+        <p class="subtitle">Your intelligent assistant for Hotel{{ hotel.id }} - Room {{ room_number }}</p>
+        
+        <div class="sun-icon">☀️</div> {# Simple sun icon using emoji #}
 
         <div class="input-group">
-            <input type="text" id="guestInput" placeholder="Type your request or click Listen">
-            <div class="button-group">
-                <button id="listenButton">Listen</button>
-                <button id="sendButton">Send</button>
-            </div>
-        </div>
-        <div id="micUnavailable" class="mic-unavailable-message" style="display: none;">
-            Speech recognition is not available in this browser or requires HTTPS.
+            <input type="text" id="userRequestInput" placeholder="Type your request or click Listen">
+            <button id="listenButton" class="btn-listen"><i class="fas fa-microphone"></i> Listen</button>
+            <button id="sendButton" class="btn-send">Send</button>
         </div>
 
-        <div id="responseArea" class="response-area">
-            Awaiting your command...
+        <div id="responseMessageBox" class="message-box">
+            <!-- Initial message or latest Conci response -->
+            Welcome! How can I assist you today?
         </div>
 
-        <div id="pendingRequestsArea" class="pending-requests-area">
+        <div class="pending-requests-section">
             <h3>Your Pending Requests:</h3>
             <ul id="pendingRequestsList">
-                <!-- Draft requests will be listed here -->
+                <!-- Pending requests will be dynamically loaded here by JavaScript -->
             </ul>
         </div>
-        <button id="confirmSendButton">Confirm & Send All Requests</button>
+
+        <button id="confirmSendAllButton" class="btn-confirm-all">Confirm & Send All Requests</button>
     </div>
 
+    <!-- Message Box for Feedback -->
+    <div id="feedbackMessageBox" class="feedback-message-box"></div>
+
+    {# Django CSRF token for AJAX POST requests #}
+    {% csrf_token %}
+
     <script>
-        const guestInput = document.getElementById('guestInput');
-        const sendButton = document.getElementById('sendButton');
+        const userRequestInput = document.getElementById('userRequestInput');
         const listenButton = document.getElementById('listenButton');
-        const responseArea = document.getElementById('responseArea');
-        const conciStatusLight = document.getElementById('conciStatusLight');
-        const micUnavailableMessage = document.getElementById('micUnavailable');
-        const pendingRequestsArea = document.getElementById('pendingRequestsArea'); // New
-        const pendingRequestsList = document.getElementById('pendingRequestsList'); // New
-        const confirmSendButton = document.getElementById('confirmSendButton'); // New
+        const sendButton = document.getElementById('sendButton');
+        const responseMessageBox = document.getElementById('responseMessageBox');
+        const pendingRequestsList = document.getElementById('pendingRequestsList');
+        const confirmSendAllButton = document.getElementById('confirmSendAllButton');
+        const feedbackMessageBox = document.getElementById('feedbackMessageBox');
 
-        const roomNumber = "{{ room_number_str }}";
-        const hotelId = "{{ hotel_id }}";
+        const hotelId = "{{ hotel.id }}";
+        const roomNumber = "{{ room_number }}";
+        let latestRequestId = "{{ latest_request_id|default:'' }}"; // Used for polling updates
+        let localPendingRequests = []; // Stores requests locally before confirming
 
-        const synth = window.speechSynthesis;
-        let selectedVoice = null;
-        let recognition = null;
+        // Get CSRF token from the hidden input generated by {% csrf_token %}
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        let chatHistory = [];
-        const MAX_HISTORY_LENGTH = 6;
+        // Function to show feedback messages (success/error)
+        function showFeedbackMessage(message, type = 'success') {
+            feedbackMessageBox.innerHTML = message;
+            feedbackMessageBox.className = `feedback-message-box show ${type}`;
+            setTimeout(() => {
+                feedbackMessageBox.classList.remove('show');
+                setTimeout(() => {
+                    feedbackMessageBox.style.display = 'none';
+                }, 500);
+            }, 3000);
+        }
 
-        let isRecognizing = false;
-        let isProcessingCommand = false;
-
-        // NEW: Array to hold requests that are pending confirmation
-        let draftRequests = [];
-
-        function setUIState() {
-            const inputDisabled = isRecognizing || isProcessingCommand;
-            const sendDisabled = isRecognizing || isProcessingCommand || guestInput.value.trim() === '';
-            const listenDisabled = isProcessingCommand;
-
-            guestInput.disabled = inputDisabled;
-            sendButton.disabled = sendDisabled;
-            listenButton.disabled = listenDisabled;
-
-            if (isRecognizing) {
-                listenButton.textContent = "Stop Listening";
-                listenButton.classList.add('active');
-                guestInput.placeholder = "Speaking...";
+        // Function to update the main response message box
+        function updateResponseMessage(message, isError = false) {
+            responseMessageBox.textContent = message;
+            if (isError) {
+                responseMessageBox.classList.add('bg-red-100', 'text-red-800');
+                responseMessageBox.classList.remove('bg-gray-100', 'text-gray-700');
             } else {
-                listenButton.textContent = "Listen";
-                listenButton.classList.remove('active');
-                guestInput.placeholder = "Type your request or click Listen";
-            }
-
-            // NEW: Control visibility of pending requests area and confirm button
-            if (draftRequests.length > 0) {
-                pendingRequestsArea.style.display = 'block';
-                confirmSendButton.style.display = 'block';
-            } else {
-                pendingRequestsArea.style.display = 'none';
-                confirmSendButton.style.display = 'none';
+                responseMessageBox.classList.remove('bg-red-100', 'text-red-800');
+                responseMessageBox.classList.add('bg-gray-100', 'text-gray-700');
             }
         }
 
-        // NEW: Function to update the displayed list of pending requests
-        function updatePendingRequestsDisplay() {
-            pendingRequestsList.innerHTML = ''; // Clear previous list
-            if (draftRequests.length === 0) {
-                pendingRequestsArea.style.display = 'none';
-                confirmSendButton.style.display = 'none';
+        // Function to render pending requests list from localPendingRequests array
+        function renderPendingRequestsList() {
+            pendingRequestsList.innerHTML = ''; // Clear existing
+            if (localPendingRequests.length > 0) {
+                localPendingRequests.forEach(requestText => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Request: ${requestText}`;
+                    pendingRequestsList.appendChild(listItem);
+                });
+            } else {
+                const listItem = document.createElement('li');
+                listItem.textContent = 'No pending requests.';
+                pendingRequestsList.appendChild(listItem);
+            }
+        }
+
+        // Initial load of pending requests (if any were in the Django context)
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
+            if (initialChatHistory && initialChatHistory.length > 0) {
+                // Filter for user messages that represent pending requests
+                initialChatHistory.forEach(msg => {
+                    if (msg.role === 'user') {
+                        localPendingRequests.push(msg.parts[0].text);
+                    }
+                });
+                // Display the latest Conci response in the main message box
+                const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
+                if (latestConciResponse) {
+                    updateResponseMessage(latestConciResponse.parts[0].text);
+                } else {
+                    updateResponseMessage("Welcome! How can I assist you today?");
+                }
+            } else {
+                updateResponseMessage("Welcome! How can I assist you today?");
+            }
+            renderPendingRequestsList(); // Render initial state of pending requests
+        });
+
+        // "Send" button functionality (adds request to local list)
+        sendButton.addEventListener('click', () => {
+            const userRequest = userRequestInput.value.trim();
+            if (userRequest === '') {
+                showFeedbackMessage("Please type your request.", "error");
                 return;
             }
 
-            draftRequests.forEach(req => {
-                const listItem = document.createElement('li');
-                let displayString = req.raw_text; // Default to raw text
-                
-                // Make it more readable based on intent if possible
-                if (req.ai_intent === 'request_amenity' && req.ai_entities && req.ai_entities.item) {
-                    displayString = `Request: ${req.ai_entities.item}`;
-                    if (req.ai_entities.quantity) {
-                        displayString += ` (Quantity: ${req.ai_entities.quantity})`;
-                    }
-                } else if (req.ai_intent === 'request_menu') {
-                    displayString = `Request: Menu`;
-                } else if (req.ai_intent === 'get_info' && req.ai_entities && req.ai_entities.info_type) {
-                    displayString = `Info: ${req.ai_entities.info_type.replace('_', ' ')}`;
-                }
-                listItem.textContent = displayString;
-                pendingRequestsList.appendChild(listItem);
-            });
-            setUIState(); // Update visibility based on new draftRequests length
-        }
+            localPendingRequests.push(userRequest);
+            renderPendingRequestsList(); // Update the displayed list
+            userRequestInput.value = ''; // Clear input
+            showFeedbackMessage("Request added to pending list!", "success");
+        });
 
-
-        function populateVoiceList() {
-            if (typeof synth === 'undefined') { return; }
-            const voices = synth.getVoices();
-            selectedVoice = voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Google') && voice.name.includes('Female')) ||
-                            voices.find(voice => voice.lang === 'en-US' && voice.name.includes('Female')) ||
-                            voices.find(voice => voice.lang === 'en-US') ||
-                            voices[0];
-        }
-
-        if (typeof synth !== 'undefined' && synth.onvoiceschanged !== undefined) {
-            synth.onvoiceschanged = populateVoiceList;
-        }
-        populateVoiceList();
-
-        function updateStatusLight(status) {
-            conciStatusLight.className = 'conci-status-light ' + status;
-        }
-
-        function speakText(text) {
-            if (synth.speaking) {
-                synth.cancel();
+        // "Confirm & Send All Requests" button functionality (sends all local pending requests to backend)
+        confirmSendAllButton.addEventListener('click', async () => {
+            if (localPendingRequests.length === 0) {
+                showFeedbackMessage("No pending requests to confirm.", "info");
+                return;
             }
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.voice = selectedVoice;
-            utterance.rate = 1;
-            utterance.pitch = 1;
 
-            utterance.onerror = (event) => {
-                console.error('SpeechSynthesisUtterance.onerror', event);
-                responseArea.textContent = "Error speaking: " + text;
-            };
+            updateResponseMessage("Confirming and sending all requests...", false);
+            const combinedRequestText = localPendingRequests.join('; '); // Combine all requests
 
-            synth.speak(utterance);
-        }
+            try {
+                const response = await fetch('/api/submit_draft_requests/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        request_text: combinedRequestText,
+                        hotel_id: hotelId,
+                        room_number: roomNumber
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    latestRequestId = result.request_id;
+                    updateResponseMessage(result.message); // This will be "Your request has been submitted..."
+                    localPendingRequests = []; // Clear local list after successful submission
+                    renderPendingRequestsList(); // Update UI to show no pending requests
+
+                    // Also clear the AI output box to its default message
+                    updateResponseMessage("Welcome! How can I assist you today?", false); 
+                    showFeedbackMessage("All requests confirmed and sent!", "success");
+                } else {
+                    updateResponseMessage(result.error || 'Failed to confirm requests.', true);
+                    showFeedbackMessage(result.error || 'Failed to confirm requests.', 'error');
+                }
+            } catch (error) {
+                console.error('Error confirming requests:', error);
+                updateResponseMessage('Network error or server issue.', true);
+                showFeedbackMessage('Network error or server issue.', 'error');
+            }
+        });
+
+        // --- Listen Button Functionality (Web Speech API) ---
+        let recognition;
+        let isListening = false;
 
         if ('webkitSpeechRecognition' in window) {
             recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
+            recognition.continuous = false; // Listen for a single utterance
+            recognition.interimResults = false; // Only return final results
+            recognition.lang = 'en-US'; // Set language
 
             recognition.onstart = () => {
-                isRecognizing = true;
-                isProcessingCommand = false;
-                setUIState();
-                updateStatusLight('listening');
-                responseArea.textContent = "Listening... Please speak now.";
+                isListening = true;
+                listenButton.classList.add('listening');
+                listenButton.innerHTML = '<i class="fas fa-microphone-alt"></i> Listening...';
+                userRequestInput.placeholder = "Listening...";
+                userRequestInput.disabled = true; // Disable input while listening
+                sendButton.disabled = true; // Disable send button
+                confirmSendAllButton.disabled = true; // Disable confirm button
+                updateResponseMessage("Conci is listening for your request...", false);
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                guestInput.value = transcript;
-                setUIState();
+                userRequestInput.value = transcript;
+                showFeedbackMessage("Speech recognized. Click Send to add.", "info");
             };
 
             recognition.onerror = (event) => {
-                console.error('SpeechRecognitionError:', event.error);
-                if (!isProcessingCommand) {
-                    updateStatusLight('idle');
-                    responseArea.textContent = "Voice input error. Please try typing or click Listen again.";
-                }
-                isRecognizing = false;
-                setUIState();
+                console.error('Speech recognition error:', event.error);
+                showFeedbackMessage(`Speech recognition error: ${event.error}`, "error");
+                updateResponseMessage("Speech recognition failed. Please type your request.", true);
+                resetListenState();
             };
 
             recognition.onend = () => {
-                if (isRecognizing && !isProcessingCommand) {
-                    isRecognizing = false;
-                    setUIState();
-                    updateStatusLight('idle');
-                    responseArea.textContent = "Awaiting your command...";
-                }
+                resetListenState();
             };
 
             listenButton.addEventListener('click', () => {
-                if (isRecognizing) {
+                if (isListening) {
                     recognition.stop();
-                    isRecognizing = false;
-                    setUIState();
                 } else {
-                    guestInput.value = '';
-                    recognition.start();
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        console.error("Error starting speech recognition:", e);
+                        showFeedbackMessage("Could not start listening. Please check microphone permissions.", "error");
+                        updateResponseMessage("Microphone access denied or not supported.", true);
+                        resetListenState();
+                    }
                 }
             });
 
+            function resetListenState() {
+                isListening = false;
+                listenButton.classList.remove('listening');
+                listenButton.innerHTML = '<i class="fas fa-microphone"></i> Listen';
+                userRequestInput.placeholder = "Type your request or click Listen";
+                userRequestInput.disabled = false; // Re-enable input
+                sendButton.disabled = false; // Re-enable send button
+                confirmSendAllButton.disabled = false; // Re-enable confirm button
+            }
+
         } else {
+            // Browser does not support Web Speech API
             listenButton.disabled = true;
-            listenButton.textContent = "Voice N/A";
-            micUnavailableMessage.style.display = 'block';
-            console.warn("Web Speech API (SpeechRecognition) not supported in this browser.");
+            listenButton.innerHTML = '<i class="fas fa-microphone-slash"></i> Not Supported';
+            showFeedbackMessage("Your browser does not support Web Speech API.", "error");
+            console.warn("Web Speech API (webkitSpeechRecognition) not supported in this browser.");
         }
 
-        sendButton.addEventListener('click', () => {
-            if (guestInput.value.trim() !== '') {
-                sendCommand();
-            } else {
-                responseArea.textContent = "Please type or speak a command first.";
-                setUIState();
-            }
-        });
-
-        guestInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendCommand();
-            }
-        });
-
-        // NEW: Event listener for the "Confirm & Send All Requests" button
-        confirmSendButton.addEventListener('click', submitDraftRequests);
-
-        async function sendCommand() {
-            const command = guestInput.value.trim();
-            if (command === '') {
-                responseArea.textContent = "Please type a command.";
-                setUIState();
-                return;
-            }
-
-            if (recognition && isRecognizing) {
-                recognition.onend = null;
-                recognition.onerror = null;
-                recognition.stop();
-            }
-            
-            isRecognizing = false;
-            isProcessingCommand = true;
-            setUIState();
-            
-            updateStatusLight('listening');
-            responseArea.textContent = "Processing your request...";
-            
+        // Polling for new updates from staff (Conci's responses)
+        async function checkForNewUpdates() {
             try {
-                updateStatusLight('thinking');
-                responseArea.textContent = "Conci is thinking...";
-
-                chatHistory.push({ role: 'user', parts: [{ text: command }] });
-                if (chatHistory.length > MAX_HISTORY_LENGTH) {
-                    chatHistory = chatHistory.slice(-MAX_HISTORY_LENGTH);
-                }
-
-                const data = {
-                    room_number: roomNumber,
-                    command: command,
-                    hotel_id: hotelId,
-                    history: chatHistory
-                };
-
-                // Send command to the backend for AI processing (but NOT direct DB save)
-                const response = await fetch('/api/process_command/', {
-                    method: 'POST',
+                const response = await fetch(`/api/guest/${hotelId}/room/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
                 });
-
                 const result = await response.json();
 
-                if (response.ok && result.success) {
-                    updateStatusLight('speaking');
-                    responseArea.textContent = result.response_text;
-                    if (result.response_text) {
-                        speakText(result.response_text);
+                if (result.has_new_updates) {
+                    // Update latestRequestId from the backend's latest request ID
+                    latestRequestId = result.updated_request_id; 
+                    
+                    // Update the main message box with the latest Conci response
+                    const latestConciResponse = result.new_messages.slice().reverse().find(msg => msg.role === 'model');
+                    if (latestConciResponse) {
+                        updateResponseMessage(latestConciResponse.parts[0].text);
+                    } else {
+                        // If no model response, revert to default message
+                        updateResponseMessage("Welcome! How can I assist you today?", false);
                     }
-                    chatHistory.push({ role: 'model', parts: [{ text: result.response_text }] });
 
-                    // NEW: If AI identified an actionable intent, add it to draftRequests
-                    // The backend will now return ai_intent and ai_entities
-                    if (['request_amenity', 'amenity_request', 'request_menu', 'get_info'].includes(result.ai_intent)) {
-                        // Check for existing draft of the same type/item to update
-                        let existingDraftIndex = -1;
-                        if (result.ai_intent === 'request_amenity' && result.ai_entities && result.ai_entities.item) {
-                            existingDraftIndex = draftRequests.findIndex(
-                                d => d.ai_intent === result.ai_intent && 
-                                     d.ai_entities && d.ai_entities.item === result.ai_entities.item
-                            );
-                        } else if (result.ai_intent === 'request_menu') {
-                            existingDraftIndex = draftRequests.findIndex(d => d.ai_intent === result.ai_intent);
-                        } else if (result.ai_intent === 'get_info' && result.ai_entities && result.ai_entities.info_type) {
-                            existingDraftIndex = draftRequests.findIndex(
-                                d => d.ai_intent === result.ai_intent && 
-                                     d.ai_entities && d.ai_entities.info_type === result.ai_entities.info_type
-                            );
+                    // Re-populate localPendingRequests based on the *current* chat_history from the backend
+                    localPendingRequests = []; 
+                    result.new_messages.forEach(msg => {
+                        if (msg.role === 'user') { 
+                            localPendingRequests.push(msg.parts[0].text);
                         }
-
-                        if (existingDraftIndex !== -1) {
-                            // Update existing draft by appending raw text and updating entities
-                            draftRequests[existingDraftIndex].raw_text += `\nGuest: ${command}`;
-                            draftRequests[existingDraftIndex].conci_response_text += `\nConci: ${result.response_text}`;
-                            Object.assign(draftRequests[existingDraftIndex].ai_entities, result.ai_entities); // Merge entities
-                            console.log("Updated existing draft request:", draftRequests[existingDraftIndex]);
-                        } else {
-                            // Add new draft request
-                            draftRequests.push({
-                                room_number: roomNumber,
-                                raw_text: command,
-                                ai_intent: result.ai_intent,
-                                ai_entities: result.ai_entities,
-                                conci_response_text: result.response_text,
-                                status: (result.ai_intent === 'get_info' ? 'completed' : 'pending'), // Info requests are 'completed' immediately
-                                timestamp: new Date().toISOString() // ISO string for easy transfer
-                            });
-                            console.log("Added new draft request:", draftRequests[draftRequests.length - 1]);
-                        }
-                        updatePendingRequestsDisplay(); // Update the UI list
-                    }
-
-                } else {
-                    responseArea.textContent = result.error || 'An unknown error occurred.';
-                    console.error('API Error:', result.error);
-                    if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
-                        chatHistory.pop();
-                    }
+                    });
+                    renderPendingRequestsList(); 
                 }
-
-                guestInput.value = '';
-
-                const utteranceDuration = result.response_text ? result.response_text.length * 50 : 2000;
-                let speechEndedTimeout = null;
-
-                const onUtteranceEnd = () => {
-                    clearTimeout(speechEndedTimeout);
-                    updateStatusLight('idle');
-                    // responseArea.textContent = "Awaiting your command..."; // Conci will prompt for more
-                    isProcessingCommand = false;
-                    setUIState();
-                    synth.removeEventListener('end', onUtteranceEnd);
-                };
-
-                if (result.response_text && typeof SpeechSynthesisUtterance !== 'undefined') {
-                    const utterance = new SpeechSynthesisUtterance(result.response_text);
-                    utterance.addEventListener('end', onUtteranceEnd);
-                    // speakText is already called above, no need to call again here
-                    speechEndedTimeout = setTimeout(onUtteranceEnd, utteranceDuration + 1000);
-                } else {
-                    setTimeout(() => {
-                        updateStatusLight('idle');
-                        // responseArea.textContent = "Awaiting your command..."; // Conci will prompt for more
-                        isProcessingCommand = false;
-                        setUIState();
-                    }, 2000);
-                }
-
-
             } catch (error) {
-                console.error("Error sending command:", error);
-                responseArea.textContent = "Sorry, there was a network error. Please try again.";
-                updateStatusLight('idle');
-                isProcessingCommand = false;
-                setUIState();
-                if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
-                    chatHistory.pop();
-                }
+                console.error('Error checking for new updates:', error);
             }
         }
 
-        // NEW: Function to submit all draft requests to the backend
-        async function submitDraftRequests() {
-            if (draftRequests.length === 0) {
-                responseArea.textContent = "No requests to send.";
-                return;
-            }
-
-            isProcessingCommand = true;
-            setUIState();
-            updateStatusLight('thinking');
-            responseArea.textContent = "Sending your requests to staff...";
-
-            try {
-                const data = {
-                    hotel_id: hotelId,
-                    requests: draftRequests // Send the array of draft requests
-                };
-
-                const response = await fetch('/api/submit_draft_requests/', { // NEW API ENDPOINT
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    updateStatusLight('speaking');
-                    responseArea.textContent = "All your requests have been sent to the staff. Is there anything else?";
-                    speakText("All your requests have been sent to the staff. Is there anything else?");
-                    draftRequests = []; // Clear drafts after successful submission
-                    updatePendingRequestsDisplay(); // Update UI
-                    chatHistory = []; // Optionally clear chat history after submission
-                } else {
-                    responseArea.textContent = result.error || 'Failed to send requests.';
-                    console.error('Submission API Error:', result.error);
-                }
-
-                setTimeout(() => {
-                    updateStatusLight('idle');
-                    responseArea.textContent = "Awaiting your command...";
-                    isProcessingCommand = false;
-                    setUIState();
-                }, 3000);
-
-            } catch (error) {
-                console.error("Error submitting draft requests:", error);
-                responseArea.textContent = "Network error while sending requests. Please try again.";
-                updateStatusLight('idle');
-                isProcessingCommand = false;
-                setUIState();
-            }
-        }
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateStatusLight('idle');
-            responseArea.textContent = "Awaiting your command...";
-            setUIState();
-            guestInput.addEventListener('input', setUIState);
-            updatePendingRequestsDisplay(); // Initial display check
-        });
+        // Poll every 5 seconds (adjust as needed)
+        setInterval(checkForNewUpdates, 5000);
     </script>
 </body>
 </html>
