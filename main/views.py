@@ -10,8 +10,8 @@ import json
 from datetime import timedelta, date
 from django.db.models import Q # Import Q for complex queries
 
-# Import your models and forms
-from .models import Hotel, UserProfile, GuestRoomAssignment, GuestRequest, Room
+# Import ALL your models and forms here
+from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest
 from .forms import GuestRoomAssignmentForm
 
 # --- Consolidated Staff Dashboard View ---
@@ -22,8 +22,32 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     Renders the staff dashboard, handling different tabs (home, requests, guest_management)
     and sub-tabs for requests (active, archive, all).
     """
-    # Access hotel via UserProfile
-    user_hotel = request.user.profile.hotel 
+    print(f"\n--- Entering staff_dashboard for user: {request.user.username} ---")
+    print(f"Is Authenticated: {request.user.is_authenticated}")
+
+    user_hotel = None
+    try:
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+        print(f"UserProfile exists. Hotel linked: {user_hotel.name if user_hotel else 'None'}")
+    except UserProfile.DoesNotExist:
+        print("UserProfile.DoesNotExist: UserProfile does not exist for this user.")
+        logout(request)
+        print("Redirecting to login due to missing UserProfile.")
+        return redirect('login')
+    except AttributeError:
+        print("AttributeError: 'User' object has no attribute 'profile'.")
+        logout(request)
+        print("Redirecting to login due to missing 'profile' attribute.")
+        return redirect('login')
+
+    if not user_hotel:
+        print("User profile exists, but no Hotel is linked to the profile.")
+        logout(request)
+        print("Redirecting to login due to missing Hotel association.")
+        return redirect('login')
+
+    print("User is authenticated and has a linked hotel. Proceeding to render dashboard.")
 
     context = {
         'page_title': 'Staff Dashboard', # Default title
@@ -161,19 +185,36 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
     elif main_tab == 'guest_management':
         context['page_title'] = 'Guest Management'
-        form = GuestRoomAssignmentForm(initial={'hotel': user_hotel})
+        
+        # Initialize an empty form for GET requests or if POST fails validation
+        # Pass hotel to form's __init__ for proper instance initialization
+        form = GuestRoomAssignmentForm(hotel=user_hotel) 
 
         if request.method == 'POST':
-            form = GuestRoomAssignmentForm(request.POST, initial={'hotel': user_hotel})
+            # Check if the request is for adding a new assignment or editing an existing one
+            assignment_id = request.POST.get('assignment_id') # This comes from the hidden input in edit modal
+            
+            if assignment_id: # This is an edit request
+                assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
+                # Pass instance and hotel to the form
+                form = GuestRoomAssignmentForm(request.POST, instance=assignment, hotel=user_hotel)
+            else: # This is an add new assignment request
+                # For new assignments, pass the hotel to the form.
+                # The form's __init__ will set form.instance.hotel for new instances.
+                form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
+
             if form.is_valid():
-                assignment = form.save(commit=False)
-                assignment.hotel = user_hotel
-                assignment.save()
-                return redirect('main:guest_management')
+                assignment = form.save() # form.save() will now handle setting check_in_time/out_time and hotel
+                # Use JsonResponse for AJAX submissions
+                return JsonResponse({'success': True, 'message': 'Guest assignment saved successfully.'})
+            else:
+                # Return form errors as JSON
+                # Django's form.errors is a dictionary of lists. Convert it to a more readable format.
+                return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
             
         all_assignments = GuestRoomAssignment.objects.filter(hotel=user_hotel).order_by('-check_in_time')
         context.update({
-            'form': form,
+            'form': form, # Pass the form to the context for rendering in the modal
             'all_assignments': all_assignments,
         })
 
@@ -189,7 +230,15 @@ def check_for_new_requests(request):
     API endpoint to check for new pending requests for the notification bell.
     Matches URL: /api/check_new_requests/
     """
-    user_hotel = request.user.profile.hotel
+    # Safely access user_hotel via UserProfile for API endpoint
+    try:
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': 'User profile not linked.'}, status=403)
+
     last_check_str = request.GET.get('last_check')
 
     new_requests_exist = False
@@ -310,7 +359,16 @@ def edit_guest_assignment(request, assignment_id):
     API endpoint to handle editing of a guest assignment via AJAX.
     Matches URL: /api/assignments/<int:assignment_id>/edit/
     """
-    assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=request.user.profile.hotel)
+    # Safely access user_hotel via UserProfile
+    try:
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': 'User profile not linked.'}, status=403)
+
+    assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
     
     mutable_post = request.POST.copy()
 
@@ -324,7 +382,8 @@ def edit_guest_assignment(request, assignment_id):
     if check_out_date and check_out_time_input:
         mutable_post['check_out_time'] = f"{check_out_date} {check_out_time_input}"
 
-    form = GuestRoomAssignmentForm(mutable_post, instance=assignment)
+    # Pass hotel to the form when editing as well
+    form = GuestRoomAssignmentForm(mutable_post, instance=assignment, hotel=user_hotel)
     
     if form.is_valid():
         form.save()
@@ -339,8 +398,17 @@ def delete_guest_assignment(request, assignment_id):
     API endpoint to handle deletion of a guest assignment via AJAX.
     Matches URL: /api/assignments/<int:assignment_id>/delete/
     """
+    # Safely access user_hotel via UserProfile
     try:
-        assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=request.user.profile.hotel)
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except AttributeError:
+        return JsonResponse({'success': False, 'error': 'User profile not linked.'}, status=403)
+
+    try:
+        assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
         assignment.delete()
         return JsonResponse({'success': True, 'message': 'Assignment deleted successfully.'})
     except Exception as e:
@@ -479,7 +547,7 @@ def submit_draft_requests(request):
             'success': True,
             'message': 'Request submitted successfully.',
             'request_id': request_obj.id,
-            'chat_history': chat_history, # Return the chat history for this specific new request
+            'chat_history': chat_history, # Return updated chat history
         })
 
     except json.JSONDecodeError:

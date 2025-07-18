@@ -3,88 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Conci Staff</title>
+    <title>Login - Conci Dashboard</title>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
-            margin: 0;
+            font-family: 'Inter', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f2f5;
-            color: #333;
+            background-color: #f3f4f6; /* Light gray background */
+            margin: 0;
         }
         .login-container {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 40px;
-            width: 90%;
-            max-width: 400px;
+            background-color: #ffffff; /* White background for the card */
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Soft shadow */
+            padding: 2.5rem; /* Inner padding */
+            max-width: 25rem; /* Max width */
+            width: 100%; /* Full width on smaller screens */
             text-align: center;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 2em;
+        h2 {
+            font-size: 1.875rem; /* Large title font size */
+            font-weight: 700; /* Bold font */
+            color: #1f2937; /* Dark gray text */
+            margin-bottom: 1.5rem; /* Space below title */
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.25rem; /* Space between form groups */
             text-align: left;
         }
-        label {
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
+            font-size: 0.875rem; /* Small label font size */
+            font-weight: 500; /* Medium font weight */
+            color: #374151; /* Medium gray text */
+            margin-bottom: 0.5rem; /* Space below label */
         }
-        input[type="text"],
-        input[type="password"] {
-            width: calc(100% - 22px); /* Account for padding and border */
-            padding: 12px 10px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
             width: 100%;
-            margin-top: 10px;
+            padding: 0.75rem 1rem; /* Padding inside input */
+            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 0.5rem; /* Rounded corners */
+            font-size: 1rem; /* Standard font size */
+            color: #1f2937; /* Dark text */
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
         }
-        button:hover {
-            background-color: #0056b3;
-            transform: translateY(-2px);
-        }
-        button:active {
-            transform: translateY(0);
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* Blue glow on focus */
+            outline: none; /* Remove default outline */
         }
         .errorlist {
-            color: #dc3545;
-            list-style-type: none;
+            color: #ef4444; /* Red for errors */
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            list-style: none;
             padding: 0;
-            margin-top: 10px;
-            margin-bottom: 0;
-            text-align: left;
         }
-        .helptext {
-            font-size: 0.9em;
-            color: #6c757d;
-            margin-top: 5px;
+        .login-button {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background-color: #2563eb; /* Blue background */
+            color: #ffffff; /* White text */
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600; /* Semi-bold */
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .login-button:hover {
+            background-color: #1d4ed8; /* Darker blue on hover */
+            transform: translateY(-1px);
+        }
+        .login-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .forgot-password {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #6b7280; /* Gray text */
+        }
+        .forgot-password a {
+            color: #2563eb; /* Blue link */
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .forgot-password a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>Conci Staff Login</h1>
+        <h2>Login to Conci Dashboard</h2>
         <form method="post">
             {% csrf_token %}
             {% if form.non_field_errors %}
@@ -98,18 +118,30 @@
                 <label for="{{ form.username.id_for_label }}">Username:</label>
                 {{ form.username }}
                 {% if form.username.errors %}
-                    <ul class="errorlist">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    <ul class="errorlist">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
                 {% endif %}
             </div>
             <div class="form-group">
                 <label for="{{ form.password.id_for_label }}">Password:</label>
                 {{ form.password }}
                 {% if form.password.errors %}
-                    <ul class="errorlist">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    <ul class="errorlist">
+                        {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
                 {% endif %}
             </div>
-            <button type="submit">Login</button>
+            <button type="submit" class="login-button">Login</button>
+            <input type="hidden" name="next" value="{{ next }}">
         </form>
+        <div class="forgot-password">
+            <a href="#">Forgot password?</a> {# Placeholder, implement if needed #}
+        </div>
     </div>
 </body>
 </html>
