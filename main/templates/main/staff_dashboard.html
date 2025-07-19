@@ -429,11 +429,29 @@
             font-weight: 600;
         }
 
+        /* New Styles for Grouped Requests */
+        .request-category-section {
+            margin-bottom: 30px; /* Space between different categories */
+            padding-top: 0; /* Remove top padding as title is inside */
+            padding-bottom: 0; /* Remove bottom padding */
+        }
+        .request-category-section .category-title {
+            color: var(--text-primary);
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+
         /* Table Styling */
         .table-responsive {
             overflow-x: auto; /* Enable horizontal scroll for this container */
             -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-            margin-top: 20px;
+            margin-top: 20px; /* Space from category title */
             border-radius: 12px;
             box-shadow: 0 4px 12px var(--shadow-light);
             background-color: var(--card-bg); /* Apply card background to the wrapper */
@@ -714,7 +732,7 @@
         .button-group button.secondary:hover {
             background-color: #5a6268;
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 6層 12px rgba(0,0,0,0.15);
         }
         .button-group button.secondary:active {
             transform: translateY(0);
@@ -1588,61 +1606,65 @@
                     </div>
                     
                     <p>Total Rooms: <strong>{{ total_rooms|default:"0" }}</strong> | Occupied: <strong>{{ occupied_rooms|default:"0" }}</strong> | Available: <strong>{{ available_rooms|default:"0" }}</strong></p>
-                    {% if requests_with_details %}
-                    <div class="table-responsive"> {# Wrapper for horizontal scroll #}
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Room No.</th>
-                                    <th>Guest Names</th>
-                                    <th>Request</th>
-                                    <th>Type</th> {# New column for Request Type #}
-                                    <th>Time</th>
-                                    <th>Status</th>
-                                    <th>Staff Notes</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in requests_with_details %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'main:guest_interface' hotel_id=item.request.hotel.id room_number=item.request.room_number %}" target="_blank" title="Open Guest Device for Room {{ item.request.room_number }}">
-                                            {{ item.request.room_number }}
-                                        </a>
-                                    </td>
-                                    <td>{{ item.assignment.guest_names|default:"N/A" }}</td>
-                                    <td>
-                                        {# Make the request text clickable to open details modal #}
-                                        <span class="view-request-details" data-request-id="{{ item.request.id }}" style="cursor: pointer; text-decoration: underline; color: var(--primary-blue);">
-                                            {{ item.request.raw_text }}
-                                        </span>
-                                    </td>
-                                    <td><span class="request-type-{{ item.request.request_type }}">{{ item.request.get_request_type_display }}</span></td> {# Display request type #}
-                                    <td><span style="white-space: nowrap;">{{ item.request.timestamp|date:"M d, Y H:i" }}</span></td>
-                                    <td><span class="status-{{ item.request.status }}">{{ item.request.get_status_display }}</span></td>
-                                    <td>
-                                        <textarea class="staff-notes-textarea" data-request-id="{{ item.request.id }}" placeholder="Add internal notes...">{{ item.request.staff_notes|default_if_none:'' }}</textarea>
-                                        <button class="staff-notes-save-btn" data-request-id="{{ item.request.id }}">Save Notes</button>
-                                    </td>
-                                    <td class="action-buttons">
-                                        <form action="{% url 'main:update_request_status' item.request.id %}" method="post" style="display: inline;">
-                                            {% csrf_token %}
-                                            <select name="new_status" onchange="this.form.submit()">
-                                                <option value="pending" {% if item.request.status == 'pending' %}selected{% endif %}>Pending</option>
-                                                <option value="in_progress" {% if item.request.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                                                <option value="completed" {% if item.request.status == 'completed' %}selected{% endif %}>Completed</option>
-                                                <option value="cancelled">Cancelled</option>
-                                            </select>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div> {# End table-responsive #}
+                    
+                    {% if has_any_requests %}
+                        {% for group in grouped_requests %}
+                            <div class="container request-category-section"> {# Use container class for consistent styling #}
+                                <h3 class="category-title">{{ group.display_name }} Requests</h3>
+                                <div class="table-responsive"> {# Wrapper for horizontal scroll #}
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Room No.</th>
+                                                <th>Guest Names</th>
+                                                <th>Request</th>
+                                                <th>Time</th>
+                                                <th>Status</th>
+                                                <th>Staff Notes</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in group.requests %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'main:guest_interface' hotel_id=item.request.hotel.id room_number=item.request.room_number %}" target="_blank" title="Open Guest Device for Room {{ item.request.room_number }}">
+                                                        {{ item.request.room_number }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ item.assignment.guest_names|default:"N/A" }}</td>
+                                                <td>
+                                                    {# Make the request text clickable to open details modal #}
+                                                    <span class="view-request-details" data-request-id="{{ item.request.id }}" style="cursor: pointer; text-decoration: underline; color: var(--primary-blue);">
+                                                        {{ item.request.raw_text }}
+                                                    </span>
+                                                </td>
+                                                <td><span style="white-space: nowrap;">{{ item.request.timestamp|date:"M d, Y H:i" }}</span></td>
+                                                <td><span class="status-{{ item.request.status }}">{{ item.request.get_status_display }}</span></td>
+                                                <td>
+                                                    <textarea class="staff-notes-textarea" data-request-id="{{ item.request.id }}" placeholder="Add internal notes...">{{ item.request.staff_notes|default_if_none:'' }}</textarea>
+                                                    <button class="staff-notes-save-btn" data-request-id="{{ item.request.id }}">Save Notes</button>
+                                                </td>
+                                                <td class="action-buttons">
+                                                    <form action="{% url 'main:update_request_status' item.request.id %}" method="post" style="display: inline;">
+                                                        {% csrf_token %}
+                                                        <select name="new_status" onchange="this.form.submit()">
+                                                            <option value="pending" {% if item.request.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                            <option value="in_progress" {% if item.request.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                                            <option value="completed" {% if item.request.status == 'completed' %}selected{% endif %}>Completed</option>
+                                                            <option value="cancelled">Cancelled</option>
+                                                        </select>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div> {# End table-responsive #}
+                            </div> {# End request-category-section container #}
+                        {% endfor %}
                     {% else %}
-                    <p>No requests found for this filter.</p>
+                        <p>No requests found for this filter.</p>
                     {% endif %}
                 </div>
             {% elif current_main_tab == 'guest_management' %}
@@ -1955,6 +1977,33 @@
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         // --- Staff Notes Save Logic (for Requests tab) ---
+        document.querySelectorAll('.staff-notes-textarea').forEach(textarea => {
+            textarea.addEventListener('blur', async (e) => {
+                const requestId = e.target.dataset.requestId;
+                const notes = e.target.value;
+
+                try {
+                    const response = await fetch(`/request/${requestId}/update_notes/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: `notes=${encodeURIComponent(notes)}`
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        console.log(`Notes for request ${requestId} auto-saved.`);
+                    } else {
+                        console.error(`Auto-save failed for request ${requestId}:`, result.error);
+                    }
+                } catch (error) {
+                    console.error('Network error during auto-save:', error);
+                }
+            });
+        });
+
         document.querySelectorAll('.staff-notes-save-btn').forEach(button => {
             button.addEventListener('click', async (e) => {
                 const requestId = e.target.dataset.requestId;
@@ -1984,33 +2033,6 @@
             });
         });
 
-        // Optional: Auto-save notes on blur (when textarea loses loses focus)
-        document.querySelectorAll('.staff-notes-textarea').forEach(textarea => {
-            textarea.addEventListener('blur', async (e) => {
-                const requestId = e.target.dataset.requestId;
-                const notes = e.target.value;
-
-                try {
-                    const response = await fetch(`/request/${requestId}/update_notes/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': csrfToken,
-                            'X-Requested-With': 'XMLHttpRequest',
-                        },
-                        body: `notes=${encodeURIComponent(notes)}`
-                    });
-                    const result = await response.json();
-                    if (response.ok && result.success) {
-                        console.log(`Notes for request ${requestId} auto-saved.`);
-                    } else {
-                        console.error(`Auto-save failed for request ${requestId}:`, result.error);
-                    }
-                } catch (error) {
-                    console.error('Network error during auto-save:', error);
-                }
-            });
-        });
 
         // --- Notification Polling Logic ---
         let lastCheckTimestamp = new Date().toISOString(); // Initialize with current time on page load

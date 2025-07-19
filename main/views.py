@@ -166,19 +166,45 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             # Archived requests are completed or cancelled
             requests_for_hotel = requests_for_hotel.filter(status__in=['completed', 'cancelled'])
         elif sub_tab == 'all':
-            pass # No additional filter for 'all'
+            # For 'all' tab, include all types, including casual_chat
+            pass # No additional filter for 'all' beyond hotel
 
         requests_for_hotel = requests_for_hotel.order_by('-timestamp')
 
-        requests_with_details = []
+        # Group requests by type for display
+        grouped_requests = {}
+        # Use the order defined in the model choices for consistent display
+        # Only iterate through actual REQUEST_TYPE_CHOICES to ensure all categories are considered
+        for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
+            grouped_requests[choice_value] = {
+                'display_name': choice_label,
+                'requests': []
+            }
+        
+        # Populate the grouped_requests
         for req in requests_for_hotel:
-            # Try to find a guest assignment for the room number, if it exists
             assignment = GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=req.room_number).first()
-            requests_with_details.append({
+            
+            # Ensure the request_type from the DB matches one of our defined choices
+            # This handles cases where old data might have undefined types
+            actual_request_type = req.request_type if req.request_type in [cv for cv, cl in GuestRequest.REQUEST_TYPE_CHOICES] else 'general_inquiry'
+
+            grouped_requests[actual_request_type]['requests'].append({
                 'request': req,
                 'assignment': assignment,
             })
-        context['requests_with_details'] = requests_with_details
+
+        # Convert to a list of (display_name, list_of_requests) for ordered iteration in template
+        # Filter out empty groups if they are not needed, unless it's the 'all' tab and we want to show all categories
+        ordered_grouped_requests = []
+        has_any_requests = False
+        for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
+            if grouped_requests[choice_value]['requests']:
+                ordered_grouped_requests.append(grouped_requests[choice_value])
+                has_any_requests = True
+
+        context['grouped_requests'] = ordered_grouped_requests
+        context['has_any_requests'] = has_any_requests
 
     elif main_tab == 'guest_management':
         context['page_title'] = 'Guest Management'
@@ -543,19 +569,19 @@ def process_guest_command(request):
         conci_response = "Thank you for your request. We have received it and will get back to you shortly."
         
         # Keywords for different request types
-        if any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working"]):
+        if any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working", "toilet blocked"]):
             request_type = 'maintenance'
             conci_response = "We've noted your maintenance request and will dispatch someone shortly."
-        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item"]):
+        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item", "power outlet"]):
             request_type = 'repairs'
             conci_response = "Your repair request has been logged. We'll send help as soon as possible."
-        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping"]):
+        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping", "laundry"]):
             request_type = 'housekeeping'
             conci_response = "Your housekeeping request has been sent. Someone will be with you shortly."
-        elif any(keyword in lower_message for keyword in ["food", "drink", "order", "menu", "breakfast", "lunch", "dinner", "water", "coffee", "room service"]):
+        elif any(keyword in lower_message for keyword in ["food", "drink", "order", "menu", "breakfast", "lunch", "dinner", "water", "coffee", "room service", "ice"]):
             request_type = 'room_service'
             conci_response = "Your room service order has been placed. Please allow some time for delivery."
-        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge"]):
+        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge", "tickets", "transport"]):
             request_type = 'concierge'
             conci_response = "We've received your concierge request and will assist you with it."
         elif any(keyword in lower_message for keyword in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thank you", "thanks", "bye", "goodbye", "ok", "okay", "alright", "yes", "no", "please", "excuse me"]):
@@ -610,6 +636,7 @@ def process_guest_command(request):
                     chat_history=json.dumps(current_chat_history)
                 )
                 request_obj_id = dummy_request.id
+
         else:
             # For actionable requests, create a NEW GuestRequest with 'pending' status
             request_obj = GuestRequest.objects.create(
