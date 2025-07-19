@@ -1012,6 +1012,108 @@
             transform: translateY(-1px);
         }
 
+        /* Filter Section Styles */
+        .filter-section {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-light);
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .filter-section h3 {
+            color: var(--text-primary);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap; /* Allows items to wrap to the next line */
+            gap: 15px; /* Spacing between filter groups */
+            align-items: flex-end; /* Align items to the bottom */
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allow groups to grow */
+            min-width: 150px; /* Minimum width for each filter group */
+        }
+        .filter-group.date-range {
+            display: flex;
+            flex-direction: row; /* For date inputs side-by-side */
+            gap: 10px; /* Space between date inputs */
+            align-items: flex-end;
+            min-width: 320px; /* Adjust as needed for two date inputs */
+        }
+        .filter-group.date-range > div { /* For the individual date inputs within the group */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        .filter-group label {
+            font-size: 0.9em;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            white-space: nowrap; /* Prevent label wrapping */
+        }
+        .filter-group input[type="text"],
+        .filter-group input[type="date"],
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            height: 38px; /* Standardize height */
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px; /* More space from inputs */
+            width: 100%; /* Take full width to align buttons to the right */
+        }
+        .filter-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px var(--shadow-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-buttons button.apply-btn {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+        .filter-buttons button.apply-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .filter-buttons button.clear-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .filter-buttons button.clear-btn:hover {
+            background-color: #5a6268;
+            transform: translateY(-1px);
+        }
+
+
         /* Responsive Adjustments */
         @media (max-width: 992px) {
             .sidebar {
@@ -1074,6 +1176,27 @@
             }
             .room-availability-block {
                 grid-column: span 1;
+            }
+
+            /* Filter Section adjustments for smaller screens */
+            .filter-form {
+                flex-direction: column; /* Stack filters vertically */
+                align-items: stretch;
+            }
+            .filter-group {
+                min-width: unset; /* Remove min-width to allow full width */
+                width: 100%;
+            }
+            .filter-group.date-range {
+                flex-direction: column; /* Stack date inputs vertically */
+                min-width: unset;
+                width: 100%;
+            }
+            .filter-group.date-range > div {
+                width: 100%;
+            }
+            .filter-buttons {
+                justify-content: center; /* Center buttons on small screens */
             }
         }
 
@@ -1507,6 +1630,54 @@
                             <i class="fas fa-plus"></i> Add Booking
                         </button>
                     </div>
+
+                    {# Filter Section for Guest Assignments #}
+                    <div class="filter-section">
+                        <h3>Filter Assignments</h3>
+                        <form method="get" id="guestFilterForm" class="filter-form">
+                            <div class="filter-group">
+                                <label for="filter_room_number">Room No.:</label>
+                                <input type="text" id="filter_room_number" name="room_number" value="{{ filter_params.room_number|default:'' }}" placeholder="e.g., 101">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter_guest_names">Guest Name:</label>
+                                <input type="text" id="filter_guest_names" name="guest_names" value="{{ filter_params.guest_names|default:'' }}" placeholder="e.g., John Doe">
+                            </div>
+                            <div class="filter-group">
+                                <label for="filter_status">Status:</label>
+                                <select id="filter_status" name="status">
+                                    <option value="">All Statuses</option>
+                                    {% for choice_value, choice_label in assignment_status_choices %}
+                                        <option value="{{ choice_value }}" {% if filter_params.status == choice_value %}selected{% endif %}>{{ choice_label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-group date-range">
+                                <div>
+                                    <label for="filter_check_in_date_from">Check-in From:</label>
+                                    <input type="date" id="filter_check_in_date_from" name="check_in_date_from" value="{{ filter_params.check_in_date_from|default:'' }}">
+                                </div>
+                                <div>
+                                    <label for="filter_check_in_date_to">Check-in To:</label>
+                                    <input type="date" id="filter_check_in_date_to" name="check_in_date_to" value="{{ filter_params.check_in_date_to|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="filter-group date-range">
+                                <div>
+                                    <label for="filter_check_out_date_from">Check-out From:</label>
+                                    <input type="date" id="filter_check_out_date_from" name="check_out_date_from" value="{{ filter_params.check_out_date_from|default:'' }}">
+                                </div>
+                                <div>
+                                    <label for="filter_check_out_date_to">Check-out To:</label>
+                                    <input type="date" id="filter_check_out_date_to" name="check_out_date_to" value="{{ filter_params.check_out_date_to|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="filter-buttons">
+                                <button type="submit" class="apply-btn"><i class="fas fa-filter"></i> Apply Filters</button>
+                                <button type="button" class="clear-btn" id="clearFiltersButton"><i class="fas fa-times-circle"></i> Clear Filters</button>
+                            </div>
+                        </form>
+                    </div>
                     
                     {# Existing Guest Assignments Table #}
                     {% if all_assignments %}
@@ -1556,7 +1727,7 @@
                         </table>
                     </div> {# End table-responsive #}
                     {% else %}
-                    <p>No guest assignments found for this hotel.</p>
+                    <p>No guest assignments found for this hotel with the current filters.</p>
                     {% endif %}
                 </div>
 
@@ -2406,6 +2577,17 @@
 
         document.addEventListener('DOMContentLoaded', renderAllCharts);
         window.addEventListener('resize', renderAllCharts);
+
+        // --- Clear Filters Button Logic ---
+        const clearFiltersButton = document.getElementById('clearFiltersButton');
+        if (clearFiltersButton) {
+            clearFiltersButton.addEventListener('click', () => {
+                const form = document.getElementById('guestFilterForm');
+                form.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => input.value = '');
+                form.querySelectorAll('select').forEach(select => select.value = '');
+                form.submit(); // Submit the form to clear filters
+            });
+        }
 
     </script>
 </body>

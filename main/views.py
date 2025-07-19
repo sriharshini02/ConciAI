@@ -22,32 +22,32 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     Renders the staff dashboard, handling different tabs (home, requests, guest_management)
     and sub-tabs for requests (active, archive, all).
     """
-    print(f"\n--- Entering staff_dashboard for user: {request.user.username} ---")
-    print(f"Is Authenticated: {request.user.is_authenticated}")
+    # print(f"\n--- Entering staff_dashboard for user: {request.user.username} ---")
+    # print(f"Is Authenticated: {request.user.is_authenticated}")
 
     user_hotel = None
     try:
         user_profile = request.user.profile
         user_hotel = user_profile.hotel
-        print(f"UserProfile exists. Hotel linked: {user_hotel.name if user_hotel else 'None'}")
+        # print(f"UserProfile exists. Hotel linked: {user_hotel.name if user_hotel else 'None'}")
     except UserProfile.DoesNotExist:
-        print("UserProfile.DoesNotExist: UserProfile does not exist for this user.")
+        # print("UserProfile.DoesNotExist: UserProfile does not exist for this user.")
         logout(request)
-        print("Redirecting to login due to missing UserProfile.")
+        # print("Redirecting to login due to missing UserProfile.")
         return redirect('login')
     except AttributeError:
-        print("AttributeError: 'User' object has no attribute 'profile'.")
+        # print("AttributeError: 'User' object has no attribute 'profile'.")
         logout(request)
-        print("Redirecting to login due to missing 'profile' attribute.")
+        # print("Redirecting to login due to missing 'profile' attribute.")
         return redirect('login')
 
     if not user_hotel:
-        print("User profile exists, but no Hotel is linked to the profile.")
+        # print("User profile exists, but no Hotel is linked to the profile.")
         logout(request)
-        print("Redirecting to login due to missing Hotel association.")
+        # print("Redirecting to login due to missing Hotel association.")
         return redirect('login')
 
-    print("User is authenticated and has a linked hotel. Proceeding to render dashboard.")
+    # print("User is authenticated and has a linked hotel. Proceeding to render dashboard.")
 
     context = {
         'page_title': 'Staff Dashboard', # Default title
@@ -109,7 +109,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             status='checked_in'
         ).count()
 
-        # Check-outs Today (GuestRoomAssignments with check_out_time today and status 'checked_out')
+        # Check-outs Today (GuestRoomAssignment.objects with check_out_time today and status 'checked_out')
         check_outs_today_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             check_out_time__date=today,
@@ -187,41 +187,96 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         context['page_title'] = 'Guest Management'
         
         # Initialize an empty form for GET requests or if POST fails validation
-        # Pass hotel to form's __init__ for proper instance initialization
         form = GuestRoomAssignmentForm(hotel=user_hotel) 
 
+        # Start with all assignments for the user's hotel
+        all_assignments = GuestRoomAssignment.objects.filter(hotel=user_hotel)
+
+        # --- Apply Filters ---
+        filter_params = {}
+
+        room_number = request.GET.get('room_number')
+        if room_number:
+            all_assignments = all_assignments.filter(room_number__icontains=room_number)
+            filter_params['room_number'] = room_number
+
+        guest_names = request.GET.get('guest_names')
+        if guest_names:
+            all_assignments = all_assignments.filter(guest_names__icontains=guest_names)
+            filter_params['guest_names'] = guest_names
+
+        status = request.GET.get('status')
+        if status:
+            all_assignments = all_assignments.filter(status=status)
+            filter_params['status'] = status
+
+        check_in_date_from = request.GET.get('check_in_date_from')
+        if check_in_date_from:
+            try:
+                # Convert to date object for filtering
+                from_date = timezone.datetime.strptime(check_in_date_from, '%Y-%m-%d').date()
+                all_assignments = all_assignments.filter(check_in_time__date__gte=from_date)
+                filter_params['check_in_date_from'] = check_in_date_from
+            except ValueError:
+                pass # Handle invalid date format if necessary
+
+        check_in_date_to = request.GET.get('check_in_date_to')
+        if check_in_date_to:
+            try:
+                to_date = timezone.datetime.strptime(check_in_date_to, '%Y-%m-%d').date()
+                all_assignments = all_assignments.filter(check_in_time__date__lte=to_date)
+                filter_params['check_in_date_to'] = check_in_date_to
+            except ValueError:
+                pass
+
+        check_out_date_from = request.GET.get('check_out_date_from')
+        if check_out_date_from:
+            try:
+                from_date = timezone.datetime.strptime(check_out_date_from, '%Y-%m-%d').date()
+                all_assignments = all_assignments.filter(check_out_time__date__gte=from_date)
+                filter_params['check_out_date_from'] = check_out_date_from
+            except ValueError:
+                pass
+
+        check_out_date_to = request.GET.get('check_out_date_to')
+        if check_out_date_to:
+            try:
+                to_date = timezone.datetime.strptime(check_out_date_to, '%Y-%m-%d').date()
+                all_assignments = all_assignments.filter(check_out_time__date__lte=to_date)
+                filter_params['check_out_date_to'] = check_out_date_to
+            except ValueError:
+                pass
+
+        # Order the filtered results
+        all_assignments = all_assignments.order_by('-check_in_time')
+
+        context.update({
+            'form': form, # Pass the form for the add/edit modal
+            'all_assignments': all_assignments, # Pass the filtered assignments
+            'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES, # Pass choices for status filter
+            'filter_params': filter_params, # Pass current filter values to re-populate form fields
+        })
+
         if request.method == 'POST':
-            # Check if the request is for adding a new assignment or editing an existing one
-            assignment_id = request.POST.get('assignment_id') # This comes from the hidden input in edit modal
+            # This block handles the form submission for adding/editing assignments
+            assignment_id = request.POST.get('assignment_id')
             
-            if assignment_id: # This is an edit request
+            if assignment_id:
                 assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
-                # Pass instance and hotel to the form
                 form = GuestRoomAssignmentForm(request.POST, instance=assignment, hotel=user_hotel)
-            else: # This is an add new assignment request
-                # For new assignments, pass the hotel to the form.
-                # The form's __init__ will set form.instance.hotel for new instances.
+            else:
                 form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
 
             if form.is_valid():
-                assignment = form.save() # form.save() will now handle setting check_in_time/out_time and hotel
-                # Use JsonResponse for AJAX submissions
+                form.save()
                 return JsonResponse({'success': True, 'message': 'Guest assignment saved successfully.'})
             else:
-                # Return form errors as JSON
-                # Django's form.errors is a dictionary of lists. Convert it to a more readable format.
                 return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
             
-        all_assignments = GuestRoomAssignment.objects.filter(hotel=user_hotel).order_by('-check_in_time')
-        context.update({
-            'form': form, # Pass the form to the context for rendering in the modal
-            'all_assignments': all_assignments,
-        })
-
     return render(request, 'main/staff_dashboard.html', context)
 
 
-# --- Staff Dashboard API Endpoints ---
+# --- Staff Dashboard API Endpoints (remain the same) ---
 
 @login_required
 @require_GET
