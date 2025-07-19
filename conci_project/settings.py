@@ -1,25 +1,31 @@
 # ConciAI/settings.py
 
 import os
-from pathlib import Path # Ensure Path is imported
-from dotenv import load_dotenv
+from pathlib import Path
+from dotenv import load_dotenv # Make sure this is imported
 
+# Load environment variables from .env file
 load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-your-secret-key-here' # Replace with your actual secret key
+# Load SECRET_KEY from environment variable for production
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-insecure-fallback-key-for-development-only')
+# IMPORTANT: Replace 'your-insecure-fallback-key-for-development-only' with a
+# very long, random string for actual development, but ensure it's loaded from
+# .env in production.
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True' # Load DEBUG from env, default to True for dev
 
-# IMPORTANT: Configure ALLOWED_HOSTS for development
-# This ensures your browser can send cookies back to your server.
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost'] # Add 'localhost' and '127.0.0.1'
+# ALLOWED_HOSTS must be set in production to your domain names or IP addresses
+# Example: ALLOWED_HOSTS = ['.yourdomain.com', 'your-server-ip']
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+# Ensure your production domain(s) are set in the DJANGO_ALLOWED_HOSTS env var (comma-separated)
+
 
 # Application definition
 
@@ -27,31 +33,28 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions', # Crucial for sessions
+    'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main', # Your main app
-    # 'debug_toolbar', # Uncomment if you use Django Debug Toolbar
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware', # Must be here
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware', # Must be here, after SessionMiddleware
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware', # Uncomment if you use Django Debug Toolbar
 ]
-
 ROOT_URLCONF = 'conci_project.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Project-level templates
-        'APP_DIRS': True, # THIS MUST BE TRUE for Django to look in app's templates/ directory
+        'DIRS': [],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -62,6 +65,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'conci_project.wsgi.application'
 
@@ -74,6 +78,13 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# For production, you'd typically use PostgreSQL or another robust database.
+# Example PostgreSQL config (requires psycopg2-binary and environment variables):
+# import dj_database_url
+# DATABASE_URL = os.getenv('DATABASE_URL')
+# if DATABASE_URL:
+#     DATABASES['default'] = dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -93,37 +104,35 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata' # Set to your local timezone, e.g., 'Asia/Kolkata' for IST
+TIME_ZONE = 'Asia/Kolkata' # Set your appropriate time zone
 
 USE_I18N = True
 
-USE_TZ = True # Crucial for timezone-aware datetimes
+USE_TZ = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'), # Project-level static files
-]
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Directory where static files will be collected for production
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Authentication URLs
-LOGIN_REDIRECT_URL = '/dashboard/' # Redirect to dashboard after successful login
-LOGOUT_REDIRECT_URL = '/login/'    # Redirect to login page after logout
-LOGIN_URL = '/login/'              # The URL where the login page is located
+# Login/Logout redirects
+LOGIN_REDIRECT_URL = '/dashboard/' # Or wherever your dashboard home is
+LOGOUT_REDIRECT_URL = '/login/' # Your login page URL
+LOGIN_URL = '/login/' # The URL where the login page is located
 
-# Session and CSRF cookie security settings for development
-# Set to False if running on HTTP (not HTTPS) in development
-SESSION_COOKIE_SECURE = False # Set to True in production (HTTPS)
-CSRF_COOKIE_SECURE = False    # Set to True in production (HTTPS)
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# Media files (for user-uploaded content, if applicable)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
