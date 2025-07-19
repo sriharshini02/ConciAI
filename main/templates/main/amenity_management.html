@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts - Inter for a modern, clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* New Color Palette */
+        :root {
+            --light-blue-gray: #D8E0E8;
+            --light-green: #D1DFCC;
+            --light-yellow-green: #DFE29D;
+            --off-white: #F8F8F8;
+            --dark-charcoal: #252527;
+
+            --sidebar-bg: var(--off-white);
+            --sidebar-text: var(--dark-charcoal);
+            --sidebar-active-bg: var(--light-blue-gray);
+            --sidebar-active-text: var(--dark-charcoal);
+            --header-bg: var(--off-white);
+            --body-bg: var(--light-blue-gray);
+            --card-bg: var(--off-white);
+            --text-primary: var(--dark-charcoal);
+            --text-secondary: #555;
+            --primary-blue: #007bff;
+            
+            --accent-green: #28a745; /* Using a standard green for success */
+            --accent-yellow: var(--light-yellow-green);
+            --accent-blue-subtle: var(--light-blue-gray);
+            --accent-red: #dc3545;
+
+            --border-color: #e0e0e0;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+        }
+
+        /* General Body and Layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--body-bg);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            padding: 20px 0;
+            box-shadow: 2px 0 10px var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0;
+            transition: width 0.3s ease;
+            position: fixed;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1001;
+        }
+        .sidebar.collapsed {
+            width: 80px;
+        }
+        .sidebar-header {
+            padding: 0 20px 20px;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 0 10px 20px;
+        }
+        .sidebar-header .full-text {
+            transition: opacity 0.3s ease, width 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            width: auto;
+        }
+        .sidebar.collapsed .sidebar-header .full-text {
+            opacity: 0;
+            width: 0;
+            display: none;
+        }
+        .sidebar-header .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .sidebar-header .toggle-btn:hover {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+        }
+        .sidebar.collapsed .sidebar-header .toggle-btn {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-nav li {
+            margin-bottom: 5px;
+        }
+        .sidebar-nav .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: var(--sidebar-text);
+            font-weight: 500;
+            font-size: 1em;
+            border-radius: 10px;
+            margin: 0 15px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .sidebar.collapsed .sidebar-nav .nav-link {
+            justify-content: center;
+            padding: 12px 0;
+            margin: 0 10px;
+        }
+        .sidebar-nav .nav-link i {
+            font-size: 1.2em;
+            width: 25px;
+            text-align: center;
+        }
+        .sidebar-nav .nav-link span {
+            transition: opacity 0.3s ease, width 0.3s ease;
+            overflow: hidden;
+            width: auto;
+            opacity: 1;
+            display: inline-block;
+        }
+        .sidebar.collapsed .sidebar-nav .nav-link span {
+            opacity: 0;
+            width: 0;
+            display: none;
+        }
+        .sidebar-nav .nav-link:hover {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+        }
+        .sidebar-nav .nav-link.active {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+            font-weight: 600;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        .sidebar-footer form {
+            width: 100%;
+        }
+        .sidebar-footer button {
+            width: 100%;
+            background: none;
+            border: none;
+            color: var(--sidebar-text);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .sidebar.collapsed .sidebar-footer button {
+            justify-content: center;
+            padding: 12px 0;
+        }
+        .sidebar-footer button span {
+            transition: opacity 0.3s ease, width 0.3s ease;
+            overflow: hidden;
+            width: auto;
+            opacity: 1;
+            display: inline-block;
+        }
+        .sidebar.collapsed .sidebar-footer button span {
+            opacity: 0;
+            width: 0;
+            display: none;
+        }
+        .sidebar-footer button:hover {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+        }
+
+        /* Main Content Area */
+        .main-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--body-bg);
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-area.shifted {
+            margin-left: 80px;
+        }
+
+        /* Header Styling (Top Bar) */
+        header {
+            background-color: var(--header-bg);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px var(--shadow-light);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        header .header-left {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        header .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .search-bar {
+            position: relative;
+        }
+        .search-bar input {
+            padding: 8px 15px 8px 35px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95em;
+            width: 250px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .search-bar input:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        .search-bar i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        /* Notification Bell */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.3em;
+            transition: color 0.2s ease;
+        }
+        .notification-bell:hover {
+            color: var(--primary-blue);
+        }
+        .notification-bell .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--accent-red);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 0.6em;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            animation: pulse 1s infinite;
+        }
+        .notification-bell .badge.show {
+            display: block; /* Show when 'show' class is added */
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* User Avatar */
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #a0a0a0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            overflow: hidden;
+        }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Notification Bar */
+        .notification-bar {
+            background-color: var(--accent-yellow);
+            color: var(--dark-charcoal);
+            padding: 10px 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+            box-shadow: 0 2px 5px var(--shadow-light);
+            position: sticky;
+            top: 65px;
+            z-index: 998;
+            margin: 15px 25px 0;
+            border-radius: 8px;
+        }
+        .notification-bar.show {
+            display: flex; /* Show when 'show' class is added */
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        .notification-bar button {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .notification-bar button:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+
+        /* Main Content Container */
+        .main-content {
+            flex-grow: 1;
+            padding: 25px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-light);
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            z-index: 0;
+        }
+        h2 {
+            color: var(--text-primary);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        /* Form Group and Button Group for Modals/Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95em;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .form-check-input { /* For checkboxes */
+            margin-right: 10px;
+            transform: scale(1.2); /* Make checkbox slightly larger */
+        }
+
+        .button-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        .button-group button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 8px var(--shadow-light);
+        }
+        .button-group button.primary {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+        .button-group button.primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .button-group button.primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button-group button.secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .button-group button.secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6層 12px rgba(0,0,0,0.15);
+        }
+        .button-group button.secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .errorlist {
+            color: var(--accent-red);
+            list-style-type: none;
+            padding: 0;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        /* Message Box */
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: translateY(-20px);
+        }
+        .message-box.error {
+            background-color: var(--accent-red);
+        }
+        .message-box.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            overflow-x: auto; /* Enable horizontal scroll for this container */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            margin-top: 20px; /* Space from category title */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow-light);
+            background-color: var(--card-bg); /* Apply card background to the wrapper */
+        }
+
+        table {
+            width: 100%;
+            min-width: 600px; /* Minimum width for the amenity table */
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden; /* Keep rounded corners */
+        }
+        th, td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 20px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background-color: var(--header-bg);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+        tbody tr:hover {
+            background-color: var(--light-blue-gray);
+        }
+
+        .action-buttons button {
+            padding: 8px 15px;
+            margin-right: 8px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 5px var(--shadow-light);
+        }
+        .action-buttons button.edit-btn {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+        .action-buttons button.edit-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        .action-buttons button.delete-btn {
+            background-color: var(--accent-red);
+            color: white;
+        }
+        .action-buttons button.delete-btn:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+        .status-available { background-color: var(--accent-green); color: var(--dark-charcoal); }
+        .status-unavailable { background-color: var(--accent-red); color: white; }
+        .status-available, .status-unavailable {
+            font-weight: 500;
+            padding: 6px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 0.8em;
+            text-transform: capitalize;
+        }
+
+        /* Modal Styles (for editing amenities) */
+        .modal {
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px; /* Adjust max-width for amenity modal */
+            position: relative;
+            animation-name: animatetop;
+            animation-duration: 0.4s;
+        }
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 32px;
+            font-weight: bold;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            line-height: 1;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Amenity Management Header */
+        .amenity-management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        .amenity-management-header h2 {
+            margin: 0;
+            border-bottom: none; /* Override general h2 border */
+            padding-bottom: 0;
+        }
+        .add-amenity-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .add-amenity-btn:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+                padding: 20px 0;
+            }
+            .sidebar-header {
+                font-size: 1.2em;
+                text-align: center;
+                padding: 0 10px 20px;
+            }
+            .sidebar-header .full-text {
+                display: none;
+            }
+            .sidebar-header .toggle-btn {
+                display: none;
+            }
+            .sidebar-nav .nav-link {
+                justify-content: center;
+                margin: 0;
+                border-radius: 0;
+                padding: 15px 0;
+            }
+            .sidebar-nav .nav-link span {
+                display: none;
+            }
+            .sidebar-nav .nav-link i {
+                margin-right: 0;
+            }
+            .sidebar-footer button {
+                text-align: center;
+                padding: 15px 0;
+            }
+            .sidebar-footer button span {
+                display: none;
+            }
+            .sidebar-footer button i {
+                margin-right: 0;
+            }
+
+            .main-area {
+                margin-left: 80px;
+            }
+            
+            header .header-left {
+                font-size: 1em;
+            }
+            .search-bar input {
+                width: 150px;
+            }
+            .main-content {
+                padding: 15px;
+            }
+            .notification-bar {
+                margin: 10px 15px 0;
+                width: calc(100% - 30px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 10px 0;
+                box-shadow: 0 2px 10px var(--shadow-light);
+                border-bottom: 1px solid var(--border-color);
+            }
+            .sidebar-header {
+                display: none;
+            }
+            .sidebar-nav ul {
+                display: flex;
+                flex-grow: 1;
+                justify-content: space-around;
+            }
+            .sidebar-nav .nav-link {
+                margin: 0;
+                padding: 10px 5px;
+                flex-direction: column;
+                font-size: 0.8em;
+                gap: 5px;
+            }
+            .sidebar-nav .nav-link span {
+                display: block;
+            }
+            .sidebar-footer {
+                display: none;
+            }
+            .main-area {
+                margin-left: 0;
+            }
+            header {
+                padding: 10px 15px;
+            }
+            header .header-left {
+                flex-grow: 1;
+            }
+            header .header-right {
+                gap: 10px;
+            }
+            .user-avatar {
+                display: none;
+            }
+            .search-bar {
+                display: none;
+            }
+            .notification-bar {
+                top: 0;
+                margin: 0;
+                border-radius: 0;
+                width: 100%;
+            }
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            table {
+                min-width: 500px; /* Adjust min-width for small screens */
+            }
+            .action-buttons button {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            .modal-content {
+                padding: 25px;
+            }
+            .close-button {
+                font-size: 24px;
+                top: 10px;
+                right: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div>
+            <div class="sidebar-header">
+                <span class="full-text">Conci Dashboard</span>
+                <button class="toggle-btn" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{% url 'main:home_dashboard' %}" class="nav-link {% if current_main_tab == 'home' %}active{% endif %}">
+                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                    </a></li>
+                    <li><a href="{% url 'main:guest_requests_dashboard' %}" class="nav-link {% if current_main_tab == 'requests' %}active{% endif %}">
+                        <i class="fas fa-bell"></i> <span>Requests</span>
+                    </a></li>
+                    <li><a href="{% url 'main:guest_management' %}" class="nav-link {% if current_main_tab == 'guest_management' %}active{% endif %}">
+                        <i class="fas fa-users"></i> <span>Guests</span>
+                    </a></li>
+                    <li><a href="{% url 'main:amenity_management' %}" class="nav-link {% if current_main_tab == 'amenities' %}active{% endif %}">
+                        <i class="fas fa-concierge-bell"></i> <span>Amenities</span>
+                    </a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-area" id="mainArea">
+        <header>
+            <div class="header-left">
+                Hello, {{ user.username }}!
+            </div>
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Start searching here...">
+                </div>
+                <div class="notification-bell" id="notificationBell">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationBadge"></span>
+                </div>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="notification-bar" id="notificationBar">
+            New requests have arrived! <span id="notificationMessage"></span>
+            <button id="refreshRequestsButton">Refresh</button>
+        </div>
+
+        <div class="main-content">
+            <div id="messageBox" class="message-box"></div>
+
+            <div class="container">
+                <div class="amenity-management-header">
+                    <h2>Existing Amenities</h2>
+                    <button id="addAmenityButton" class="add-amenity-btn">
+                        <i class="fas fa-plus"></i> Add New Amenity
+                    </button>
+                </div>
+                
+                {% if amenities %}
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Price</th>
+                                    <th>Available</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for amenity in amenities %}
+                                <tr>
+                                    <td>{{ amenity.name }}</td>
+                                    <td>{{ amenity.description|default:"-" }}</td>
+                                    <td>${{ amenity.price|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="status-{% if amenity.is_available %}available{% else %}unavailable{% endif %}">
+                                            {% if amenity.is_available %}Yes{% else %}No{% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="action-buttons">
+                                        <button class="edit-amenity-btn"
+                                            data-id="{{ amenity.id }}"
+                                            data-name="{{ amenity.name }}"
+                                            data-description="{{ amenity.description|default:'' }}"
+                                            data-price="{{ amenity.price|floatformat:2 }}"
+                                            data-is-available="{% if amenity.is_available %}true{% else %}false{% endif %}">
+                                            Edit
+                                        </button>
+                                        <button class="delete-amenity-btn" data-id="{{ amenity.id }}">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No amenities added yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Amenity Modal (New) -->
+    <div id="addAmenityModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeAddAmenityModal">&times;</span>
+            <h2>Add New Amenity</h2>
+            <form id="addAmenityForm" method="post" action="{% url 'main:amenity_management' %}">
+                {% csrf_token %}
+                <div id="addFormErrors" class="errorlist"></div> {# For non-field errors #}
+
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Name:</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">Description:</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <ul class="errorlist">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.price.id_for_label }}">Price:</label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                        <ul class="errorlist">{% for error in form.price.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.is_available.id_for_label }}">Is Available:</label>
+                    {{ form.is_available }}
+                    {% if form.is_available.errors %}
+                        <ul class="errorlist">{% for error in form.is_available.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                {% if form.non_field_errors %}
+                    <ul class="errorlist">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                
+                <div class="button-group">
+                    <button type="submit" class="primary">Add Amenity</button>
+                    <button type="button" class="secondary" id="cancelAddAmenityButton">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Amenity Modal -->
+    <div id="editAmenityModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeEditAmenityModal">&times;</span>
+            <h2>Edit Amenity</h2>
+            <form id="editAmenityForm" method="post">
+                {% csrf_token %}
+                <div id="editFormErrors" class="errorlist"></div>
+                <input type="hidden" name="amenity_id" id="editAmenityId">
+
+                <div class="form-group">
+                    <label for="edit_id_name">Name:</label>
+                    <input type="text" id="edit_id_name" name="name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_description">Description:</label>
+                    <textarea id="edit_id_description" name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_price">Price:</label>
+                    <input type="number" step="0.01" id="edit_id_price" name="price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit_id_is_available">Is Available:</label>
+                    <input type="checkbox" id="edit_id_is_available" name="is_available" class="form-check-input">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="primary">Save Changes</button>
+                    <button type="button" class="secondary" id="cancelEditAmenityButton">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // Global Message Box Functions
+        function showMessage(message, type = 'success') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.innerHTML = message;
+            messageBox.className = 'message-box show';
+            if (type === 'error') {
+                messageBox.classList.add('error');
+            } else {
+                messageBox.classList.remove('error');
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 500);
+            }, 3000);
+        }
+
+        // Get CSRF token for AJAX requests
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // --- Sidebar Toggle Logic ---
+        const sidebar = document.getElementById('sidebar');
+        const mainArea = document.getElementById('mainArea');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainArea.classList.toggle('shifted');
+            if (sidebar.classList.contains('collapsed')) {
+                sidebarToggle.querySelector('i').classList.remove('fa-chevron-left');
+                sidebarToggle.querySelector('i').classList.add('fa-chevron-right');
+            } else {
+                sidebarToggle.querySelector('i').classList.remove('fa-chevron-right');
+                sidebarToggle.querySelector('i').classList.add('fa-chevron-left');
+            }
+        });
+
+        function handleResize() {
+            if (window.innerWidth <= 992) {
+                sidebar.classList.add('collapsed');
+                mainArea.classList.add('shifted');
+                sidebarToggle.querySelector('i').classList.remove('fa-chevron-left');
+                sidebarToggle.querySelector('i').classList.add('fa-chevron-right');
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainArea.classList.remove('shifted');
+                sidebarToggle.querySelector('i').classList.remove('fa-chevron-right');
+                sidebarToggle.querySelector('i').classList.add('fa-chevron-left');
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('DOMContentLoaded', handleResize);
+
+
+        // --- Amenity Modals Logic ---
+        const addAmenityButton = document.getElementById('addAmenityButton');
+        const addAmenityModal = document.getElementById('addAmenityModal');
+        const closeAddAmenityModal = document.getElementById('closeAddAmenityModal');
+        const cancelAddAmenityButton = document.getElementById('cancelAddAmenityButton');
+        const addAmenityForm = document.getElementById('addAmenityForm');
+        const addFormErrorsDiv = document.getElementById('addFormErrors');
+
+        const editAmenityModal = document.getElementById('editAmenityModal');
+        const closeEditAmenityModal = document.getElementById('closeEditAmenityModal');
+        const cancelEditAmenityButton = document.getElementById('cancelEditAmenityButton');
+        const editAmenityForm = document.getElementById('editAmenityForm');
+        const editFormErrorsDiv = document.getElementById('editFormErrors');
+
+        // Open Add Amenity Modal
+        if (addAmenityButton) {
+            addAmenityButton.addEventListener('click', () => {
+                addAmenityForm.reset(); // Clear form fields
+                addFormErrorsDiv.innerHTML = ''; // Clear previous errors
+                document.querySelectorAll('#addAmenityForm .errorlist').forEach(el => el.innerHTML = '');
+                document.querySelectorAll('#addAmenityForm input, #addAmenityForm textarea').forEach(input => {
+                    input.classList.remove('input-error');
+                });
+                addAmenityModal.classList.add('show');
+            });
+        }
+
+        // Close Add Amenity Modal
+        if (closeAddAmenityModal) {
+            closeAddAmenityModal.addEventListener('click', () => {
+                addAmenityModal.classList.remove('show');
+            });
+        }
+        if (cancelAddAmenityButton) {
+            cancelAddAmenityButton.addEventListener('click', () => {
+                addAmenityModal.classList.remove('show');
+            });
+        }
+
+        // Handle Add Amenity Form Submission (AJAX)
+        if (addAmenityForm) {
+            addAmenityForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+
+                addFormErrorsDiv.innerHTML = ''; // Clear previous errors
+                document.querySelectorAll('#addAmenityForm .errorlist').forEach(el => el.innerHTML = '');
+                document.querySelectorAll('#addAmenityForm input, #addAmenityForm textarea').forEach(input => {
+                    input.classList.remove('input-error');
+                });
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken,
+                        }
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showMessage(result.message, 'success');
+                        addAmenityModal.classList.remove('show');
+                        setTimeout(() => location.reload(), 1000); // Reload to show new amenity
+                    } else {
+                        let errorMessage = 'An error occurred. Please check your input.';
+                        if (result.errors) {
+                            const errors = JSON.parse(result.errors);
+                            let errorHtml = '';
+                            if (errors.__all__) {
+                                errors.__all__.forEach(error => {
+                                    errorHtml += `<li><strong>Form Error:</strong> ${error.message}</li>`;
+                                });
+                                delete errors.__all__;
+                            }
+                            for (const field in errors) {
+                                errors[field].forEach(error => {
+                                    const inputElement = document.getElementById(`id_${field}`);
+                                    if (inputElement) {
+                                        inputElement.classList.add('input-error');
+                                    }
+                                    errorHtml += `<li><strong>${field}:</strong> ${error.message}</li>`;
+                                });
+                            }
+                            addFormErrorsDiv.innerHTML = errorHtml;
+                            showMessage('Please correct the errors in the form.', 'error');
+                        } else if (result.error) {
+                            showMessage(result.error, 'error');
+                        } else {
+                            showMessage(errorMessage, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error adding amenity:', error);
+                    showMessage('Network error or server issue.', 'error');
+                }
+            });
+        }
+
+        // Open Edit Amenity Modal
+        document.querySelectorAll('.edit-amenity-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const id = e.target.dataset.id;
+                const name = e.target.dataset.name;
+                const description = e.target.dataset.description;
+                const price = e.target.dataset.price;
+                const isAvailable = e.target.dataset.isAvailable === 'true';
+
+                document.getElementById('editAmenityId').value = id;
+                document.getElementById('edit_id_name').value = name;
+                document.getElementById('edit_id_description').value = description;
+                document.getElementById('edit_id_price').value = price;
+                document.getElementById('edit_id_is_available').checked = isAvailable;
+
+                editFormErrorsDiv.innerHTML = '';
+                document.querySelectorAll('#editAmenityForm .errorlist').forEach(el => el.innerHTML = '');
+                document.querySelectorAll('#editAmenityForm input, #editAmenityForm textarea').forEach(input => {
+                    input.classList.remove('input-error');
+                });
+
+                editAmenityModal.classList.add('show');
+            });
+        });
+
+        if (closeEditAmenityModal) {
+            closeEditAmenityModal.addEventListener('click', () => {
+                editAmenityModal.classList.remove('show');
+            });
+        }
+        if (cancelEditAmenityButton) {
+            cancelEditAmenityButton.addEventListener('click', () => {
+                editAmenityModal.classList.remove('show');
+            });
+        }
+
+        // Close modals if user clicks outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target == addAmenityModal) { // Added for new modal
+                addAmenityModal.classList.remove('show');
+            }
+            if (event.target == editAmenityModal) {
+                editAmenityModal.classList.remove('show');
+            }
+        });
+
+        // Handle Edit Amenity Form Submission
+        if (editAmenityForm) {
+            editAmenityForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const amenityId = document.getElementById('editAmenityId').value;
+                const formData = new FormData(form);
+                
+                // Add the amenity_id to the form data for editing
+                formData.append('amenity_id', amenityId);
+
+                editFormErrorsDiv.innerHTML = '';
+                document.querySelectorAll('#editAmenityForm .errorlist').forEach(el => el.innerHTML = '');
+                document.querySelectorAll('#editAmenityForm input, #editAmenityForm textarea').forEach(input => {
+                    input.classList.remove('input-error');
+                });
+
+                try {
+                    const response = await fetch(`/dashboard/amenities/`, { // Submit to the same amenity_management view
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken,
+                        }
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showMessage(result.message, 'success');
+                        editAmenityModal.classList.remove('show');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        let errorMessage = 'An error occurred. Please check your input.';
+                        if (result.errors) {
+                            const errors = JSON.parse(result.errors);
+                            let errorHtml = '';
+                            if (errors.__all__) {
+                                errors.__all__.forEach(error => {
+                                    errorHtml += `<li><strong>Form Error:</strong> ${error.message}</li>`;
+                                });
+                                delete errors.__all__;
+                            }
+                            for (const field in errors) {
+                                errors[field].forEach(error => {
+                                    const inputElement = document.getElementById(`edit_id_${field}`);
+                                    if (inputElement) {
+                                        inputElement.classList.add('input-error');
+                                    }
+                                    errorHtml += `<li><strong>${field}:</strong> ${error.message}</li>`;
+                                });
+                            }
+                            editFormErrorsDiv.innerHTML = errorHtml;
+                            showMessage('Please correct the errors in the form.', 'error');
+                        } else if (result.error) {
+                            showMessage(result.error, 'error');
+                        } else {
+                            showMessage(errorMessage, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error editing amenity:', error);
+                    showMessage('Network error or server issue.', 'error');
+                }
+            });
+        }
+
+        // --- Delete Amenity Logic ---
+        document.querySelectorAll('.delete-amenity-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const id = e.target.dataset.id;
+                if (confirm('Are you sure you want to delete this amenity? This action cannot be undone.')) {
+                    try {
+                        const response = await fetch(`/api/amenities/${id}/delete/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': csrfToken,
+                            }
+                        });
+                        const result = await response.json();
+                        if (response.ok && result.success) {
+                            showMessage(result.message, 'success');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showMessage(result.error || 'Failed to delete amenity.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting amenity:', error);
+                        showMessage('Network error or server issue.', 'error');
+                    }
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>

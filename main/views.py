@@ -8,14 +8,284 @@ from django.views.decorators.http import require_POST, require_GET
 from django.utils import timezone
 import json
 from datetime import timedelta, date
-from django.db.models import Q # Import Q for complex queries
-
-# Import ALL your models and forms here
+from django.db.models import Q
+import requests
+from asgiref.sync import sync_to_async
+import os
+from dotenv import load_dotenv
 from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest, Amenity
-from .forms import GuestRoomAssignmentForm
+from .forms import AmenityForm, GuestRoomAssignmentForm
+
+# Load environment variables from .env file
+load_dotenv()
+
+# --- Gemini API Configuration ---
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+
+async def call_gemini_api(prompt, available_amenities_data): # Changed parameter name to reflect data structure
+    """
+    Calls the Gemini API to get intent, entities, and a response.
+    Args:
+        prompt (str): The user's message.
+        available_amenities_data (list): A list of dictionaries, each with 'name' and 'price' of available amenities.
+    Returns:
+        dict: Parsed JSON response from Gemini, or an error structure.
+    """
+    # Explicit API key check
+    if not GEMINI_API_KEY:
+        print("Error: GOOGLE_API_KEY not set for Gemini API.")
+        return {
+            "intent": "general_inquiry",
+            "entities": {"query": prompt},
+            "conci_response": "I'm sorry, my AI capabilities are currently offline due to a missing API key. Please inform the staff."
+        }
+
+    chat_history = []
+    
+    # Provide context about available amenities to the AI, including price
+    amenities_info_parts = []
+    for amenity in available_amenities_data:
+        amenities_info_parts.append(f"{amenity['name']} (${amenity['price']:.2f})")
+    
+    amenities_info = "Available amenities: " + ", ".join(amenities_info_parts) + "."
+    if not amenities_info_parts:
+        amenities_info = "No specific amenities are currently listed as available."
+
+    # System instruction for the AI
+    system_instruction_text = f"""
+    You are an AI hotel concierge named Conci. Your primary goal is to assist guests with their requests.
+    Analyze the guest's message to determine their intent and extract relevant entities.
+    
+    Here are the possible request types you can identify:
+    - 'amenity_request': The guest is asking for a specific item that is an amenity (e.g., "water bottle", "fresh towels", "extra pillow").
+    - 'maintenance': The guest is reporting a problem that requires maintenance (e.g., "AC not working", "leaky faucet", "light is broken").
+    - 'housekeeping': The guest is requesting cleaning or supplies related to housekeeping (e.g., "clean my room", "more soap", "new bedding").
+    - 'room_service': The guest is asking for food or drinks (e.g., "order breakfast", "bring coffee", "menu").
+    - 'concierge': The guest is asking for information or assistance typically provided by a concierge (e.g., "taxi", "restaurant recommendation", "directions", "what to do").
+    - 'general_inquiry': A general question or statement that doesn't fit other categories but requires a helpful response (e.g., "What time is checkout?", "Do you have Wi-Fi?").
+    - 'casual_chat': A greeting, farewell, or simple conversational filler that doesn't require an action (e.g., "Hi", "Thank you", "How are you?").
+
+    {amenities_info}
+
+    When an 'amenity_request' is identified, also extract the 'amenity_name' (must exactly match one of the available amenities if possible) and 'quantity' (default to 1 if not specified).
+    
+    IMPORTANT: If an 'amenity_request' is identified, you MUST include the price of the amenity in your 'conci_response' and state that the cost will be added to their bill upon completion. For example: "Certainly! I'll arrange for a water bottle to be delivered to your room. The cost of $2.50 will be added to your bill." If the quantity is more than one, calculate the total price.
+    
+    If the guest asks for information you cannot provide (like real-time weather, external locations, or current time) or if their request is unclear, state that you cannot fulfill that specific part of the request but offer to help with other hotel-related inquiries. Do not make up information.
+
+    Your response should be a JSON object with the following structure:
+    {{
+        "intent": "request_type_string",
+        "entities": {{
+            "amenity_name": "string (if amenity_request)",
+            "quantity": "integer (if amenity_request, default 1)",
+            "query": "original_user_message_string"
+            // other relevant entities as needed
+        }},
+        "conci_response": "Your natural language response to the guest."
+    }}
+    
+    Ensure the "conci_response" is friendly and helpful.
+    """
+    
+    chat_history.append({
+        "role": "user",
+        "parts": [{"text": prompt}]
+    })
+
+    payload = {
+        "contents": chat_history,
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "OBJECT",
+                "properties": {
+                    "intent": {"type": "STRING"},
+                    "entities": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "amenity_name": {"type": "STRING", "nullable": True},
+                            "quantity": {"type": "INTEGER", "default": 1},
+                            "query": {"type": "STRING"}
+                        },
+                    },
+                    "conci_response": {"type": "STRING"}
+                },
+                "required": ["intent", "entities", "conci_response"]
+            }
+        },
+        "system_instruction": {"parts": [{"text": system_instruction_text}]}
+    }
+
+    # Print the payload for debugging
+    print("--- Gemini API Request Payload ---")
+    print(json.dumps(payload, indent=2))
+    print("----------------------------------")
+
+    try:
+        response = requests.post(
+            GEMINI_API_URL,
+            headers={'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY},
+            json=payload
+        )
+        response.raise_for_status()
+        result = response.json()
+        
+        if result.get('candidates') and result['candidates'][0].get('content') and result['candidates'][0]['content'].get('parts'):
+            json_string = result['candidates'][0]['content']['parts'][0]['text']
+            parsed_json = json.loads(json_string)
+            return parsed_json
+        else:
+            print("Gemini API response structure unexpected:", result)
+            return {
+                "intent": "general_inquiry",
+                "entities": {"query": prompt},
+                "conci_response": "I apologize, I could not process your request at this moment. Please try again or contact staff directly."
+            }
+    except requests.exceptions.RequestException as e:
+        print(f"Error calling Gemini API: {e}")
+        # Print the response content for more details on 400 error
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Gemini API Error Response Content: {e.response.text}")
+        return {
+            "intent": "general_inquiry",
+            "entities": {"query": prompt},
+            "conci_response": "I'm having trouble connecting right now. Please try again in a moment."
+        }
+    except json.JSONDecodeError as e:
+        print(f"Error decoding Gemini API response JSON: {e}")
+        print("Raw Gemini response:", response.text if 'response' in locals() else "No response text")
+        return {
+            "intent": "general_inquiry",
+            "entities": {"query": prompt},
+            "conci_response": "I received an unexpected response. Could you please rephrase your request?"
+        }
+    except Exception as e:
+        print(f"An unexpected error occurred in call_gemini_api: {e}")
+        return {
+            "intent": "general_inquiry",
+            "entities": {"query": prompt},
+            "conci_response": "An internal error occurred while processing your request. Please contact staff if the issue persists."
+        }
+
+
+# --- Guest Interface API Endpoints ---
+
+@require_POST
+async def process_guest_command(request):
+    """
+    API endpoint to process a guest's command (new message).
+    This creates a new GuestRequest with 'pending' status if it's an actionable request,
+    or just updates chat history if it's a casual chat.
+    Matches URL: /api/process_command/
+    Expects hotel_id and room_number in the JSON body.
+    """
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message').strip()
+
+        hotel_id = data.get('hotel_id')
+        room_number = data.get('room_number')
+
+        if not user_message or not hotel_id or not room_number:
+            return JsonResponse({'success': False, 'error': 'Missing message, hotel_id, or room_number.'}, status=400)
+
+        hotel = await sync_to_async(get_object_or_404)(Hotel, id=hotel_id)
+
+        # Fetch available amenities with name and price
+        available_amenities_data = await sync_to_async(list)(
+            Amenity.objects.filter(is_available=True).values('name', 'price')
+        )
+        
+        gemini_response = await call_gemini_api(user_message, available_amenities_data)
+        
+        request_type = gemini_response.get('intent', 'general_inquiry')
+        conci_response = gemini_response.get('conci_response', "I apologize, I couldn't fully understand that. Can you please rephrase?")
+        ai_entities = gemini_response.get('entities', {"query": user_message})
+
+        amenity_obj = None
+        amenity_qty = ai_entities.get('quantity', 1)
+
+        if request_type == 'amenity_request':
+            amenity_name_from_ai = ai_entities.get('amenity_name')
+            if amenity_name_from_ai:
+                amenity_obj = await sync_to_async(Amenity.objects.filter(name__iexact=amenity_name_from_ai, is_available=True).first)()
+                if not amenity_obj:
+                    request_type = 'general_inquiry'
+                    conci_response = f"I'm sorry, '{amenity_name_from_ai}' is not currently available or recognized as an amenity. Can I help with something else?"
+            else:
+                request_type = 'general_inquiry'
+                conci_response = "I understand you're looking for an amenity, but I didn't catch which one. Could you please specify?"
+
+
+        latest_request_for_chat = await sync_to_async(GuestRequest.objects.filter(
+            hotel=hotel,
+            room_number=room_number
+        ).order_by('-timestamp').first)()
+
+        current_chat_history = []
+        if latest_request_for_chat and latest_request_for_chat.chat_history:
+            try:
+                current_chat_history = json.loads(latest_request_for_chat.chat_history)
+            except json.JSONDecodeError:
+                current_chat_history = []
+
+        current_chat_history.append({"role": "user", "parts": [{"text": user_message}]})
+        current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+
+        request_obj_id = None
+
+        if request_type == 'casual_chat':
+            if latest_request_for_chat:
+                latest_request_for_chat.chat_history = json.dumps(current_chat_history)
+                await sync_to_async(latest_request_for_chat.save)()
+                request_obj_id = latest_request_for_chat.id
+            else:
+                dummy_request = await sync_to_async(GuestRequest.objects.create)(
+                    hotel=hotel,
+                    room_number=room_number,
+                    raw_text=user_message,
+                    conci_response_text=conci_response,
+                    status='completed',
+                    request_type='casual_chat',
+                    chat_history=json.dumps(current_chat_history)
+                )
+                request_obj_id = dummy_request.id
+
+        else:
+            request_obj = await sync_to_async(GuestRequest.objects.create)(
+                hotel=hotel,
+                room_number=room_number,
+                raw_text=user_message,
+                ai_intent=request_type,
+                ai_entities=json.dumps(ai_entities),
+                conci_response_text=conci_response,
+                status='pending',
+                request_type=request_type,
+                amenity_requested=amenity_obj,
+                amenity_quantity=amenity_qty,
+                bill_added=False,
+                chat_history=json.dumps(current_chat_history)
+            )
+            request_obj_id = request_obj.id
+        
+        return JsonResponse({
+            'success': True,
+            'conci_response': conci_response,
+            'request_id': request_obj_id,
+            'chat_history': current_chat_history,
+        })
+
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON in request body.")
+    except Exception as e:
+        print(f"Error processing guest command: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 
 # --- Consolidated Staff Dashboard View ---
-
 @login_required
 def staff_dashboard(request, main_tab='home', sub_tab=None):
     """
@@ -191,7 +461,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
             # Only add to grouped_requests if it's not a casual_chat for 'active' tab
             if sub_tab == 'active' and actual_request_type == 'casual_chat':
-                continue # Skip casual chats for active view
+                continue # Skip casual chat for active view
             
             grouped_requests[actual_request_type]['requests'].append({
                 'request': req,
@@ -307,6 +577,54 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     return render(request, 'main/staff_dashboard.html', context)
 
 
+# --- New Amenity Management View ---
+@login_required
+def amenity_management(request):
+    user_hotel = None
+    try:
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+    except UserProfile.DoesNotExist:
+        logout(request)
+        return redirect('login')
+    except AttributeError:
+        logout(request)
+        return redirect('login')
+
+    if not user_hotel:
+        logout(request)
+        return redirect('login')
+
+    amenities = Amenity.objects.all().order_by('name') # Get all amenities
+
+    if request.method == 'POST':
+        amenity_id = request.POST.get('amenity_id')
+        if amenity_id:
+            # Editing an existing amenity
+            amenity_instance = get_object_or_404(Amenity, id=amenity_id)
+            form = AmenityForm(request.POST, instance=amenity_instance)
+        else:
+            # Adding a new amenity
+            form = AmenityForm(request.POST)
+        
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
+    
+    else: # GET request
+        form = AmenityForm() # Empty form for adding new amenity
+
+    context = {
+        'page_title': 'Amenity Management',
+        'current_main_tab': 'amenities', # Set a new main tab for amenities
+        'form': form,
+        'amenities': amenities,
+    }
+    return render(request, 'main/amenity_management.html', context)
+
+
 # --- Staff Dashboard API Endpoints (remain the same) ---
 
 @login_required
@@ -390,26 +708,26 @@ def update_request_status(request, request_id):
         if new_status in dict(req.STATUS_CHOICES):
             # Special handling for 'amenity_request' when status changes to 'completed'
             if req.request_type == 'amenity_request' and new_status == 'completed' and not req.bill_added:
-                if req.amenity_requested and req.amenity_quantity > 0:
-                    # Find the guest's current assignment for this room
-                    guest_assignment = GuestRoomAssignment.objects.filter(
-                        hotel=req.hotel,
-                        room_number=req.room_number,
-                        check_in_time__lte=timezone.localtime(timezone.now()),
-                        check_out_time__gte=timezone.localtime(timezone.now()),
-                        status='checked_in' # Only add to bill if guest is checked in
-                    ).first()
+                # Find the guest's current assignment for this room
+                guest_assignment = GuestRoomAssignment.objects.filter(
+                    hotel=req.hotel,
+                    room_number=req.room_number,
+                    check_in_time__lte=timezone.localtime(timezone.now()),
+                    check_out_time__gte=timezone.localtime(timezone.now()),
+                    status='checked_in' # Only add to bill if guest is checked in
+                ).first()
 
-                    if guest_assignment:
+                if guest_assignment:
+                    if req.amenity_requested and req.amenity_quantity > 0:
                         amenity_cost = req.amenity_requested.price * req.amenity_quantity
                         guest_assignment.total_bill_amount += amenity_cost
                         guest_assignment.save()
                         req.bill_added = True # Mark as billed
                         print(f"Added ${amenity_cost:.2f} for {req.amenity_quantity}x {req.amenity_requested.name} to Room {req.room_number}'s bill. New total: ${guest_assignment.total_bill_amount:.2f}")
                     else:
-                        print(f"Warning: Amenity request {req.id} completed but no active guest assignment found for Room {req.room_number}. Bill not updated.")
+                        print(f"Warning: Amenity request {req.id} completed but amenity_requested or quantity missing. Bill not updated.")
                 else:
-                    print(f"Warning: Amenity request {req.id} completed but amenity_requested or quantity missing. Bill not updated.")
+                    print(f"Warning: Amenity request {req.id} completed but no active guest assignment found for Room {req.room_number}. Bill not updated.")
 
             req.status = new_status
             req.save()
@@ -547,25 +865,29 @@ def delete_guest_assignment(request, assignment_id):
 
 # --- Guest Interface Views ---
 
-def guest_interface(request, hotel_id, room_number):
+# Make guest_interface an async function
+async def guest_interface(request, hotel_id, room_number):
     """
     Renders the guest-facing interface for a specific room in a hotel.
     Matches URL: /guest/<int:hotel_id>/<str:room_number>/
     """
-    hotel = get_object_or_404(Hotel, id=hotel_id)
+    # Use sync_to_async for get_object_or_404
+    hotel = await sync_to_async(get_object_or_404)(Hotel, id=hotel_id)
     
-    current_assignment = GuestRoomAssignment.objects.filter(
+    # Use sync_to_async for ORM query
+    current_assignment = await sync_to_async(GuestRoomAssignment.objects.filter(
         hotel=hotel,
         room_number=room_number,
         check_in_time__lte=timezone.localtime(timezone.now()),
         check_out_time__gte=timezone.localtime(timezone.now())
-    ).first()
+    ).first)()
 
     # Get the latest request (any status) for chat history display
-    latest_request_for_chat = GuestRequest.objects.filter(
+    # Use sync_to_async for ORM query
+    latest_request_for_chat = await sync_to_async(GuestRequest.objects.filter(
         hotel=hotel,
         room_number=room_number
-    ).order_by('-timestamp').first()
+    ).order_by('-timestamp').first)()
 
     chat_history = []
     if latest_request_for_chat and latest_request_for_chat.chat_history:
@@ -581,182 +903,31 @@ def guest_interface(request, hotel_id, room_number):
         'latest_request_id': latest_request_for_chat.id if latest_request_for_chat else None,
         'chat_history': json.dumps(chat_history),
     }
+    # Render is a synchronous function, no need for sync_to_async here
     return render(request, 'main/guest_interface.html', context)
 
 
 # --- Guest Interface API Endpoints ---
 
-@require_POST
-def process_guest_command(request):
-    """
-    API endpoint to process a guest's command (new message).
-    This creates a new GuestRequest with 'pending' status if it's an actionable request,
-    or just updates chat history if it's a casual chat.
-    Matches URL: /api/process_command/
-    Expects hotel_id and room_number in the JSON body.
-    """
-    try:
-        data = json.loads(request.body)
-        user_message = data.get('message').strip() # Strip whitespace
 
-        hotel_id = data.get('hotel_id')
-        room_number = data.get('room_number')
-
-        if not user_message or not hotel_id or not room_number:
-            return JsonResponse({'success': False, 'error': 'Missing message, hotel_id, or room_number.'}, status=400)
-
-        hotel = get_object_or_404(Hotel, id=hotel_id)
-
-        # --- AI-like Logic for Request Categorization ---
-        # This is a simple keyword-based approach. For real AI, you'd use an NLU service.
-        lower_message = user_message.lower()
-        
-        request_type = 'general_inquiry' # Default type
-        conci_response = "Thank you for your request. We have received it and will get back to you shortly."
-        
-        # Initialize amenity specific fields
-        amenity_obj = None
-        amenity_qty = 1 # Default quantity
-
-        # Check for amenity requests first, as they are specific
-        # Fetch all available amenities for the current hotel (or globally if not hotel-specific)
-        available_amenities = Amenity.objects.filter(is_available=True)
-        
-        found_amenity = None
-        for amenity in available_amenities:
-            # Simple check: if amenity name is in the message
-            # More sophisticated parsing (e.g., using regex for quantity) can be added here
-            if amenity.name.lower() in lower_message:
-                found_amenity = amenity
-                request_type = 'amenity_request'
-                # Try to extract quantity (very basic, needs improvement for real use)
-                import re
-                qty_match = re.search(r'(\d+)\s+' + re.escape(amenity.name.lower()), lower_message)
-                if qty_match:
-                    amenity_qty = int(qty_match.group(1))
-                elif "a couple" in lower_message or "two" in lower_message:
-                    amenity_qty = 2
-                elif "few" in lower_message or "three" in lower_message:
-                    amenity_qty = 3
-                break # Found an amenity, stop checking others
-
-        if request_type == 'amenity_request' and found_amenity:
-            amenity_obj = found_amenity
-            conci_response = f"Certainly! Your request for {amenity_qty} {amenity_obj.name}(s) has been noted. The cost of ${amenity_obj.price * amenity_qty:.2f} will be added to your bill upon completion."
-        elif any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working", "toilet blocked", "no hot water"]):
-            request_type = 'maintenance'
-            conci_response = "We've noted your maintenance request and will dispatch someone shortly."
-        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item", "power outlet", "tv not working"]):
-            request_type = 'repairs'
-            conci_response = "Your repair request has been logged. We'll send help as soon as possible."
-        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping", "laundry", "tissue"]):
-            request_type = 'housekeeping'
-            conci_response = "Your housekeeping request has been sent. Someone will be with you shortly."
-        elif any(keyword in lower_message for keyword in ["food", "drink", "order", "menu", "breakfast", "lunch", "dinner", "water", "coffee", "room service", "ice"]):
-            request_type = 'room_service'
-            conci_response = "Your room service order has been placed. Please allow some time for delivery."
-        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge", "tickets", "transport", "what to do"]):
-            request_type = 'concierge'
-            conci_response = "We've received your concierge request and will assist you with it."
-        elif any(keyword in lower_message for keyword in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thank you", "thanks", "bye", "goodbye", "ok", "okay", "alright", "yes", "no", "please", "excuse me"]):
-            request_type = 'casual_chat'
-            if "thank you" in lower_message or "thanks" in lower_message:
-                conci_response = "You're welcome! Is there anything else I can assist you with?"
-            elif "hi" in lower_message or "hello" in lower_message or "hey" in lower_message:
-                conci_response = "Hello! How can I help you today?"
-            else:
-                conci_response = "Okay! Let me know if you need anything."
-        
-        # --- End AI-like Logic ---
-
-
-        # Retrieve existing chat history for this room, or start new if none exists
-        latest_request_for_chat = GuestRequest.objects.filter(
-            hotel=hotel,
-            room_number=room_number
-        ).order_by('-timestamp').first()
-
-        current_chat_history = []
-        if latest_request_for_chat and latest_request_for_chat.chat_history:
-            try:
-                current_chat_history = json.loads(latest_request_for_chat.chat_history)
-            except json.JSONDecodeError:
-                current_chat_history = []
-
-        # Add user's new message to chat history regardless
-        current_chat_history.append({"role": "user", "parts": [{"text": user_message}]})
-        
-        # Append Conci's response to the chat history
-        current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
-
-        request_obj_id = None # Initialize to None
-
-        if request_type == 'casual_chat':
-            # For casual chats, we update the chat_history of the LATEST request
-            # or create a new one with 'completed' status to hold the chat.
-            if latest_request_for_chat:
-                latest_request_for_chat.chat_history = json.dumps(current_chat_history)
-                latest_request_for_chat.save()
-                request_obj_id = latest_request_for_chat.id
-            else:
-                # If no previous requests, create a dummy one just to hold the chat history
-                dummy_request = GuestRequest.objects.create(
-                    hotel=hotel,
-                    room_number=room_number,
-                    raw_text=user_message, # Store the casual message
-                    conci_response_text=conci_response,
-                    status='completed', # Mark as completed so it doesn't show in staff pending
-                    request_type='casual_chat', # Set type
-                    chat_history=json.dumps(current_chat_history)
-                )
-                request_obj_id = dummy_request.id
-
-        else:
-            # For actionable requests, create a NEW GuestRequest with 'pending' status
-            request_obj = GuestRequest.objects.create(
-                hotel=hotel,
-                room_number=room_number,
-                raw_text=user_message,
-                ai_intent="N/A", # Placeholder for actual AI intent
-                ai_entities=json.dumps({"query": user_message}), # Placeholder for actual AI entities
-                conci_response_text=conci_response,
-                status='pending', # New actionable requests start as 'pending'
-                request_type=request_type, # Set the determined type
-                amenity_requested=amenity_obj, # Link to amenity object if applicable
-                amenity_quantity=amenity_qty, # Store quantity if applicable
-                bill_added=False, # Not billed yet
-                chat_history=json.dumps(current_chat_history)
-            )
-            request_obj_id = request_obj.id
-        
-        return JsonResponse({
-            'success': True,
-            'conci_response': conci_response,
-            'request_id': request_obj_id, # Return the ID of the relevant request (new or updated)
-            'chat_history': current_chat_history, # Return the updated chat history
-        })
-
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON in request body.")
-    except Exception as e:
-        print(f"Error processing guest command: {e}")
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @require_GET
-def check_for_new_updates(request, hotel_id, room_number):
+async def check_for_new_updates(request, hotel_id, room_number):
     """
     API endpoint for the guest interface to check for new responses from Conci.
     Matches URL: /api/guest/<int:hotel_id>/room/<str:room_number>/check_updates/
     """
     last_request_id = request.GET.get('last_request_id')
     
-    hotel = get_object_or_404(Hotel, id=hotel_id)
+    # Use sync_to_async for get_object_or_404
+    hotel = await sync_to_async(get_object_or_404)(Hotel, id=hotel_id)
     
     # Get the latest request for this room, regardless of status
-    latest_request = GuestRequest.objects.filter(
+    # Use sync_to_async for ORM query
+    latest_request = await sync_to_async(GuestRequest.objects.filter(
         hotel=hotel,
         room_number=room_number
-    ).order_by('-timestamp').first()
+    ).order_by('-timestamp').first)()
 
     new_messages = []
     has_new_updates = False
@@ -783,3 +954,19 @@ def check_for_new_updates(request, hotel_id, room_number):
 def user_logout(request):
     logout(request)
     return redirect('login') # Assuming 'login' is the name of your login URL
+
+# --- API Endpoints for Amenity Management (remain the same) ---
+
+@login_required
+@require_POST
+def delete_amenity(request, amenity_id):
+    """
+    API endpoint to delete an amenity.
+    """
+    try:
+        amenity = get_object_or_404(Amenity, id=amenity_id)
+        amenity.delete()
+        return JsonResponse({'success': True, 'message': 'Amenity deleted successfully.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+

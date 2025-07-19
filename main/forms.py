@@ -1,7 +1,7 @@
 # main/forms.py
 
 from django import forms
-from .models import GuestRoomAssignment, Room # Import Room model
+from .models import GuestRoomAssignment, Room, Amenity # Import Amenity model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
@@ -16,14 +16,12 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         model = GuestRoomAssignment
         fields = [
             'room_number', 'guest_names', 'check_in_time', 'check_out_time',
-            'base_bill_amount', 'amount_paid', 'status', 'hotel' # Corrected: 'bill_amount' changed to 'base_bill_amount'
+            'base_bill_amount', 'amount_paid', 'status', 'hotel'
         ]
-        # Exclude check_in_time and check_out_time from default widget rendering
-        # as we are handling them with separate date/time inputs
         widgets = {
             'room_number': forms.TextInput(attrs={'class': 'form-control'}),
             'guest_names': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'base_bill_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}), # Updated widget name
+            'base_bill_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'hotel': forms.Select(attrs={'class': 'form-control'}),
@@ -45,23 +43,20 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         # Filter room_number choices based on the hotel if provided
         if self.hotel:
             self.fields['room_number'].queryset = Room.objects.filter(hotel=self.hotel).values_list('room_number', flat=True).distinct() # type: ignore
-            # If you want a dropdown of existing room numbers, you can use:
             self.fields['room_number'] = forms.ChoiceField(
                 choices=[(room.room_number, room.room_number) for room in Room.objects.filter(hotel=self.hotel).order_by('room_number')],
                 widget=forms.Select(attrs={'class': 'form-control'}),
                 required=True
             )
         else:
-            # If no hotel is provided (e.g., in admin for superuser), show all rooms or handle as needed
             self.fields['room_number'] = forms.CharField(
                 widget=forms.TextInput(attrs={'class': 'form-control'}),
                 required=True
             )
 
-        # Hide the 'hotel' field in the form if it's already set or not needed for direct input
         if self.hotel:
             self.fields['hotel'].widget = forms.HiddenInput()
-            self.fields['hotel'].initial = self.hotel.id # Set initial value for hidden input
+            self.fields['hotel'].initial = self.hotel.id
 
     def clean(self):
         cleaned_data = super().clean()
@@ -70,7 +65,6 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         check_out_date = cleaned_data.get('check_out_date')
         check_out_time_input = cleaned_data.get('check_out_time_input')
         
-        # Combine date and time fields into full datetime objects
         if check_in_date and check_in_time_input:
             cleaned_data['check_in_time'] = timezone.make_aware(
                 timezone.datetime.combine(check_in_date, check_in_time_input),
@@ -82,12 +76,10 @@ class GuestRoomAssignmentForm(forms.ModelForm):
                 timezone.get_current_timezone()
             )
 
-        # Validate check-in/check-out times
         if 'check_in_time' in cleaned_data and 'check_out_time' in cleaned_data:
             if cleaned_data['check_out_time'] <= cleaned_data['check_in_time']:
                 raise ValidationError("Check-out time must be after check-in time.")
         
-        # Validate room number exists for the hotel
         room_number = cleaned_data.get('room_number')
         if self.hotel and room_number:
             if not Room.objects.filter(hotel=self.hotel, room_number=room_number).exists():
@@ -95,17 +87,36 @@ class GuestRoomAssignmentForm(forms.ModelForm):
 
         return cleaned_data
 
-    # Override save to handle the combined datetime fields
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # The combined check_in_time and check_out_time are already in cleaned_data
-        # and assigned to instance by the parent clean method.
         
-        # Ensure hotel is set if it was passed in __init__
         if self.hotel and not instance.hotel:
             instance.hotel = self.hotel
 
         if commit:
             instance.save()
         return instance
+
+# New Amenity Form
+class AmenityForm(forms.ModelForm):
+    class Meta:
+        model = Amenity
+        fields = ['name', 'description', 'price', 'is_available']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'is_available': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        }
+    
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        # Ensure amenity names are unique (case-insensitive)
+        if self.instance.pk: # If updating an existing amenity
+            if Amenity.objects.filter(name__iexact=name).exclude(pk=self.instance.pk).exists():
+                raise ValidationError("An amenity with this name already exists.")
+        else: # If creating a new amenity
+            if Amenity.objects.filter(name__iexact=name).exists():
+                raise ValidationError("An amenity with this name already exists.")
+        return name
 
