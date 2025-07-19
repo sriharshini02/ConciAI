@@ -23,7 +23,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
-async def call_gemini_api(prompt, available_amenities_data): # Changed parameter name to reflect data structure
+async def call_gemini_api(prompt, available_amenities_data):
     """
     Calls the Gemini API to get intent, entities, and a response.
     Args:
@@ -70,7 +70,7 @@ async def call_gemini_api(prompt, available_amenities_data): # Changed parameter
 
     When an 'amenity_request' is identified, also extract the 'amenity_name' (must exactly match one of the available amenities if possible) and 'quantity' (default to 1 if not specified).
     
-    IMPORTANT: If an 'amenity_request' is identified, you MUST include the price of the amenity in your 'conci_response' and state that the cost will be added to their bill upon completion. For example: "Certainly! I'll arrange for a water bottle to be delivered to your room. The cost of $2.50 will be added to your bill." If the quantity is more than one, calculate the total price.
+    IMPORTANT: If an 'amenity_request' is identified, you MUST include the price of the amenity in your 'conci_response' and state that the cost will be added to their bill upon completion *ONLY IF THE GUEST IS CLEARLY REQUESTING THE AMENITY FOR DELIVERY*. If the guest is only asking about the price or availability, your 'conci_response' should provide the information without implying a delivery or adding to the bill.
     
     If the guest asks for information you cannot provide (like real-time weather, external locations, or current time) or if their request is unclear, state that you cannot fulfill that specific part of the request but offer to help with other hotel-related inquiries. Do not make up information.
 
@@ -207,6 +207,8 @@ async def process_guest_command(request):
         amenity_obj = None
         amenity_qty = ai_entities.get('quantity', 1)
 
+        is_actionable_amenity_request = False
+
         if request_type == 'amenity_request':
             amenity_name_from_ai = ai_entities.get('amenity_name')
             if amenity_name_from_ai:
@@ -214,6 +216,17 @@ async def process_guest_command(request):
                 if not amenity_obj:
                     request_type = 'general_inquiry'
                     conci_response = f"I'm sorry, '{amenity_name_from_ai}' is not currently available or recognized as an amenity. Can I help with something else?"
+                else:
+                    # Check if the AI's response implies a delivery/action, not just info.
+                    # This is a heuristic and might need fine-tuning based on AI's actual responses.
+                    # Look for keywords that suggest confirmation of delivery or action.
+                    conci_response_lower = conci_response.lower()
+                    if "deliver" in conci_response_lower or \
+                       "bring" in conci_response_lower or \
+                       "send" in conci_response_lower or \
+                       "on its way" in conci_response_lower or \
+                       "will be added to your bill" in conci_response_lower:
+                        is_actionable_amenity_request = True
             else:
                 request_type = 'general_inquiry'
                 conci_response = "I understand you're looking for an amenity, but I didn't catch which one. Could you please specify?"
@@ -236,7 +249,10 @@ async def process_guest_command(request):
 
         request_obj_id = None
 
-        if request_type == 'casual_chat':
+        # Only create a new pending request if it's truly actionable
+        if request_type == 'casual_chat' or (request_type == 'amenity_request' and not is_actionable_amenity_request):
+            # For casual chats or amenity inquiries that are not actionable requests,
+            # update the chat_history of the LATEST request or create a new one with 'completed' status.
             if latest_request_for_chat:
                 latest_request_for_chat.chat_history = json.dumps(current_chat_history)
                 await sync_to_async(latest_request_for_chat.save)()
@@ -247,13 +263,13 @@ async def process_guest_command(request):
                     room_number=room_number,
                     raw_text=user_message,
                     conci_response_text=conci_response,
-                    status='completed',
-                    request_type='casual_chat',
+                    status='completed', # Mark as completed so it doesn't show in staff pending
+                    request_type='casual_chat', # Set type
                     chat_history=json.dumps(current_chat_history)
                 )
                 request_obj_id = dummy_request.id
 
-        else:
+        else: # This is an actionable request (e.g., maintenance, housekeeping, or an actionable amenity_request)
             request_obj = await sync_to_async(GuestRequest.objects.create)(
                 hotel=hotel,
                 room_number=room_number,
@@ -261,7 +277,7 @@ async def process_guest_command(request):
                 ai_intent=request_type,
                 ai_entities=json.dumps(ai_entities),
                 conci_response_text=conci_response,
-                status='pending',
+                status='pending', # New actionable requests start as 'pending'
                 request_type=request_type,
                 amenity_requested=amenity_obj,
                 amenity_quantity=amenity_qty,
@@ -282,8 +298,6 @@ async def process_guest_command(request):
     except Exception as e:
         print(f"Error processing guest command: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
 
 # --- Consolidated Staff Dashboard View ---
 @login_required
