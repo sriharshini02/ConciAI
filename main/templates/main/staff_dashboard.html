@@ -492,6 +492,28 @@
             text-transform: capitalize;
         }
 
+        /* Request Type Colors (newly added) */
+        .request-type-maintenance { background-color: #e0f2f7; color: #00796b; } /* Teal-ish */
+        .request-type-repairs { background-color: #ffe0b2; color: #e65100; } /* Orange-ish */
+        .request-type-housekeeping { background-color: #e8f5e9; color: #2e7d32; } /* Green-ish */
+        .request-type-room_service { background-color: #fff3e0; color: #ef6c00; } /* Amber-ish */
+        .request-type-concierge { background-color: #e3f2fd; color: #1976d2; } /* Blue-ish */
+        .request-type-general_inquiry { background-color: #f3e5f5; color: #8e24aa; } /* Purple-ish */
+        .request-type-casual_chat { background-color: #eeeeee; color: #616161; } /* Light gray for casual */
+
+        .request-type-maintenance, .request-type-repairs, .request-type-housekeeping,
+        .request-type-room_service, .request-type-concierge, .request-type-general_inquiry,
+        .request-type-casual_chat {
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 5px;
+            display: inline-block;
+            font-size: 0.75em;
+            text-transform: capitalize;
+            white-space: nowrap;
+        }
+
+
         /* Action Buttons and Staff Notes */
         .action-buttons {
             white-space: nowrap;
@@ -1574,6 +1596,7 @@
                                     <th>Room No.</th>
                                     <th>Guest Names</th>
                                     <th>Request</th>
+                                    <th>Type</th> {# New column for Request Type #}
                                     <th>Time</th>
                                     <th>Status</th>
                                     <th>Staff Notes</th>
@@ -1595,6 +1618,7 @@
                                             {{ item.request.raw_text }}
                                         </span>
                                     </td>
+                                    <td><span class="request-type-{{ item.request.request_type }}">{{ item.request.get_request_type_display }}</span></td> {# Display request type #}
                                     <td><span style="white-space: nowrap;">{{ item.request.timestamp|date:"M d, Y H:i" }}</span></td>
                                     <td><span class="status-{{ item.request.status }}">{{ item.request.get_status_display }}</span></td>
                                     <td>
@@ -1895,6 +1919,7 @@
                 <p><strong>AI Entities:</strong> <span id="detailAiEntities"></span></p>
                 <p><strong>Conci Response:</strong> <span id="detailConciResponse"></span></p>
                 <p><strong>Status:</strong> <span id="detailStatus"></span></p>
+                <p><strong>Request Type:</strong> <span id="detailRequestType"></span></p> {# Display request type #}
                 <p><strong>Timestamp:</strong> <span id="detailTimestamp"></span></p>
                 <p><strong>Staff Notes:</strong> <span id="detailStaffNotes"></span></p>
                 
@@ -2322,6 +2347,7 @@
         const detailAiEntities = document.getElementById('detailAiEntities');
         const detailConciResponse = document.getElementById('detailConciResponse');
         const detailStatus = document.getElementById('detailStatus');
+        const detailRequestType = document.getElementById('detailRequestType'); // New element
         const detailTimestamp = document.getElementById('detailTimestamp');
         const detailStaffNotes = document.getElementById('detailStaffNotes');
         const detailChatHistory = document.getElementById('detailChatHistory');
@@ -2346,6 +2372,7 @@
                         detailAiEntities.textContent = JSON.stringify(result.ai_entities, null, 2); // Pretty print JSON
                         detailConciResponse.textContent = result.conci_response_text;
                         detailStatus.textContent = result.status;
+                        detailRequestType.textContent = result.request_type; // Set request type
                         detailTimestamp.textContent = new Date(result.timestamp).toLocaleString();
                         detailStaffNotes.textContent = result.staff_notes || 'No notes.';
                         

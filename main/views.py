@@ -160,7 +160,8 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
         if sub_tab == 'active':
             # Active requests are those with 'pending' or 'in_progress' status
-            requests_for_hotel = requests_for_hotel.filter(status__in=['pending', 'in_progress'])
+            # AND NOT 'casual_chat' type
+            requests_for_hotel = requests_for_hotel.filter(status__in=['pending', 'in_progress']).exclude(request_type='casual_chat')
         elif sub_tab == 'archive':
             # Archived requests are completed or cancelled
             requests_for_hotel = requests_for_hotel.filter(status__in=['completed', 'cancelled'])
@@ -307,6 +308,7 @@ def check_for_new_requests(request):
             new_requests_count = GuestRequest.objects.filter(
                 hotel=user_hotel,
                 status='pending',
+                request_type__in=['maintenance', 'repairs', 'housekeeping', 'room_service', 'concierge', 'general_inquiry'], # Only count actionable requests
                 timestamp__gt=last_check_timestamp
             ).count()
 
@@ -399,6 +401,7 @@ def get_request_details(request, request_id):
             'ai_entities': ai_entities_data,
             'conci_response_text': req.conci_response_text or 'No response yet.',
             'status': req.get_status_display(),
+            'request_type': req.get_request_type_display(), # New: display request type
             'timestamp': req.timestamp.isoformat(),
             'staff_notes': req.staff_notes or 'No notes.',
             'chat_history': chat_history_data,
@@ -515,7 +518,8 @@ def guest_interface(request, hotel_id, room_number):
 def process_guest_command(request):
     """
     API endpoint to process a guest's command (new message).
-    This creates a new GuestRequest with 'pending' status.
+    This creates a new GuestRequest with 'pending' status if it's an actionable request,
+    or just updates chat history if it's a casual chat.
     Matches URL: /api/process_command/
     Expects hotel_id and room_number in the JSON body.
     """
@@ -531,19 +535,39 @@ def process_guest_command(request):
 
         hotel = get_object_or_404(Hotel, id=hotel_id)
 
-        # Define common greetings/casual phrases
-        casual_greetings = [
-            "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
-            "how are you", "what's up", "thank you", "thanks", "bye", "goodbye",
-            "ok", "okay", "alright", "yes", "no", "please", "excuse me"
-        ]
-        # Check if the message is a casual greeting (case-insensitive)
-        is_casual_chat = user_message.lower() in casual_greetings or \
-                         user_message.lower().startswith("hi ") or \
-                         user_message.lower().startswith("hello ") or \
-                         user_message.lower().startswith("thank you ") or \
-                         user_message.lower().startswith("thanks ") or \
-                         len(user_message.split()) <= 2 and user_message.lower() in casual_greetings # Simple short phrases
+        # --- AI-like Logic for Request Categorization ---
+        # This is a simple keyword-based approach. For real AI, you'd use an NLU service.
+        lower_message = user_message.lower()
+        
+        request_type = 'general_inquiry' # Default type
+        conci_response = "Thank you for your request. We have received it and will get back to you shortly."
+        
+        # Keywords for different request types
+        if any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working"]):
+            request_type = 'maintenance'
+            conci_response = "We've noted your maintenance request and will dispatch someone shortly."
+        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item"]):
+            request_type = 'repairs'
+            conci_response = "Your repair request has been logged. We'll send help as soon as possible."
+        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping"]):
+            request_type = 'housekeeping'
+            conci_response = "Your housekeeping request has been sent. Someone will be with you shortly."
+        elif any(keyword in lower_message for keyword in ["food", "drink", "order", "menu", "breakfast", "lunch", "dinner", "water", "coffee", "room service"]):
+            request_type = 'room_service'
+            conci_response = "Your room service order has been placed. Please allow some time for delivery."
+        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge"]):
+            request_type = 'concierge'
+            conci_response = "We've received your concierge request and will assist you with it."
+        elif any(keyword in lower_message for keyword in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thank you", "thanks", "bye", "goodbye", "ok", "okay", "alright", "yes", "no", "please", "excuse me"]):
+            request_type = 'casual_chat'
+            if "thank you" in lower_message or "thanks" in lower_message:
+                conci_response = "You're welcome! Is there anything else I can assist you with?"
+            elif "hi" in lower_message or "hello" in lower_message or "hey" in lower_message:
+                conci_response = "Hello! How can I help you today?"
+            else:
+                conci_response = "Okay! Let me know if you need anything."
+        
+        # --- End AI-like Logic ---
 
 
         # Retrieve existing chat history for this room, or start new if none exists
@@ -559,58 +583,44 @@ def process_guest_command(request):
             except json.JSONDecodeError:
                 current_chat_history = []
 
-        # Add user's new message to chat history regardless of whether it's a request
+        # Add user's new message to chat history regardless
         current_chat_history.append({"role": "user", "parts": [{"text": user_message}]})
         
-        conci_response = ""
+        # Append Conci's response to the chat history
+        current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+
         request_obj_id = None # Initialize to None
 
-        if is_casual_chat:
-            # If it's a casual chat, provide a friendly response and DON'T create a new GuestRequest
-            if "thank you" in user_message.lower() or "thanks" in user_message.lower():
-                conci_response = "You're welcome! Is there anything else I can assist you with?"
-            elif "hi" in user_message.lower() or "hello" in user_message.lower() or "hey" in user_message.lower():
-                conci_response = "Hello! How can I help you today?"
-            else:
-                conci_response = "Okay! Let me know if you need anything."
-            
-            # Append Conci's response to the chat history
-            current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
-
-            # Update the chat history of the LATEST request (if one exists)
-            # This ensures the conversation flow is maintained even for casual chats.
+        if request_type == 'casual_chat':
+            # For casual chats, we update the chat_history of the LATEST request
+            # or create a new one with 'completed' status to hold the chat.
             if latest_request_for_chat:
                 latest_request_for_chat.chat_history = json.dumps(current_chat_history)
                 latest_request_for_chat.save()
-                request_obj_id = latest_request_for_chat.id # Use existing ID for polling
+                request_obj_id = latest_request_for_chat.id
             else:
                 # If no previous requests, create a dummy one just to hold the chat history
-                # This ensures `latest_request_id` always has a valid ID for polling.
                 dummy_request = GuestRequest.objects.create(
                     hotel=hotel,
                     room_number=room_number,
                     raw_text=user_message, # Store the casual message
                     conci_response_text=conci_response,
                     status='completed', # Mark as completed so it doesn't show in staff pending
+                    request_type='casual_chat', # Set type
                     chat_history=json.dumps(current_chat_history)
                 )
                 request_obj_id = dummy_request.id
-
         else:
-            # If it's not a casual chat, proceed to create a new GuestRequest
-            ai_intent = "General Inquiry" # Placeholder for actual AI intent
-            ai_entities = {"query": user_message} # Placeholder for actual AI entities
-            conci_response = "Thank you for your request. We have received it and will get back to you shortly."
-            current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
-
+            # For actionable requests, create a NEW GuestRequest with 'pending' status
             request_obj = GuestRequest.objects.create(
                 hotel=hotel,
                 room_number=room_number,
                 raw_text=user_message,
-                ai_intent=ai_intent,
-                ai_entities=json.dumps(ai_entities),
+                ai_intent="N/A", # Placeholder for actual AI intent
+                ai_entities=json.dumps({"query": user_message}), # Placeholder for actual AI entities
                 conci_response_text=conci_response,
                 status='pending', # New actionable requests start as 'pending'
+                request_type=request_type, # Set the determined type
                 chat_history=json.dumps(current_chat_history)
             )
             request_obj_id = request_obj.id
@@ -626,9 +636,6 @@ def process_guest_command(request):
         return HttpResponseBadRequest("Invalid JSON in request body.")
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-# The submit_draft_requests view was already removed in the previous step,
-# so no changes needed for that here.
 
 @require_GET
 def check_for_new_updates(request, hotel_id, room_number):
