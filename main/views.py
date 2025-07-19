@@ -118,10 +118,6 @@ async def call_gemini_api(prompt, available_amenities_data):
         "system_instruction": {"parts": [{"text": system_instruction_text}]}
     }
 
-    # Print the payload for debugging
-    print("--- Gemini API Request Payload ---")
-    print(json.dumps(payload, indent=2))
-    print("----------------------------------")
 
     try:
         response = requests.post(
@@ -137,7 +133,6 @@ async def call_gemini_api(prompt, available_amenities_data):
             parsed_json = json.loads(json_string)
             return parsed_json
         else:
-            print("Gemini API response structure unexpected:", result)
             return {
                 "intent": "general_inquiry",
                 "entities": {"query": prompt},
