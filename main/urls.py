@@ -32,7 +32,6 @@ urlpatterns = [
     # Guest Interface and its API endpoints
     path('guest/<int:hotel_id>/<str:room_number>/', views.guest_interface, name='guest_interface'),
     path('api/process_command/', views.process_guest_command, name='process_guest_command_api'),
-    path('api/submit_draft_requests/', views.submit_draft_requests, name='submit_draft_requests_api'),
     # This is the URL that was giving 404, ensure it's exactly as below
     path('api/guest/<int:hotel_id>/room/<str:room_number>/check_updates/', views.check_for_new_updates, name='check_for_new_updates'),
 ]

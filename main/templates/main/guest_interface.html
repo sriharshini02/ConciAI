@@ -3,215 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conci Guest Interface - Room {{ room_number }}</title>
-    <!-- Google Fonts - Inter for a modern, clean look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
+    <title>Conci - Room {{ room_number }}</title>
+    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts - Inter for a modern, clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #f3f4f6; /* Light gray background */
-            padding: 1rem; /* Padding around the content */
-            margin: 0;
-            box-sizing: border-box; /* Include padding in element's total width and height */
-        }
-        .card {
-            background-color: #ffffff; /* White background for the card */
-            border-radius: 1rem; /* Rounded corners */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Soft shadow */
-            padding: 2rem; /* Inner padding */
-            max-width: 28rem; /* Max width for responsiveness */
-            width: 100%; /* Full width on smaller screens */
-            text-align: center;
-        }
-        .title {
-            font-size: 1.875rem; /* Large title font size */
-            font-weight: 700; /* Bold font */
-            color: #1f2937; /* Dark gray text */
-            margin-bottom: 0.5rem; /* Space below title */
-        }
-        .subtitle {
-            font-size: 1.125rem; /* Subtitle font size */
-            color: #4b5563; /* Medium gray text */
-            margin-bottom: 1.5rem; /* Space below subtitle */
-        }
-        .sun-icon {
-            color: #f59e0b; /* Yellow color for sun icon */
-            font-size: 3.75rem; /* Large icon size */
-            margin-bottom: 2rem; /* Space below icon */
-            display: block; /* Ensures it's centered if parent is text-align: center */
-        }
-        .input-group {
-            display: flex;
-            gap: 0.75rem; /* Space between input and buttons */
-            margin-bottom: 1rem; /* Space below input group */
-        }
-        .input-group input {
-            flex-grow: 1; /* Input takes available space */
-            padding: 0.75rem; /* Padding inside input */
-            border: 1px solid #d1d5db; /* Light gray border */
-            border-radius: 0.5rem; /* Rounded corners for input */
-            outline: none; /* Remove default outline */
-            transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition on focus */
-        }
-        .input-group input:focus {
-            border-color: #3b82f6; /* Blue border on focus */
-            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5); /* Blue glow on focus */
-        }
-        .input-group button {
-            padding: 0.75rem 1.5rem; /* Padding for buttons */
-            border-radius: 0.5rem; /* Rounded corners for buttons */
-            font-weight: 600; /* Semi-bold font */
-            transition: background-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition on hover */
-            cursor: pointer;
-            border: none; /* Remove default button border */
-        }
-        .input-group .btn-listen {
-            background-color: #22c55e; /* Green background */
-            color: #ffffff; /* White text */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
-        }
-        .input-group .btn-listen:hover {
-            background-color: #16a34a; /* Darker green on hover */
-        }
-        .input-group .btn-listen.listening {
-            background-color: #f59e0b; /* Orange when listening */
-        }
-        .input-group .btn-send {
-            background-color: #2563eb; /* Blue background */
-            color: #ffffff; /* White text */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
-        }
-        .input-group .btn-send:hover {
-            background-color: #1d4ed8; /* Darker blue on hover */
-        }
-        .message-box {
-            background-color: #f3f4f6; /* Light gray background */
-            color: #374151; /* Dark gray text */
-            padding: 1rem; /* Padding */
-            border-radius: 0.5rem; /* Rounded corners */
-            margin-bottom: 1rem; /* Space below */
-            font-size: 0.875rem; /* Small font size */
-            text-align: left;
-        }
-        .pending-requests-section {
-            text-align: left;
-            margin-bottom: 1.5rem; /* Space below */
-        }
-        .pending-requests-section h3 {
-            font-size: 1.125rem; /* Medium title font size */
-            font-weight: 600; /* Semi-bold */
-            color: #1f2937; /* Dark gray text */
-            margin-bottom: 0.5rem; /* Space below heading */
-        }
-        .pending-requests-section ul {
-            list-style: disc; /* Bullet points */
-            list-style-position: inside; /* Bullets inside content flow */
-            color: #374151; /* Dark gray text */
-            padding-left: 0; /* Remove default padding for list */
-        }
-        .pending-requests-section li {
-            margin-bottom: 0.25rem; /* Small space between list items */
-        }
-        .btn-confirm-all {
-            width: 100%; /* Full width button */
-            padding: 0.75rem 1.5rem; /* Padding */
-            border-radius: 0.5rem; /* Rounded corners */
-            font-weight: 600; /* Semi-bold */
-            background-color: #9333ea; /* Purple background */
-            color: #ffffff; /* White text */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
-            transition: background-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition */
-            cursor: pointer;
-            border: none; /* Remove default button border */
-        }
-        .btn-confirm-all:hover {
-            background-color: #7e22ce; /* Darker purple on hover */
+        :root {
+            --primary-color: #4A90E2; /* A friendly blue */
+            --secondary-color: #A8DADC; /* A light teal */
+            --background-color: #F0F2F5; /* Light grey background */
+            --card-background: #FFFFFF; /* White card background */
+            --text-color: #333333; /* Dark grey text */
+            --light-text-color: #666666; /* Medium grey text */
+            --border-color: #E0E0E0; /* Light border */
+            --shadow-light: rgba(0, 0, 0, 0.08); /* Light shadow */
+            --success-color: #5cb85c;
+            --error-color: #d9534f;
+            --warning-color: #f0ad4e;
         }
 
-        /* Message Box for Feedback (for success/error notifications) */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow-light);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--light-text-color);
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+
+        .conci-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 25px;
+            /* Reverted filter to original, if any, or a simple one */
+            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1)); 
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1em;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-area input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        .input-area button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .input-area button.listen-btn {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .input-area button.listen-btn:hover {
+            background-color: #90C2C2; /* Slightly darker teal */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-area button.send-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .input-area button.send-btn:hover {
+            background-color: #3A7AD9; /* Slightly darker blue */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .response-area { /* This is the main message box, renamed from .response-area to .main-message-box in JS */
+            background-color: #F8F8F8; /* Lighter background for response */
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            min-height: 50px; /* Ensure it has some height */
+            display: flex; /* Use flex to align content vertically */
+            align-items: center; /* Center content vertically */
+            justify-content: flex-start; /* Align content to start */
+            color: var(--light-text-color);
+        }
+
+        /* Chat History Section */
+        .chat-history-container {
+            margin-top: 25px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            max-height: 300px; /* Limit height */
+            overflow-y: auto; /* Enable scrolling */
+            text-align: left;
+        }
+
+        .chat-history-container h3 {
+            color: var(--text-color);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .chat-message.user {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: auto; /* Aligns to the right */
+            border-bottom-right-radius: 2px; /* Pointy corner */
+        }
+
+        .chat-message.model {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            margin-right: auto; /* Aligns to the left */
+            border-bottom-left-radius: 2px; /* Pointy corner */
+        }
+        .chat-message:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Feedback Message Box (for success/error notifications) */
         .feedback-message-box {
             position: fixed;
-            top: 1rem; /* Distance from top */
-            right: 1rem; /* Distance from right */
-            background-color: #22c55e; /* Green background */
-            color: #ffffff; /* White text */
-            padding: 0.75rem 1.5rem; /* Padding */
-            border-radius: 0.5rem; /* Rounded corners */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Larger shadow */
-            z-index: 50; /* Ensure it's on top */
-            display: none; /* Hidden by default */
-            opacity: 0; /* Start invisible */
-            transform: translateY(-20px); /* Start slightly above */
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; /* Smooth animation */
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            transform: translateY(-20px);
         }
         .feedback-message-box.error {
-            background-color: #ef4444; /* Red background for errors */
+            background-color: var(--error-color);
+        }
+        .feedback-message-box.info { 
+            background-color: #17a2b8; /* Info blue */
+        }
+        .feedback-message-box.warning { /* Added warning type */
+            background-color: var(--warning-color);
+            color: var(--text-color); /* Dark text for warning */
         }
         .feedback-message-box.show {
-            display: block; /* Show when 'show' class is added */
-            opacity: 1; /* Fully visible */
-            transform: translateY(0); /* Slide into place */
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                width: 95%;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .subtitle {
+                font-size: 1.1em;
+            }
+            .input-area {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .input-area input[type="text"],
+            .input-area button {
+                width: 100%;
+            }
+            .chat-message {
+                max-width: 95%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1 class="title">Welcome to Conci</h1>
-        <p class="subtitle">Your intelligent assistant for Hotel{{ hotel.id }} - Room {{ room_number }}</p>
+    <div class="container">
+        <h1>Welcome to Conci</h1>
+        <p class="subtitle">Your intelligent assistant for Hotel {{ hotel.name }} - Room {{ room_number }}</p>
         
-        <div class="sun-icon">☀️</div> {# Simple sun icon using emoji #}
+        <img src="https://placehold.co/80x80/F0AD4E/FFFFFF?text=AI" alt="Conci AI Icon" class="conci-icon">
 
-        <div class="input-group">
-            <input type="text" id="userRequestInput" placeholder="Type your request or click Listen">
-            <button id="listenButton" class="btn-listen"><i class="fas fa-microphone"></i> Listen</button>
-            <button id="sendButton" class="btn-send">Send</button>
+        <div class="input-area">
+            <input type="text" id="guestMessageInput" placeholder="Type your request or click Listen">
+            <button id="listenButton" class="listen-btn" type="button"><i class="fas fa-microphone"></i> Listen</button>
+            <button id="sendMessageButton" class="send-btn" type="button"><i class="fas fa-paper-plane"></i> Send</button>
         </div>
 
-        <div id="responseMessageBox" class="message-box">
-            <!-- Initial message or latest Conci response -->
+        <div id="mainResponseMessageArea" class="response-area">
             Welcome! How can I assist you today?
         </div>
 
-        <div class="pending-requests-section">
-            <h3>Your Pending Requests:</h3>
-            <ul id="pendingRequestsList">
-                <!-- Pending requests will be dynamically loaded here by JavaScript -->
-            </ul>
+        <div class="chat-history-container">
+            <h3>Conversation History:</h3>
+            <div id="chatHistoryDisplay">
+                <!-- Chat messages will be loaded here dynamically -->
+            </div>
         </div>
-
-        <button id="confirmSendAllButton" class="btn-confirm-all">Confirm & Send All Requests</button>
     </div>
 
-    <!-- Message Box for Feedback -->
+    <!-- Feedback Message Box -->
     <div id="feedbackMessageBox" class="feedback-message-box"></div>
 
     {# Django CSRF token for AJAX POST requests #}
     {% csrf_token %}
 
     <script>
-        const userRequestInput = document.getElementById('userRequestInput');
+        const guestMessageInput = document.getElementById('guestMessageInput');
         const listenButton = document.getElementById('listenButton');
-        const sendButton = document.getElementById('sendButton');
-        const responseMessageBox = document.getElementById('responseMessageBox');
-        const pendingRequestsList = document.getElementById('pendingRequestsList');
-        const confirmSendAllButton = document.getElementById('confirmSendAllButton');
+        const sendMessageButton = document.getElementById('sendMessageButton');
+        const mainResponseMessageArea = document.getElementById('mainResponseMessageArea'); // Renamed from conciResponseArea
         const feedbackMessageBox = document.getElementById('feedbackMessageBox');
+        const chatHistoryDisplay = document.getElementById('chatHistoryDisplay');
 
         const hotelId = "{{ hotel.id }}";
         const roomNumber = "{{ room_number }}";
         let latestRequestId = "{{ latest_request_id|default:'' }}"; // Used for polling updates
-        let localPendingRequests = []; // Stores requests locally before confirming
-
+        
         // Get CSRF token from the hidden input generated by {% csrf_token %}
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // Function to show feedback messages (success/error)
+        // Function to show feedback messages (success/error/info/warning)
         function showFeedbackMessage(message, type = 'success') {
             feedbackMessageBox.innerHTML = message;
             feedbackMessageBox.className = `feedback-message-box show ${type}`;
@@ -224,82 +298,45 @@
         }
 
         // Function to update the main response message box
-        function updateResponseMessage(message, isError = false) {
-            responseMessageBox.textContent = message;
-            if (isError) {
-                responseMessageBox.classList.add('bg-red-100', 'text-red-800');
-                responseMessageBox.classList.remove('bg-gray-100', 'text-gray-700');
-            } else {
-                responseMessageBox.classList.remove('bg-red-100', 'text-red-800');
-                responseMessageBox.classList.add('bg-gray-100', 'text-gray-700');
-            }
+        function updateResponseMessage(message) {
+            mainResponseMessageArea.textContent = message;
         }
 
-        // Function to render pending requests list from localPendingRequests array
-        function renderPendingRequestsList() {
-            pendingRequestsList.innerHTML = ''; // Clear existing
-            if (localPendingRequests.length > 0) {
-                localPendingRequests.forEach(requestText => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `Request: ${requestText}`;
-                    pendingRequestsList.appendChild(listItem);
+        // Function to render chat history
+        function renderChatHistory(history) {
+            chatHistoryDisplay.innerHTML = ''; // Clear existing history
+            if (history && history.length > 0) {
+                history.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.classList.add('chat-message', msg.role);
+                    msgDiv.textContent = msg.parts[0].text;
+                    chatHistoryDisplay.appendChild(msgDiv);
                 });
+                chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight; // Scroll to bottom
             } else {
-                const listItem = document.createElement('li');
-                listItem.textContent = 'No pending requests.';
-                pendingRequestsList.appendChild(listItem);
+                chatHistoryDisplay.innerHTML = '<p style="color: var(--light-text-color);">No conversation yet.</p>';
             }
         }
 
-        // Initial load of pending requests (if any were in the Django context)
+        // Initial render of chat history from Django context
         document.addEventListener('DOMContentLoaded', () => {
             const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
-            if (initialChatHistory && initialChatHistory.length > 0) {
-                // Filter for user messages that represent pending requests
-                initialChatHistory.forEach(msg => {
-                    if (msg.role === 'user') {
-                        localPendingRequests.push(msg.parts[0].text);
-                    }
-                });
-                // Display the latest Conci response in the main message box
-                const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
-                if (latestConciResponse) {
-                    updateResponseMessage(latestConciResponse.parts[0].text);
-                } else {
-                    updateResponseMessage("Welcome! How can I assist you today?");
-                }
-            } else {
-                updateResponseMessage("Welcome! How can I assist you today?");
-            }
-            renderPendingRequestsList(); // Render initial state of pending requests
+            renderChatHistory(initialChatHistory);
         });
 
-        // "Send" button functionality (adds request to local list)
-        sendButton.addEventListener('click', () => {
-            const userRequest = userRequestInput.value.trim();
+        // --- Send Message Button Logic (Direct Send) ---
+        sendMessageButton.addEventListener('click', async () => {
+            const userRequest = guestMessageInput.value.trim();
             if (userRequest === '') {
-                showFeedbackMessage("Please type your request.", "error");
+                showFeedbackMessage("Please type your message before sending.", "warning");
                 return;
             }
 
-            localPendingRequests.push(userRequest);
-            renderPendingRequestsList(); // Update the displayed list
-            userRequestInput.value = ''; // Clear input
-            showFeedbackMessage("Request added to pending list!", "success");
-        });
-
-        // "Confirm & Send All Requests" button functionality (sends all local pending requests to backend)
-        confirmSendAllButton.addEventListener('click', async () => {
-            if (localPendingRequests.length === 0) {
-                showFeedbackMessage("No pending requests to confirm.", "info");
-                return;
-            }
-
-            updateResponseMessage("Confirming and sending all requests...", false);
-            const combinedRequestText = localPendingRequests.join('; '); // Combine all requests
+            updateResponseMessage("Sending your request...", false);
+            guestMessageInput.value = ''; // Clear input immediately
 
             try {
-                const response = await fetch('/api/submit_draft_requests/', {
+                const response = await fetch('/api/process_command/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -307,7 +344,7 @@
                         'X-Requested-With': 'XMLHttpRequest',
                     },
                     body: JSON.stringify({
-                        request_text: combinedRequestText,
+                        message: userRequest,
                         hotel_id: hotelId,
                         room_number: roomNumber
                     })
@@ -317,20 +354,16 @@
 
                 if (response.ok && result.success) {
                     latestRequestId = result.request_id;
-                    updateResponseMessage(result.message); // This will be "Your request has been submitted..."
-                    localPendingRequests = []; // Clear local list after successful submission
-                    renderPendingRequestsList(); // Update UI to show no pending requests
-
-                    // Also clear the AI output box to its default message
-                    updateResponseMessage("Welcome! How can I assist you today?", false); 
-                    showFeedbackMessage("All requests confirmed and sent!", "success");
+                    updateResponseMessage(result.conci_response); // Display Conci's immediate response
+                    renderChatHistory(result.chat_history); // Re-render chat history with new messages
+                    showFeedbackMessage("Request sent!", "success");
                 } else {
-                    updateResponseMessage(result.error || 'Failed to confirm requests.', true);
-                    showFeedbackMessage(result.error || 'Failed to confirm requests.', 'error');
+                    updateResponseMessage(result.error || 'Failed to send request.');
+                    showFeedbackMessage(result.error || 'Failed to send request.', 'error');
                 }
             } catch (error) {
-                console.error('Error confirming requests:', error);
-                updateResponseMessage('Network error or server issue.', true);
+                console.error('Error sending message:', error);
+                updateResponseMessage('Network error or server issue.');
                 showFeedbackMessage('Network error or server issue.', 'error');
             }
         });
@@ -349,23 +382,21 @@
                 isListening = true;
                 listenButton.classList.add('listening');
                 listenButton.innerHTML = '<i class="fas fa-microphone-alt"></i> Listening...';
-                userRequestInput.placeholder = "Listening...";
-                userRequestInput.disabled = true; // Disable input while listening
-                sendButton.disabled = true; // Disable send button
-                confirmSendAllButton.disabled = true; // Disable confirm button
-                updateResponseMessage("Conci is listening for your request...", false);
+                guestMessageInput.placeholder = "Listening...";
+                guestMessageInput.disabled = true; // Disable input while listening
+                sendMessageButton.disabled = true; // Disable send button
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                userRequestInput.value = transcript;
+                guestMessageInput.value = transcript;
                 showFeedbackMessage("Speech recognized. Click Send to add.", "info");
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
                 showFeedbackMessage(`Speech recognition error: ${event.error}`, "error");
-                updateResponseMessage("Speech recognition failed. Please type your request.", true);
+                updateResponseMessage("Speech recognition failed. Please type your request.");
                 resetListenState();
             };
 
@@ -382,7 +413,7 @@
                     } catch (e) {
                         console.error("Error starting speech recognition:", e);
                         showFeedbackMessage("Could not start listening. Please check microphone permissions.", "error");
-                        updateResponseMessage("Microphone access denied or not supported.", true);
+                        updateResponseMessage("Microphone access denied or not supported.");
                         resetListenState();
                     }
                 }
@@ -392,10 +423,9 @@
                 isListening = false;
                 listenButton.classList.remove('listening');
                 listenButton.innerHTML = '<i class="fas fa-microphone"></i> Listen';
-                userRequestInput.placeholder = "Type your request or click Listen";
-                userRequestInput.disabled = false; // Re-enable input
-                sendButton.disabled = false; // Re-enable send button
-                confirmSendAllButton.disabled = false; // Re-enable confirm button
+                guestMessageInput.placeholder = "Type your request or click Listen";
+                guestMessageInput.disabled = false; // Re-enable input
+                sendMessageButton.disabled = false; // Re-enable send button
             }
 
         } else {
@@ -427,17 +457,11 @@
                         updateResponseMessage(latestConciResponse.parts[0].text);
                     } else {
                         // If no model response, revert to default message
-                        updateResponseMessage("Welcome! How can I assist you today?", false);
+                        updateResponseMessage("Welcome! How can I assist you today?");
                     }
 
-                    // Re-populate localPendingRequests based on the *current* chat_history from the backend
-                    localPendingRequests = []; 
-                    result.new_messages.forEach(msg => {
-                        if (msg.role === 'user') { 
-                            localPendingRequests.push(msg.parts[0].text);
-                        }
-                    });
-                    renderPendingRequestsList(); 
+                    // Re-render chat history with the full updated history
+                    renderChatHistory(result.new_messages);
                 }
             } catch (error) {
                 console.error('Error checking for new updates:', error);

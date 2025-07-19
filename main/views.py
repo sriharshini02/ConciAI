@@ -22,32 +22,20 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     Renders the staff dashboard, handling different tabs (home, requests, guest_management)
     and sub-tabs for requests (active, archive, all).
     """
-    # print(f"\n--- Entering staff_dashboard for user: {request.user.username} ---")
-    # print(f"Is Authenticated: {request.user.is_authenticated}")
-
     user_hotel = None
     try:
         user_profile = request.user.profile
         user_hotel = user_profile.hotel
-        # print(f"UserProfile exists. Hotel linked: {user_hotel.name if user_hotel else 'None'}")
     except UserProfile.DoesNotExist:
-        # print("UserProfile.DoesNotExist: UserProfile does not exist for this user.")
         logout(request)
-        # print("Redirecting to login due to missing UserProfile.")
         return redirect('login')
     except AttributeError:
-        # print("AttributeError: 'User' object has no attribute 'profile'.")
         logout(request)
-        # print("Redirecting to login due to missing 'profile' attribute.")
         return redirect('login')
 
     if not user_hotel:
-        # print("User profile exists, but no Hotel is linked to the profile.")
         logout(request)
-        # print("Redirecting to login due to missing Hotel association.")
         return redirect('login')
-
-    # print("User is authenticated and has a linked hotel. Proceeding to render dashboard.")
 
     context = {
         'page_title': 'Staff Dashboard', # Default title
@@ -165,17 +153,25 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         context['page_title'] = 'Guest Requests'
         requests_for_hotel = GuestRequest.objects.filter(hotel=user_hotel)
 
+        # Default to 'active' if no sub_tab is specified
+        if sub_tab is None:
+            sub_tab = 'active'
+            context['current_sub_tab'] = 'active' # Ensure template reflects default
+
         if sub_tab == 'active':
-            requests_for_hotel = requests_for_hotel.exclude(status__in=['completed', 'cancelled'])
+            # Active requests are those with 'pending' or 'in_progress' status
+            requests_for_hotel = requests_for_hotel.filter(status__in=['pending', 'in_progress'])
         elif sub_tab == 'archive':
+            # Archived requests are completed or cancelled
             requests_for_hotel = requests_for_hotel.filter(status__in=['completed', 'cancelled'])
         elif sub_tab == 'all':
-            pass
+            pass # No additional filter for 'all'
 
         requests_for_hotel = requests_for_hotel.order_by('-timestamp')
 
         requests_with_details = []
         for req in requests_for_hotel:
+            # Try to find a guest assignment for the room number, if it exists
             assignment = GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=req.room_number).first()
             requests_with_details.append({
                 'request': req,
@@ -357,7 +353,11 @@ def update_request_status(request, request_id):
         if new_status in dict(req.STATUS_CHOICES):
             req.status = new_status
             req.save()
-            return redirect('main:guest_requests_dashboard') 
+            # Redirect to the correct URL based on the new status
+            if new_status in ['completed', 'cancelled']:
+                return redirect('main:archive_requests') # Redirect to archive if completed/cancelled
+            else:
+                return redirect('main:active_requests') # Redirect to active for pending/in_progress
         else:
             return JsonResponse({'success': False, 'error': 'Invalid status provided.'}, status=400)
     except Exception as e:
@@ -395,7 +395,7 @@ def get_request_details(request, request_id):
             'room_number': req.room_number,
             'guest_names': guest_names,
             'raw_text': req.raw_text,
-            'ai_intent': req.ai_intent or 'N/A',
+            'ai_intent': ai_entities_data.get('intent', 'N/A'), # Use 'intent' from entities if available
             'ai_entities': ai_entities_data,
             'conci_response_text': req.conci_response_text or 'No response yet.',
             'status': req.get_status_display(),
@@ -486,15 +486,16 @@ def guest_interface(request, hotel_id, room_number):
         check_out_time__gte=timezone.localtime(timezone.now())
     ).first()
 
-    latest_request = GuestRequest.objects.filter(
+    # Get the latest request (any status) for chat history display
+    latest_request_for_chat = GuestRequest.objects.filter(
         hotel=hotel,
         room_number=room_number
     ).order_by('-timestamp').first()
 
     chat_history = []
-    if latest_request and latest_request.chat_history:
+    if latest_request_for_chat and latest_request_for_chat.chat_history:
         try:
-            chat_history = json.loads(latest_request.chat_history)
+            chat_history = json.loads(latest_request_for_chat.chat_history)
         except json.JSONDecodeError:
             chat_history = []
 
@@ -502,7 +503,7 @@ def guest_interface(request, hotel_id, room_number):
         'hotel': hotel,
         'room_number': room_number,
         'guest_names': current_assignment.guest_names if current_assignment else "Guest",
-        'latest_request_id': latest_request.id if latest_request else None,
+        'latest_request_id': latest_request_for_chat.id if latest_request_for_chat else None,
         'chat_history': json.dumps(chat_history),
     }
     return render(request, 'main/guest_interface.html', context)
@@ -513,49 +514,112 @@ def guest_interface(request, hotel_id, room_number):
 @require_POST
 def process_guest_command(request):
     """
-    API endpoint to process a guest's command (new request).
-    This simulates AI processing and Conci's response.
+    API endpoint to process a guest's command (new message).
+    This creates a new GuestRequest with 'pending' status.
     Matches URL: /api/process_command/
     Expects hotel_id and room_number in the JSON body.
     """
     try:
         data = json.loads(request.body)
-        user_message = data.get('message')
-        hotel_id = data.get('hotel_id') # Get from body
-        room_number = data.get('room_number') # Get from body
+        user_message = data.get('message').strip() # Strip whitespace
+
+        hotel_id = data.get('hotel_id')
+        room_number = data.get('room_number')
 
         if not user_message or not hotel_id or not room_number:
             return JsonResponse({'success': False, 'error': 'Missing message, hotel_id, or room_number.'}, status=400)
 
         hotel = get_object_or_404(Hotel, id=hotel_id)
 
-        # Always create a new GuestRequest for each command/message from the guest interface
-        # The chat_history will be initialized for this new request.
-        chat_history = []
-        chat_history.append({"role": "user", "parts": [{"text": user_message}]})
-        
-        # Simulate AI processing and response for this new command
-        ai_intent = "General Inquiry"
-        ai_entities = {"query": user_message}
-        conci_response = "Thank you for your request. We have received it and will get back to you shortly."
-        chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+        # Define common greetings/casual phrases
+        casual_greetings = [
+            "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
+            "how are you", "what's up", "thank you", "thanks", "bye", "goodbye",
+            "ok", "okay", "alright", "yes", "no", "please", "excuse me"
+        ]
+        # Check if the message is a casual greeting (case-insensitive)
+        is_casual_chat = user_message.lower() in casual_greetings or \
+                         user_message.lower().startswith("hi ") or \
+                         user_message.lower().startswith("hello ") or \
+                         user_message.lower().startswith("thank you ") or \
+                         user_message.lower().startswith("thanks ") or \
+                         len(user_message.split()) <= 2 and user_message.lower() in casual_greetings # Simple short phrases
 
-        request_obj = GuestRequest.objects.create(
+
+        # Retrieve existing chat history for this room, or start new if none exists
+        latest_request_for_chat = GuestRequest.objects.filter(
             hotel=hotel,
-            room_number=room_number,
-            raw_text=user_message,
-            ai_intent=ai_intent,
-            ai_entities=json.dumps(ai_entities),
-            conci_response_text=conci_response,
-            status='pending', # New requests start as 'pending'
-            chat_history=json.dumps(chat_history)
-        )
+            room_number=room_number
+        ).order_by('-timestamp').first()
+
+        current_chat_history = []
+        if latest_request_for_chat and latest_request_for_chat.chat_history:
+            try:
+                current_chat_history = json.loads(latest_request_for_chat.chat_history)
+            except json.JSONDecodeError:
+                current_chat_history = []
+
+        # Add user's new message to chat history regardless of whether it's a request
+        current_chat_history.append({"role": "user", "parts": [{"text": user_message}]})
+        
+        conci_response = ""
+        request_obj_id = None # Initialize to None
+
+        if is_casual_chat:
+            # If it's a casual chat, provide a friendly response and DON'T create a new GuestRequest
+            if "thank you" in user_message.lower() or "thanks" in user_message.lower():
+                conci_response = "You're welcome! Is there anything else I can assist you with?"
+            elif "hi" in user_message.lower() or "hello" in user_message.lower() or "hey" in user_message.lower():
+                conci_response = "Hello! How can I help you today?"
+            else:
+                conci_response = "Okay! Let me know if you need anything."
+            
+            # Append Conci's response to the chat history
+            current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+
+            # Update the chat history of the LATEST request (if one exists)
+            # This ensures the conversation flow is maintained even for casual chats.
+            if latest_request_for_chat:
+                latest_request_for_chat.chat_history = json.dumps(current_chat_history)
+                latest_request_for_chat.save()
+                request_obj_id = latest_request_for_chat.id # Use existing ID for polling
+            else:
+                # If no previous requests, create a dummy one just to hold the chat history
+                # This ensures `latest_request_id` always has a valid ID for polling.
+                dummy_request = GuestRequest.objects.create(
+                    hotel=hotel,
+                    room_number=room_number,
+                    raw_text=user_message, # Store the casual message
+                    conci_response_text=conci_response,
+                    status='completed', # Mark as completed so it doesn't show in staff pending
+                    chat_history=json.dumps(current_chat_history)
+                )
+                request_obj_id = dummy_request.id
+
+        else:
+            # If it's not a casual chat, proceed to create a new GuestRequest
+            ai_intent = "General Inquiry" # Placeholder for actual AI intent
+            ai_entities = {"query": user_message} # Placeholder for actual AI entities
+            conci_response = "Thank you for your request. We have received it and will get back to you shortly."
+            current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+
+            request_obj = GuestRequest.objects.create(
+                hotel=hotel,
+                room_number=room_number,
+                raw_text=user_message,
+                ai_intent=ai_intent,
+                ai_entities=json.dumps(ai_entities),
+                conci_response_text=conci_response,
+                status='pending', # New actionable requests start as 'pending'
+                chat_history=json.dumps(current_chat_history)
+            )
+            request_obj_id = request_obj.id
         
         return JsonResponse({
             'success': True,
             'conci_response': conci_response,
-            'request_id': request_obj.id,
-            'chat_history': chat_history, # Return the chat history for this specific new request
+            'request_id': request_obj_id, # Return the ID of the relevant request (new or updated)
+            'chat_history': current_chat_history, # Return the updated chat history
         })
 
     except json.JSONDecodeError:
@@ -563,52 +627,8 @@ def process_guest_command(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-@require_POST
-def submit_draft_requests(request):
-    """
-    API endpoint for guest interface to submit a draft request (e.g., from a form).
-    This now always creates a new request.
-    Matches URL: /api/submit_draft_requests/
-    Expects hotel_id and room_number in the JSON body.
-    """
-    try:
-        data = json.loads(request.body)
-        request_text = data.get('request_text') # This is the combined text from pending requests
-        hotel_id = data.get('hotel_id')
-        room_number = data.get('room_number')
-
-        if not request_text or not hotel_id or not room_number:
-            return JsonResponse({'success': False, 'error': 'Missing request_text, hotel_id, or room_number.'}, status=400)
-
-        hotel = get_object_or_404(Hotel, id=hotel_id)
-
-        # Always create a new GuestRequest for confirmed draft requests
-        chat_history = []
-        chat_history.append({"role": "user", "parts": [{"text": request_text}]})
-
-        conci_ack = "Your request has been submitted. We will attend to it shortly."
-        chat_history.append({"role": "model", "parts": [{"text": conci_ack}]})
-
-        request_obj = GuestRequest.objects.create(
-            hotel=hotel,
-            room_number=room_number,
-            raw_text=request_text,
-            conci_response_text=conci_ack,
-            status='pending', # New requests start as 'pending'
-            chat_history=json.dumps(chat_history)
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Request submitted successfully.',
-            'request_id': request_obj.id,
-            'chat_history': chat_history, # Return updated chat history
-        })
-
-    except json.JSONDecodeError:
-        return HttpResponseBadRequest("Invalid JSON in request body.")
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+# The submit_draft_requests view was already removed in the previous step,
+# so no changes needed for that here.
 
 @require_GET
 def check_for_new_updates(request, hotel_id, room_number):
