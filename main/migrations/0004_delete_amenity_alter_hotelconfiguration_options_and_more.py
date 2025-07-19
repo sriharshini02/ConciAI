@@ -66,12 +66,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='guestroomassignment',
             name='amount_paid',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10),
+            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10), # type: ignore
         ),
         migrations.AlterField(
             model_name='guestroomassignment',
             name='bill_amount',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10),
+            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=10), # type: ignore
         ),
         migrations.AlterField(
             model_name='guestroomassignment',

@@ -516,12 +516,13 @@
         .request-type-housekeeping { background-color: #e8f5e9; color: #2e7d32; } /* Green-ish */
         .request-type-room_service { background-color: #fff3e0; color: #ef6c00; } /* Amber-ish */
         .request-type-concierge { background-color: #e3f2fd; color: #1976d2; } /* Blue-ish */
+        .request-type-amenity_request { background-color: #e6e6fa; color: #6a5acd; } /* Lavender for amenity */
         .request-type-general_inquiry { background-color: #f3e5f5; color: #8e24aa; } /* Purple-ish */
         .request-type-casual_chat { background-color: #eeeeee; color: #616161; } /* Light gray for casual */
 
         .request-type-maintenance, .request-type-repairs, .request-type-housekeeping,
-        .request-type-room_service, .request-type-concierge, .request-type-general_inquiry,
-        .request-type-casual_chat {
+        .request-type-room_service, .request-type-concierge, .request-type-amenity_request,
+        .request-type-general_inquiry, .request-type-casual_chat {
             font-weight: 500;
             padding: 4px 8px;
             border-radius: 5px;
@@ -1609,59 +1610,79 @@
                     
                     {% if has_any_requests %}
                         {% for group in grouped_requests %}
-                            <div class="container request-category-section"> {# Use container class for consistent styling #}
-                                <h3 class="category-title">{{ group.display_name }} Requests</h3>
-                                <div class="table-responsive"> {# Wrapper for horizontal scroll #}
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Room No.</th>
-                                                <th>Guest Names</th>
-                                                <th>Request</th>
-                                                <th>Time</th>
-                                                <th>Status</th>
-                                                <th>Staff Notes</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for item in group.requests %}
-                                            <tr>
-                                                <td>
-                                                    <a href="{% url 'main:guest_interface' hotel_id=item.request.hotel.id room_number=item.request.room_number %}" target="_blank" title="Open Guest Device for Room {{ item.request.room_number }}">
-                                                        {{ item.request.room_number }}
-                                                    </a>
-                                                </td>
-                                                <td>{{ item.assignment.guest_names|default:"N/A" }}</td>
-                                                <td>
-                                                    {# Make the request text clickable to open details modal #}
-                                                    <span class="view-request-details" data-request-id="{{ item.request.id }}" style="cursor: pointer; text-decoration: underline; color: var(--primary-blue);">
-                                                        {{ item.request.raw_text }}
-                                                    </span>
-                                                </td>
-                                                <td><span style="white-space: nowrap;">{{ item.request.timestamp|date:"M d, Y H:i" }}</span></td>
-                                                <td><span class="status-{{ item.request.status }}">{{ item.request.get_status_display }}</span></td>
-                                                <td>
-                                                    <textarea class="staff-notes-textarea" data-request-id="{{ item.request.id }}" placeholder="Add internal notes...">{{ item.request.staff_notes|default_if_none:'' }}</textarea>
-                                                    <button class="staff-notes-save-btn" data-request-id="{{ item.request.id }}">Save Notes</button>
-                                                </td>
-                                                <td class="action-buttons">
-                                                    <form action="{% url 'main:update_request_status' item.request.id %}" method="post" style="display: inline;">
-                                                        {% csrf_token %}
-                                                        <select name="new_status" onchange="this.form.submit()">
-                                                            <option value="pending" {% if item.request.status == 'pending' %}selected{% endif %}>Pending</option>
-                                                            <option value="in_progress" {% if item.request.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                                                            <option value="completed" {% if item.request.status == 'completed' %}selected{% endif %}>Completed</option>
-                                                            <option value="cancelled">Cancelled</option>
-                                                        </select>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div> {# End table-responsive #}
-                            </div> {# End request-category-section container #}
+                            {% if group.requests %} {# Only render section if there are requests in it #}
+                                <div class="container request-category-section"> {# Use container class for consistent styling #}
+                                    <h3 class="category-title">{{ group.display_name }} Requests</h3>
+                                    <div class="table-responsive"> {# Wrapper for horizontal scroll #}
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Room No.</th>
+                                                    <th>Guest Names</th>
+                                                    <th>Request</th>
+                                                    {# Only show Amenity/Quantity/Billed if it's an amenity request type #}
+                                                    {% if group.display_name == 'Amenity Request' %}
+                                                        <th>Amenity</th>
+                                                        <th>Quantity</th>
+                                                        <th>Billed</th>
+                                                    {% endif %}
+                                                    <th>Time</th>
+                                                    <th>Status</th>
+                                                    <th>Staff Notes</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in group.requests %}
+                                                <tr>
+                                                    <td>
+                                                        <a href="{% url 'main:guest_interface' hotel_id=item.request.hotel.id room_number=item.request.room_number %}" target="_blank" title="Open Guest Device for Room {{ item.request.room_number }}">
+                                                            {{ item.request.room_number }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ item.assignment.guest_names|default:"N/A" }}</td>
+                                                    <td>
+                                                        {# Make the request text clickable to open details modal #}
+                                                        <span class="view-request-details" data-request-id="{{ item.request.id }}" style="cursor: pointer; text-decoration: underline; color: var(--primary-blue);">
+                                                            {{ item.request.raw_text }}
+                                                        </span>
+                                                    </td>
+                                                    {# Display Amenity details if applicable #}
+                                                    {% if group.display_name == 'Amenity Request' %}
+                                                        <td>{{ item.request.amenity_requested.name|default:"N/A" }}</td>
+                                                        <td>{{ item.request.amenity_quantity|default:"-" }}</td>
+                                                        <td>
+                                                            {% if item.request.bill_added %}
+                                                                <i class="fas fa-check-circle" style="color: var(--accent-green);"></i> Yes
+                                                            {% else %}
+                                                                <i class="fas fa-times-circle" style="color: var(--accent-red);"></i> No
+                                                            {% endif %}
+                                                        </td>
+                                                    {% endif %}
+                                                    <td><span style="white-space: nowrap;">{{ item.request.timestamp|date:"M d, Y H:i" }}</span></td>
+                                                    <td><span class="status-{{ item.request.status }}">{{ item.request.get_status_display }}</span></td>
+                                                    <td>
+                                                        <textarea class="staff-notes-textarea" data-request-id="{{ item.request.id }}" placeholder="Add internal notes...">{{ item.request.staff_notes|default_if_none:'' }}</textarea>
+                                                        <button class="staff-notes-save-btn" data-request-id="{{ item.request.id }}">Save Notes</button>
+                                                    </td>
+                                                    <td class="action-buttons">
+                                                        <form action="{% url 'main:update_request_status' item.request.id %}" method="post" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <select name="new_status" onchange="this.form.submit()">
+                                                                <option value="pending" {% if item.request.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                                <option value="in_progress" {% if item.request.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                                                <option value="completed" {% if item.request.status == 'completed' %}selected{% endif %}>Completed</option>
+                                                                <option value="cancelled">Cancelled</option>
+                                                            </select>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div> {# End table-responsive #}
+                                </div> {# End request-category-section container #}
+                            {% endif %}
                         {% endfor %}
                     {% else %}
                         <p>No requests found for this filter.</p>
@@ -1735,7 +1756,8 @@
                                     <th>Guest Names</th>
                                     <th>Check-in</th>
                                     <th>Check-out</th>
-                                    <th>Bill Amount</th>
+                                    <th>Base Bill</th> {# Updated column name #}
+                                    <th>Total Bill</th> {# New column for total bill #}
                                     <th>Amount Paid</th>
                                     <th>Status</th> {# Added Status column #}
                                     <th>Actions</th>
@@ -1748,7 +1770,8 @@
                                     <td>{{ assignment.guest_names }}</td>
                                     <td><span style="white-space: nowrap;">{{ assignment.check_in_time|date:"M d, Y H:i" }}</span></td>
                                     <td><span style="white-space: nowrap;">{{ assignment.check_out_time|date:"M d, Y H:i" }}</span></td>
-                                    <td>${{ assignment.bill_amount|floatformat:2 }}</td>
+                                    <td>${{ assignment.base_bill_amount|floatformat:2 }}</td> {# Display base bill #}
+                                    <td>${{ assignment.total_bill_amount|floatformat:2 }}</td> {# Display total bill #}
                                     <td>${{ assignment.amount_paid|floatformat:2 }}</td>
                                     <td><span class="status-{{ assignment.status }}">{{ assignment.get_status_display }}</span></td> {# Display status #}
                                     <td class="action-buttons">
@@ -1760,7 +1783,8 @@
                                                 data-check-in-time="{{ assignment.check_in_time|date:'H:i' }}"
                                                 data-check-out-date="{{ assignment.check_out_time|date:'Y-m-d' }}"
                                                 data-check-out-time="{{ assignment.check_out_time|date:'H:i' }}"
-                                                data-bill-amount="{{ assignment.bill_amount|floatformat:2 }}"
+                                                data-base-bill-amount="{{ assignment.base_bill_amount|floatformat:2 }}" {# Pass base bill #}
+                                                data-total-bill-amount="{{ assignment.total_bill_amount|floatformat:2 }}" {# Pass total bill #}
                                                 data-amount-paid="{{ assignment.amount_paid|floatformat:2 }}"
                                                 data-status="{{ assignment.status }}"> {# Pass status to edit modal #}
                                             Edit
@@ -1830,14 +1854,14 @@
                                 {% endif %}
                             </div>
                             <div class="form-group">
-                                <label for="{{ form.bill_amount.id_for_label }}">{{ form.bill_amount.label }}:</label>
-                                {{ form.bill_amount }}
-                                {% if form.bill_amount.errors %}
-                                    <ul class="errorlist">{% for error in form.bill_amount.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                                <label for="{{ form.base_bill_amount.id_for_label }}">Base Bill Amount:</label> {# Updated label #}
+                                {{ form.base_bill_amount }}
+                                {% if form.base_bill_amount.errors %}
+                                    <ul class="errorlist">{% for error in form.base_bill_amount.errors %}<li>{{ error }}</li>{% endfor %}</ul>
                                 {% endif %}
                             </div>
                             <div class="form-group">
-                                <label for="{{ form.amount_paid.id_for_label }}">{{ form.amount_paid.label }}:</label>
+                                <label for="{{ form.amount_paid.id_for_label }}">Amount Paid:</label>
                                 {{ form.amount_paid }}
                                 {% if form.amount_paid.errors %}
                                     <ul class="errorlist">{% for error in form.amount_paid.errors %}<li>{{ error }}</li>{% endfor %}</ul>
@@ -1900,8 +1924,12 @@
                                 <input type="time" id="edit_check_out_time_input" name="check_out_time_input" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label for="edit_id_bill_amount">Bill Amount:</label>
-                                <input type="number" step="0.01" id="edit_id_bill_amount" name="bill_amount" class="form-control">
+                                <label for="edit_id_base_bill_amount">Base Bill Amount:</label> {# Updated label #}
+                                <input type="number" step="0.01" id="edit_id_base_bill_amount" name="base_bill_amount" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_id_total_bill_amount">Total Bill Amount:</label> {# New field #}
+                                <input type="number" step="0.01" id="edit_id_total_bill_amount" name="total_bill_amount" class="form-control" readonly> {# Readonly as it's calculated #}
                             </div>
                             <div class="form-group">
                                 <label for="edit_id_amount_paid">Amount Paid:</label>
@@ -1936,15 +1964,25 @@
             <h2>Request Details</h2>
             <div id="requestDetailsContent">
                 <p><strong>Room Number:</strong> <span id="detailRoomNumber"></span></p>
+                <p><strong>Guest Names:</strong> <span id="detailGuestNames"></span></p> {# Added guest names #}
                 <p><strong>Raw Text:</strong> <span id="detailRawText"></span></p>
                 <p><strong>AI Intent:</strong> <span id="detailAiIntent"></span></p>
                 <p><strong>AI Entities:</strong> <span id="detailAiEntities"></span></p>
                 <p><strong>Conci Response:</strong> <span id="detailConciResponse"></span></p>
                 <p><strong>Status:</strong> <span id="detailStatus"></span></p>
-                <p><strong>Request Type:</strong> <span id="detailRequestType"></span></p> {# Display request type #}
+                <p><strong>Request Type:</strong> <span id="detailRequestType"></span></p>
                 <p><strong>Timestamp:</strong> <span id="detailTimestamp"></span></p>
                 <p><strong>Staff Notes:</strong> <span id="detailStaffNotes"></span></p>
                 
+                <div id="amenityDetailsSection" style="display: none;"> {# Section for amenity details #}
+                    <h3>Amenity Details:</h3>
+                    <p><strong>Amenity:</strong> <span id="detailAmenityName"></span></p>
+                    <p><strong>Quantity:</strong> <span id="detailAmenityQuantity"></span></p>
+                    <p><strong>Price per Unit:</strong> $<span id="detailAmenityPricePerUnit"></span></p>
+                    <p><strong>Total Amenity Cost:</strong> $<span id="detailTotalAmenityCost"></span></p>
+                    <p><strong>Billed to Guest:</strong> <span id="detailBillAdded"></span></p>
+                </div>
+
                 <h3>Conversation History:</h3>
                 <div id="detailChatHistory" class="chat-history-container">
                     <!-- Chat messages will be loaded here -->
@@ -2110,6 +2148,9 @@
                 // Clear field-specific errors. Iterate over all input/select/textarea elements
                 // and remove any 'input-error' class if you added one for visual feedback.
                 document.querySelectorAll('#addAssignmentForm .errorlist').forEach(el => el.innerHTML = ''); 
+                document.querySelectorAll('#addAssignmentForm input, #addAssignmentForm select, #addAssignmentForm textarea').forEach(input => {
+                    input.classList.remove('input-error');
+                });
                 addAssignmentModal.classList.add('show');
             });
         }
@@ -2207,7 +2248,8 @@
                 const checkInTime = e.target.dataset.checkInTime;
                 const checkOutDate = e.target.dataset.checkOutDate;
                 const checkOutTime = e.target.dataset.checkOutTime;
-                const billAmount = e.target.dataset.billAmount;
+                const baseBillAmount = e.target.dataset.baseBillAmount; // Get base bill
+                const totalBillAmount = e.target.dataset.totalBillAmount; // Get total bill
                 const amountPaid = e.target.dataset.amountPaid;
                 const status = e.target.dataset.status; // Get status
 
@@ -2218,7 +2260,8 @@
                 document.getElementById('edit_check_in_time_input').value = checkInTime;
                 document.getElementById('edit_check_out_date').value = checkOutDate;
                 document.getElementById('edit_check_out_time_input').value = checkOutTime;
-                document.getElementById('edit_id_bill_amount').value = billAmount;
+                document.getElementById('edit_id_base_bill_amount').value = baseBillAmount; // Set base bill
+                document.getElementById('edit_id_total_bill_amount').value = totalBillAmount; // Set total bill
                 document.getElementById('edit_id_amount_paid').value = amountPaid;
                 document.getElementById('edit_id_status').value = status; // Set status
 
@@ -2364,15 +2407,22 @@
         const requestDetailsModal = document.getElementById('requestDetailsModal');
         const closeRequestDetailsModalButton = document.getElementById('closeRequestDetailsModal');
         const detailRoomNumber = document.getElementById('detailRoomNumber');
+        const detailGuestNames = document.getElementById('detailGuestNames'); // Added
         const detailRawText = document.getElementById('detailRawText');
         const detailAiIntent = document.getElementById('detailAiIntent');
         const detailAiEntities = document.getElementById('detailAiEntities');
         const detailConciResponse = document.getElementById('detailConciResponse');
         const detailStatus = document.getElementById('detailStatus');
-        const detailRequestType = document.getElementById('detailRequestType'); // New element
+        const detailRequestType = document.getElementById('detailRequestType');
         const detailTimestamp = document.getElementById('detailTimestamp');
         const detailStaffNotes = document.getElementById('detailStaffNotes');
         const detailChatHistory = document.getElementById('detailChatHistory');
+        const amenityDetailsSection = document.getElementById('amenityDetailsSection'); // New
+        const detailAmenityName = document.getElementById('detailAmenityName'); // New
+        const detailAmenityQuantity = document.getElementById('detailAmenityQuantity'); // New
+        const detailAmenityPricePerUnit = document.getElementById('detailAmenityPricePerUnit'); // New
+        const detailTotalAmenityCost = document.getElementById('detailTotalAmenityCost'); // New
+        const detailBillAdded = document.getElementById('detailBillAdded'); // New
 
         // Event listener for clicking on a request in the table
         document.querySelectorAll('.view-request-details').forEach(span => {
@@ -2389,15 +2439,29 @@
 
                     if (response.ok && result.success) {
                         detailRoomNumber.textContent = result.room_number;
+                        detailGuestNames.textContent = result.guest_names; // Set guest names
                         detailRawText.textContent = result.raw_text;
                         detailAiIntent.textContent = result.ai_intent;
                         detailAiEntities.textContent = JSON.stringify(result.ai_entities, null, 2); // Pretty print JSON
                         detailConciResponse.textContent = result.conci_response_text;
                         detailStatus.textContent = result.status;
-                        detailRequestType.textContent = result.request_type; // Set request type
+                        detailRequestType.textContent = result.request_type;
                         detailTimestamp.textContent = new Date(result.timestamp).toLocaleString();
                         detailStaffNotes.textContent = result.staff_notes || 'No notes.';
                         
+                        // Populate amenity details if available
+                        if (result.amenity_details) {
+                            amenityDetailsSection.style.display = 'block';
+                            detailAmenityName.textContent = result.amenity_details.name;
+                            detailAmenityQuantity.textContent = result.amenity_details.quantity;
+                            detailAmenityPricePerUnit.textContent = result.amenity_details.price_per_unit.toFixed(2);
+                            detailTotalAmenityCost.textContent = result.amenity_details.total_amenity_cost.toFixed(2);
+                            detailBillAdded.textContent = result.amenity_details.bill_added ? 'Yes' : 'No';
+                            detailBillAdded.style.color = result.amenity_details.bill_added ? 'var(--accent-green)' : 'var(--accent-red)';
+                        } else {
+                            amenityDetailsSection.style.display = 'none';
+                        }
+
                         // Populate chat history
                         detailChatHistory.innerHTML = ''; // Clear previous history
                         if (result.chat_history && result.chat_history.length > 0) {

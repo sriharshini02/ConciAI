@@ -11,7 +11,7 @@ from datetime import timedelta, date
 from django.db.models import Q # Import Q for complex queries
 
 # Import ALL your models and forms here
-from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest
+from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest, Amenity
 from .forms import GuestRoomAssignmentForm
 
 # --- Consolidated Staff Dashboard View ---
@@ -189,6 +189,10 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             # This handles cases where old data might have undefined types
             actual_request_type = req.request_type if req.request_type in [cv for cv, cl in GuestRequest.REQUEST_TYPE_CHOICES] else 'general_inquiry'
 
+            # Only add to grouped_requests if it's not a casual_chat for 'active' tab
+            if sub_tab == 'active' and actual_request_type == 'casual_chat':
+                continue # Skip casual chats for active view
+            
             grouped_requests[actual_request_type]['requests'].append({
                 'request': req,
                 'assignment': assignment,
@@ -199,6 +203,10 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         ordered_grouped_requests = []
         has_any_requests = False
         for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
+            # Only include non-casual chat types in the active view, or all types in the 'all'/'archive' views
+            if (sub_tab == 'active' and choice_value == 'casual_chat'):
+                continue # Skip casual chat for active tab
+            
             if grouped_requests[choice_value]['requests']:
                 ordered_grouped_requests.append(grouped_requests[choice_value])
                 has_any_requests = True
@@ -334,7 +342,7 @@ def check_for_new_requests(request):
             new_requests_count = GuestRequest.objects.filter(
                 hotel=user_hotel,
                 status='pending',
-                request_type__in=['maintenance', 'repairs', 'housekeeping', 'room_service', 'concierge', 'general_inquiry'], # Only count actionable requests
+                request_type__in=['maintenance', 'repairs', 'housekeeping', 'room_service', 'concierge', 'general_inquiry', 'amenity_request'], # Include amenity requests
                 timestamp__gt=last_check_timestamp
             ).count()
 
@@ -378,9 +386,34 @@ def update_request_status(request, request_id):
     try:
         req = get_object_or_404(GuestRequest, id=request_id, hotel=request.user.profile.hotel)
         new_status = request.POST.get('new_status')
+        
         if new_status in dict(req.STATUS_CHOICES):
+            # Special handling for 'amenity_request' when status changes to 'completed'
+            if req.request_type == 'amenity_request' and new_status == 'completed' and not req.bill_added:
+                if req.amenity_requested and req.amenity_quantity > 0:
+                    # Find the guest's current assignment for this room
+                    guest_assignment = GuestRoomAssignment.objects.filter(
+                        hotel=req.hotel,
+                        room_number=req.room_number,
+                        check_in_time__lte=timezone.localtime(timezone.now()),
+                        check_out_time__gte=timezone.localtime(timezone.now()),
+                        status='checked_in' # Only add to bill if guest is checked in
+                    ).first()
+
+                    if guest_assignment:
+                        amenity_cost = req.amenity_requested.price * req.amenity_quantity
+                        guest_assignment.total_bill_amount += amenity_cost
+                        guest_assignment.save()
+                        req.bill_added = True # Mark as billed
+                        print(f"Added ${amenity_cost:.2f} for {req.amenity_quantity}x {req.amenity_requested.name} to Room {req.room_number}'s bill. New total: ${guest_assignment.total_bill_amount:.2f}")
+                    else:
+                        print(f"Warning: Amenity request {req.id} completed but no active guest assignment found for Room {req.room_number}. Bill not updated.")
+                else:
+                    print(f"Warning: Amenity request {req.id} completed but amenity_requested or quantity missing. Bill not updated.")
+
             req.status = new_status
             req.save()
+            
             # Redirect to the correct URL based on the new status
             if new_status in ['completed', 'cancelled']:
                 return redirect('main:archive_requests') # Redirect to archive if completed/cancelled
@@ -389,6 +422,7 @@ def update_request_status(request, request_id):
         else:
             return JsonResponse({'success': False, 'error': 'Invalid status provided.'}, status=400)
     except Exception as e:
+        print(f"Error updating request status: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
@@ -431,9 +465,21 @@ def get_request_details(request, request_id):
             'timestamp': req.timestamp.isoformat(),
             'staff_notes': req.staff_notes or 'No notes.',
             'chat_history': chat_history_data,
+            'amenity_details': None # Initialize amenity details
         }
+
+        if req.request_type == 'amenity_request' and req.amenity_requested:
+            details['amenity_details'] = {
+                'name': req.amenity_requested.name,
+                'quantity': req.amenity_quantity,
+                'price_per_unit': float(req.amenity_requested.price), # Convert Decimal to float for JSON
+                'total_amenity_cost': float(req.amenity_requested.price * req.amenity_quantity),
+                'bill_added': req.bill_added
+            }
+
         return JsonResponse(details)
     except Exception as e:
+        print(f"Error fetching request details: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
@@ -568,20 +614,48 @@ def process_guest_command(request):
         request_type = 'general_inquiry' # Default type
         conci_response = "Thank you for your request. We have received it and will get back to you shortly."
         
-        # Keywords for different request types
-        if any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working", "toilet blocked"]):
+        # Initialize amenity specific fields
+        amenity_obj = None
+        amenity_qty = 1 # Default quantity
+
+        # Check for amenity requests first, as they are specific
+        # Fetch all available amenities for the current hotel (or globally if not hotel-specific)
+        available_amenities = Amenity.objects.filter(is_available=True)
+        
+        found_amenity = None
+        for amenity in available_amenities:
+            # Simple check: if amenity name is in the message
+            # More sophisticated parsing (e.g., using regex for quantity) can be added here
+            if amenity.name.lower() in lower_message:
+                found_amenity = amenity
+                request_type = 'amenity_request'
+                # Try to extract quantity (very basic, needs improvement for real use)
+                import re
+                qty_match = re.search(r'(\d+)\s+' + re.escape(amenity.name.lower()), lower_message)
+                if qty_match:
+                    amenity_qty = int(qty_match.group(1))
+                elif "a couple" in lower_message or "two" in lower_message:
+                    amenity_qty = 2
+                elif "few" in lower_message or "three" in lower_message:
+                    amenity_qty = 3
+                break # Found an amenity, stop checking others
+
+        if request_type == 'amenity_request' and found_amenity:
+            amenity_obj = found_amenity
+            conci_response = f"Certainly! Your request for {amenity_qty} {amenity_obj.name}(s) has been noted. The cost of ${amenity_obj.price * amenity_qty:.2f} will be added to your bill upon completion."
+        elif any(keyword in lower_message for keyword in ["maintenance", "fix", "broken", "leak", "ac", "heating", "light not working", "toilet blocked", "no hot water"]):
             request_type = 'maintenance'
             conci_response = "We've noted your maintenance request and will dispatch someone shortly."
-        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item", "power outlet"]):
+        elif any(keyword in lower_message for keyword in ["repair", "damaged", "faulty", "broken item", "power outlet", "tv not working"]):
             request_type = 'repairs'
             conci_response = "Your repair request has been logged. We'll send help as soon as possible."
-        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping", "laundry"]):
+        elif any(keyword in lower_message for keyword in ["towels", "cleaning", "clean room", "toiletries", "soap", "shampoo", "bedding", "housekeeping", "laundry", "tissue"]):
             request_type = 'housekeeping'
             conci_response = "Your housekeeping request has been sent. Someone will be with you shortly."
         elif any(keyword in lower_message for keyword in ["food", "drink", "order", "menu", "breakfast", "lunch", "dinner", "water", "coffee", "room service", "ice"]):
             request_type = 'room_service'
             conci_response = "Your room service order has been placed. Please allow some time for delivery."
-        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge", "tickets", "transport"]):
+        elif any(keyword in lower_message for keyword in ["taxi", "reservation", "recommendation", "directions", "tour", "attraction", "concierge", "tickets", "transport", "what to do"]):
             request_type = 'concierge'
             conci_response = "We've received your concierge request and will assist you with it."
         elif any(keyword in lower_message for keyword in ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "how are you", "what's up", "thank you", "thanks", "bye", "goodbye", "ok", "okay", "alright", "yes", "no", "please", "excuse me"]):
@@ -648,6 +722,9 @@ def process_guest_command(request):
                 conci_response_text=conci_response,
                 status='pending', # New actionable requests start as 'pending'
                 request_type=request_type, # Set the determined type
+                amenity_requested=amenity_obj, # Link to amenity object if applicable
+                amenity_quantity=amenity_qty, # Store quantity if applicable
+                bill_added=False, # Not billed yet
                 chat_history=json.dumps(current_chat_history)
             )
             request_obj_id = request_obj.id
@@ -662,6 +739,7 @@ def process_guest_command(request):
     except json.JSONDecodeError:
         return HttpResponseBadRequest("Invalid JSON in request body.")
     except Exception as e:
+        print(f"Error processing guest command: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @require_GET

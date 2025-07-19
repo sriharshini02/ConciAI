@@ -1,80 +1,97 @@
+# main/admin.py
+
 from django.contrib import admin
-from .models import Hotel, GuestRequest, HotelConfiguration, GuestRoomAssignment, UserProfile, Room # Added Room
+from .models import  Hotel, UserProfile, HotelConfiguration, Room, GuestRoomAssignment, GuestRequest, Amenity # Import Amenity
+
+# Register your models here.
 
 
-# Register the Hotel model for easy management in the Django admin.
 @admin.register(Hotel)
 class HotelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'total_rooms')
-    search_fields = ('name',)
+    list_display = ('name',  'total_rooms')
+    search_fields = ('name', 'address')
 
-
-# Register the UserProfile model
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'hotel')
     list_filter = ('hotel',)
     search_fields = ('user__username', 'hotel__name')
 
+@admin.register(Room)
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ('room_number', 'hotel', 'room_type', 'status')
+    list_filter = ('hotel', 'status', 'room_type')
+    search_fields = ('room_number', 'hotel__name')
+    list_editable = ('status',) # Allow editing status directly from list view
 
-# Register the GuestRequest model.
-@admin.register(GuestRequest)
-class GuestRequestAdmin(admin.ModelAdmin):
-    list_display = ('room_number', 'hotel', 'raw_text', 'status', 'timestamp', 'ai_intent')
-    list_filter = ('status', 'hotel', 'timestamp')
-    search_fields = ('room_number', 'raw_text', 'staff_notes')
-    readonly_fields = ('timestamp', 'ai_intent', 'ai_entities', 'conci_response_text', 'chat_history') 
+@admin.register(GuestRoomAssignment)
+class GuestRoomAssignmentAdmin(admin.ModelAdmin):
+    # Corrected list_display to use base_bill_amount and total_bill_amount
+    list_display = ('room_number', 'guest_names', 'check_in_time', 'check_out_time',
+                    'base_bill_amount', 'total_bill_amount', 'amount_paid', 'status', 'created_at') # Updated fields
+    list_filter = ('hotel', 'status', 'check_in_time', 'check_out_time')
+    search_fields = ('room_number', 'guest_names', 'hotel__name')
+    date_hierarchy = 'check_in_time'
+    ordering = ('-check_in_time',)
+    # Add fields to fieldsets for better organization in detail view
     fieldsets = (
         (None, {
-            'fields': ('hotel', 'room_number', 'raw_text', 'status', 'staff_notes')
+            'fields': ('hotel', 'room_number', 'guest_names', 'status')
         }),
-        ('AI Analysis & Response', {
-            'fields': ('ai_intent', 'ai_entities', 'conci_response_text', 'chat_history'), 
+        ('Booking Details', {
+            'fields': ('check_in_time', 'check_out_time')
+        }),
+        ('Financials', {
+            'fields': ('base_bill_amount', 'total_bill_amount', 'amount_paid') # Updated fields
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',) # Collapse this section by default
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at', 'total_bill_amount') # total_bill_amount is calculated
+
+@admin.register(GuestRequest)
+class GuestRequestAdmin(admin.ModelAdmin):
+    list_display = ('room_number', 'raw_text', 'request_type', 'status', 'timestamp',
+                    'amenity_requested', 'amenity_quantity', 'bill_added') # Added amenity fields
+    list_filter = ('hotel', 'status', 'request_type', 'timestamp', 'amenity_requested') # Added request_type and amenity_requested to filter
+    search_fields = ('room_number', 'raw_text', 'staff_notes')
+    date_hierarchy = 'timestamp'
+    ordering = ('-timestamp',)
+    # Add fields to fieldsets for better organization in detail view
+    fieldsets = (
+        (None, {
+            'fields': ('hotel', 'room_number', 'raw_text', 'status', 'request_type', 'staff_notes') # Added request_type
+        }),
+        ('AI Analysis', {
+            'fields': ('ai_intent', 'ai_entities', 'conci_response_text'),
+            'classes': ('collapse',)
+        }),
+        ('Amenity Details', { # New fieldset for amenity details
+            'fields': ('amenity_requested', 'amenity_quantity', 'bill_added'),
+            'classes': ('collapse',)
+        }),
+        ('Chat History', {
+            'fields': ('chat_history',),
             'classes': ('collapse',)
         }),
         ('Timestamps', {
-            'fields': ('timestamp',),
+            'fields': ('timestamp', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+    readonly_fields = ('timestamp', 'updated_at', 'ai_entities', 'chat_history') # ai_entities and chat_history are JSONFields
 
-# Register the HotelConfiguration model.
+@admin.register(Amenity) # Register the new Amenity model
+class AmenityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'is_available', 'created_at')
+    list_filter = ('is_available',)
+    search_fields = ('name', 'description')
+    ordering = ('name',)
+
 @admin.register(HotelConfiguration)
 class HotelConfigurationAdmin(admin.ModelAdmin):
     list_display = ('hotel', 'key', 'value')
     list_filter = ('hotel', 'key')
     search_fields = ('key', 'value')
-
-# Register the GuestRoomAssignment model with new fields
-@admin.register(GuestRoomAssignment)
-class GuestRoomAssignmentAdmin(admin.ModelAdmin):
-    list_display = ('hotel', 'room_number', 'guest_names', 'check_in_time', 'check_out_time', 'bill_amount', 'amount_paid', 'status', 'created_at')
-    list_filter = ('hotel', 'room_number', 'check_in_time', 'check_out_time', 'status') 
-    search_fields = ('room_number', 'guest_names')
-    ordering = ('room_number', '-check_in_time')
-    readonly_fields = ('created_at',) 
-    fieldsets = (
-        (None, {
-            'fields': ('hotel', 'room_number', 'guest_names', 'status') 
-        }),
-        ('Assignment Times', {
-            'fields': ('check_in_time', 'check_out_time'),
-            'description': 'Specify the exact check-in and check-out date/times for this guest in this room.'
-        }),
-        ('Billing Details', {
-            'fields': ('bill_amount', 'amount_paid'),
-            'description': 'Financial information for this room assignment.'
-        }),
-        ('System Info', {
-            'fields': ('created_at',),
-            'classes': ('collapse',)
-        })
-    )
-
-# NEW: Register the Room model
-@admin.register(Room)
-class RoomAdmin(admin.ModelAdmin):
-    list_display = ('hotel', 'room_number', 'status')
-    list_filter = ('hotel', 'status')
-    search_fields = ('room_number',)
-    list_editable = ('status',) # Allow editing status directly from list view

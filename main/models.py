@@ -1,12 +1,9 @@
 # main/models.py
-
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.utils import timezone
 from django.conf import settings 
 import json # Import json for JSONField handling
-
-
 
 class Hotel(models.Model):
     name = models.CharField(max_length=255)
@@ -19,8 +16,6 @@ class Hotel(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     hotel = models.ForeignKey(Hotel, on_delete=models.SET_NULL, null=True, blank=True)
-    # Add other profile specific fields if needed
-
     def __str__(self):
         return f"{self.user.username}'s profile ({self.hotel.name if self.hotel else 'No Hotel'})"
 class HotelConfiguration(models.Model):
@@ -33,6 +28,7 @@ class HotelConfiguration(models.Model):
 
     def __str__(self):
         return f"{self.hotel.name} - {self.key}: {self.value[:50]}..."
+
 
 
 class Room(models.Model):
@@ -55,6 +51,22 @@ class Room(models.Model):
     def __str__(self):
         return f"{self.room_number} ({self.hotel.name})"
 
+# New Amenity Model
+class Amenity(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Cost per unit of this amenity.")
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Amenities" # Correct pluralization in admin
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} (${self.price:.2f})"
+
 class GuestRoomAssignment(models.Model):
     STATUS_CHOICES = [
         ('confirmed', 'Confirmed'),
@@ -68,8 +80,12 @@ class GuestRoomAssignment(models.Model):
     guest_names = models.TextField(help_text="Full names of guests, separated by commas if more than one.")
     check_in_time = models.DateTimeField()
     check_out_time = models.DateTimeField()
-    bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # type: ignore
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # type: ignore
+    # Renamed bill_amount to base_bill_amount for clarity, and added total_bill_amount
+    base_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,  # type: ignore
+                                           help_text="Base room charges for the stay.")
+    total_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,  # type: ignore
+                                            help_text="Total bill including room charges and amenities.")
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # type: ignore
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -80,53 +96,11 @@ class GuestRoomAssignment(models.Model):
     def __str__(self):
         return f"Assignment for Room {self.room_number} - {self.guest_names} ({self.hotel.name})"
 
-    def clean(self):
-        super().clean()
-
-        # Ensure all necessary fields for the overlap check are present
-        # If these are None at this stage, it means the form validation
-        # (specifically the form's clean method) failed to provide them,
-        # or they are not marked as required in the form.
-        if not self.room_number or not self.check_in_time or not self.check_out_time or not self.hotel:
-            # If any of these are missing, the overlap check cannot proceed meaningfully.
-            # Django's form validation (due to `required=True` in form fields or model defaults)
-            # should ideally catch this earlier. If it reaches here, it's a safeguard.
-            # We raise a ValidationError here if essential fields are missing for the overlap logic.
-            # If the fields are required in the model, Django will also raise an error during save()
-            # if they are still None.
-            # For the specific "Cannot use None as a query value" error, this check prevents it.
-            # However, the form's clean method should be the primary place to enforce required fields
-            # and combine date/time.
-            if not self.room_number:
-                raise ValidationError("Room number is required for overlap check.")
-            if not self.check_in_time:
-                raise ValidationError("Check-in time is required for overlap check.")
-            if not self.check_out_time:
-                raise ValidationError("Check-out time is required for overlap check.")
-            if not self.hotel:
-                raise ValidationError("Hotel is required for overlap check.")
-            return # Should not be reached if ValidationErrors are raised above.
-
-        if self.check_in_time >= self.check_out_time:
-            raise ValidationError("Check-out time must be after check-in time.")
-
-        # Check for overlapping assignments in the same room and hotel
-        # Exclude the current instance itself when editing
-        overlapping_assignments = GuestRoomAssignment.objects.filter(
-            hotel=self.hotel,
-            room_number=self.room_number,
-            check_in_time__lt=self.check_out_time,
-            check_out_time__gt=self.check_in_time
-        )
-
-        if self.pk: # If updating an existing instance, exclude self
-            overlapping_assignments = overlapping_assignments.exclude(pk=self.pk)
-
-        if overlapping_assignments.exists():
-            raise ValidationError(
-                f"Room {self.room_number} is already booked for an overlapping period."
-            )
-
+    # Override save to ensure total_bill_amount is at least base_bill_amount initially
+    def save(self, *args, **kwargs):
+        if self.pk is None: # Only on creation
+            self.total_bill_amount = self.base_bill_amount
+        super().save(*args, **kwargs)
 
 
 class GuestRequest(models.Model):
@@ -143,8 +117,9 @@ class GuestRequest(models.Model):
         ('housekeeping', 'Housekeeping'),
         ('room_service', 'Room Service'),
         ('concierge', 'Concierge'),
+        ('amenity_request', 'Amenity Request'), # New type for amenities
         ('general_inquiry', 'General Inquiry'),
-        ('casual_chat', 'Casual Chat'), # New type for non-actionable messages
+        ('casual_chat', 'Casual Chat'), # For non-actionable messages
     ]
 
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='guest_requests')
@@ -158,14 +133,19 @@ class GuestRequest(models.Model):
                                            help_text="The response sent by Conci to the guest.")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     request_type = models.CharField(max_length=50, choices=REQUEST_TYPE_CHOICES, default='general_inquiry',
-                                    help_text="Categorized type of the guest request.") # New field
+                                    help_text="Categorized type of the guest request.")
     staff_notes = models.TextField(blank=True, null=True,
                                    help_text="Internal notes added by staff regarding this request.")
     timestamp = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # chat_history will store the full conversation for this request, as a list of dicts
-    # e.g., [{"role": "user", "parts": [{"text": "hi"}]}, {"role": "model", "parts": [{"text": "hello"}]}]
+    # New fields for amenity requests
+    amenity_requested = models.ForeignKey(Amenity, on_delete=models.SET_NULL, null=True, blank=True,
+                                          help_text="The amenity requested, if applicable.")
+    amenity_quantity = models.IntegerField(default=1, help_text="Quantity of the amenity requested.")
+    bill_added = models.BooleanField(default=False,
+                                     help_text="True if the amenity cost has been added to guest's bill.")
+
     chat_history = models.JSONField(blank=True, null=True,
                                     help_text="Full JSON chat history for this specific request.")
 
