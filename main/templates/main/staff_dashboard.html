@@ -917,11 +917,19 @@
                 </button>
             </div>
             <ul>
-                <li><a href="{% url 'main:home_dashboard' %}" class="{% if current_main_tab == 'home' %}active{% endif %}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-                <li><a href="{% url 'main:guest_requests_dashboard' %}" class="{% if current_main_tab == 'requests' %}active{% endif %}"><i class="fas fa-bell"></i> <span>Guest Requests</span></a></li>
-                <li><a href="{% url 'main:guest_management' %}" class="{% if current_main_tab == 'guest_management' %}active{% endif %}"><i class="fas fa-users"></i> <span>Guest Management</span></a></li>
-                <li><a href="{% url 'main:amenity_management' %}" class="{% if current_main_tab == 'amenities' %}active{% endif %}"><i class="fas fa-spa"></i> <span>Amenity Management</span></a></li>
-            </ul>
+                    <li><a href="{% url 'main:home_dashboard' %}" class="nav-link {% if current_main_tab == 'home' %}active{% endif %}">
+                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
+                    </a></li>
+                    <li><a href="{% url 'main:guest_requests_dashboard' %}" class="nav-link {% if current_main_tab == 'requests' %}active{% endif %}">
+                        <i class="fas fa-bell"></i> <span>Requests</span>
+                    </a></li>
+                    <li><a href="{% url 'main:guest_management' %}" class="nav-link {% if current_main_tab == 'guest_management' %}active{% endif %}">
+                        <i class="fas fa-users"></i> <span>Guests</span>
+                    </a></li>
+                    <li><a href="{% url 'main:amenity_management' %}" class="nav-link {% if current_main_tab == 'amenities' %}active{% endif %}">
+                        <i class="fas fa-concierge-bell"></i> <span>Amenities</span>
+                    </a></li>
+                </ul>
             <div class="logout-section">
                 <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
             </div>
