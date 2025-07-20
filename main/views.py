@@ -710,47 +710,59 @@ def update_request_status(request, request_id):
     API endpoint to update the status of a specific request.
     Matches URL: /request/<int:request_id>/update_status/
     """
-    try:
-        req = get_object_or_404(GuestRequest, id=request_id, hotel=request.user.profile.hotel)
-        new_status = request.POST.get('new_status')
-        
-        if new_status in dict(req.STATUS_CHOICES):
-            # Special handling for 'amenity_request' when status changes to 'completed'
-            if req.request_type == 'amenity_request' and new_status == 'completed' and not req.bill_added:
-                # Find the guest's current assignment for this room
-                guest_assignment = GuestRoomAssignment.objects.filter(
-                    hotel=req.hotel,
-                    room_number=req.room_number,
-                    check_in_time__lte=timezone.localtime(timezone.now()),
-                    check_out_time__gte=timezone.localtime(timezone.now()),
-                    status='checked_in' # Only add to bill if guest is checked in
-                ).first()
-
-                if guest_assignment:
-                    if req.amenity_requested and req.amenity_quantity > 0:
-                        amenity_cost = req.amenity_requested.price * req.amenity_quantity
-                        guest_assignment.total_bill_amount += amenity_cost
-                        guest_assignment.save()
-                        req.bill_added = True # Mark as billed
-                        print(f"Added ${amenity_cost:.2f} for {req.amenity_quantity}x {req.amenity_requested.name} to Room {req.room_number}'s bill. New total: ${guest_assignment.total_bill_amount:.2f}")
-                    else:
-                        print(f"Warning: Amenity request {req.id} completed but amenity_requested or quantity missing. Bill not updated.")
-                else:
-                    print(f"Warning: Amenity request {req.id} completed but no active guest assignment found for Room {req.room_number}. Bill not updated.")
-
-            req.status = new_status
-            req.save()
+    if request.method == 'POST':
+        try:
+            # Ensure the user has a hotel profile and access to this request
+            user_hotel = request.user.profile.hotel
+            req = get_object_or_404(GuestRequest, id=request_id, hotel=user_hotel)
+            new_status = request.POST.get('new_status')
             
-            # Redirect to the correct URL based on the new status
-            if new_status in ['completed', 'cancelled']:
-                return redirect('main:archive_requests') # Redirect to archive if completed/cancelled
+            # Print for debugging: what status is being received?
+            print(f"Attempting to update request {request_id} to status: {new_status}")
+
+            if new_status in dict(req.STATUS_CHOICES):
+                # Special handling for 'amenity_request' when status changes to 'completed'
+                if req.request_type == 'amenity_request' and new_status == 'completed' and not req.bill_added:
+                    # Find the guest's current assignment for this room
+                    guest_assignment = GuestRoomAssignment.objects.filter(
+                        hotel=req.hotel,
+                        room_number=req.room_number,
+                        check_in_time__lte=timezone.localtime(timezone.now()),
+                        check_out_time__gte=timezone.localtime(timezone.now()),
+                        status='checked_in' # Only add to bill if guest is checked in
+                    ).first()
+
+                    if guest_assignment:
+                        if req.amenity_requested and req.amenity_quantity > 0:
+                            amenity_cost = req.amenity_requested.price * req.amenity_quantity
+                            guest_assignment.total_bill_amount += amenity_cost
+                            guest_assignment.save()
+                            req.bill_added = True # Mark as billed
+                            print(f"Added ${amenity_cost:.2f} for {req.amenity_quantity}x {req.amenity_requested.name} to Room {req.room_number}'s bill. New total: ${guest_assignment.total_bill_amount:.2f}")
+                        else:
+                            print(f"Warning: Amenity request {req.id} completed but amenity_requested or quantity missing. Bill not updated.")
+                    else:
+                        print(f"Warning: Amenity request {req.id} completed but no active guest assignment found for Room {req.room_number}. Bill not updated.")
+
+                req.status = new_status
+                req.save()
+                
+                # *** CRITICAL CHANGE: Return JSON response instead of redirect ***
+                return JsonResponse({'success': True, 'message': 'Status updated successfully!'})
             else:
-                return redirect('main:active_requests') # Redirect to active for pending/in_progress
-        else:
-            return JsonResponse({'success': False, 'error': 'Invalid status provided.'}, status=400)
-    except Exception as e:
-        print(f"Error updating request status: {e}")
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+                # Invalid status provided
+                print(f"Error: Invalid status '{new_status}' provided for request {request_id}.")
+                return JsonResponse({'success': False, 'error': 'Invalid status provided.'}, status=400)
+        except GuestRequest.DoesNotExist:
+            print(f"Error: Request with ID {request_id} not found or not accessible.")
+            return JsonResponse({'success': False, 'error': 'Request not found or unauthorized.'}, status=404)
+        except Exception as e:
+            # Log the actual error on your server for debugging
+            print(f"Error updating request status: {e}")
+            return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
+    else:
+        # Not a POST request
+        return JsonResponse({'success': False, 'error': 'Invalid request method. Only POST is allowed.'}, status=405)
 
 @login_required
 @require_GET
