@@ -863,7 +863,6 @@ def get_request_details(request, request_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
-# REMOVE @require_POST decorator
 def edit_guest_assignment(request, assignment_id):
     """
     API endpoint to handle editing of a guest assignment via AJAX.
@@ -882,13 +881,33 @@ def edit_guest_assignment(request, assignment_id):
 
     if request.method == 'GET':
         # Logic to fetch data for the form
+        room_id = None
+        room_number_str = ''
+
+        # --- CRITICAL FIX: Safely check the type of assignment.room_number ---
+        if isinstance(assignment.room_number, Room):
+            # It's a valid Room object, extract its details
+            room_id = assignment.room_number.id
+            room_number_str = assignment.room_number.room_number
+        elif assignment.room_number is None:
+            # The ForeignKey is null, which is valid if blank=True was allowed
+            room_id = None
+            room_number_str = ''
+        else:
+            # This is the problematic case: assignment.room_number is a string or unexpected type
+            # Log a warning for debugging data issues
+            print(f"WARNING: GuestRoomAssignment ID {assignment.id} has a non-Room object or None in room_number. Type: {type(assignment.room_number)}, Value: {assignment.room_number}")
+            # Attempt to use the string value directly as the room number for display
+            room_number_str = str(assignment.room_number) # Treat it as the room number string
+            room_id = None # Cannot get an ID if it's not a Room object
+
         data = {
             'success': True,
             'assignment': {
                 'id': assignment.id,
                 'room_number': {
-                    'id': assignment.room_number.id,
-                    'room_number': assignment.room_number.room_number
+                    'id': room_id,
+                    'room_number': room_number_str
                 },
                 'guest_names': assignment.guest_names,
                 'check_in_time': assignment.check_in_time.isoformat() if assignment.check_in_time else None,
@@ -907,14 +926,11 @@ def edit_guest_assignment(request, assignment_id):
         check_in_date = mutable_post.get('check_in_date')
         check_in_time_input = mutable_post.get('check_in_time_input')
         if check_in_date and check_in_time_input:
-            # Note: This is not strictly necessary if forms.py clean() handles it,
-            # but it doesn't hurt. The form's clean method is the primary place.
             mutable_post['check_in_time'] = f"{check_in_date} {check_in_time_input}"
         
         check_out_date = mutable_post.get('check_out_date')
         check_out_time_input = mutable_post.get('check_out_time_input')
         if check_out_date and check_out_time_input:
-            # Same note as above
             mutable_post['check_out_time'] = f"{check_out_date} {check_out_time_input}"
 
         form = GuestRoomAssignmentForm(mutable_post, instance=assignment, hotel=user_hotel)
@@ -932,7 +948,6 @@ def edit_guest_assignment(request, assignment_id):
             print("Guest assignment edit form errors:", form.errors)
             return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
     
-    # Fallback for other methods if needed, though 405 is usually handled by Django
     return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
 
 @login_required
