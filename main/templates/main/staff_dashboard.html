@@ -20,37 +20,37 @@
             --dark-charcoal: #252527;
 
             /* Mapping new palette to existing UI elements */
-            --sidebar-bg: var(--dark-charcoal); /* Changed from off-white to dark-charcoal */
-            --sidebar-text: var(--off-white); /* Changed to off-white for contrast */
+            --sidebar-bg: var(--light-blue-gray); /* Changed to light-blue-gray */
+            --sidebar-text: var(--dark-charcoal); /* Changed for contrast */
             --header-bg: var(--light-blue-gray);
             --header-text: var(--dark-charcoal);
             --main-bg: var(--light-blue-gray); /* Main background */
             --card-bg: var(--off-white);
-            --card-border: var(--dark-charcoal); /* Changed from light-blue-gray to dark-charcoal for stronger definition */
+            --card-border: var(--dark-charcoal); /* Stronger definition */
             --button-primary-bg: var(--dark-charcoal);
             --button-primary-text: var(--off-white);
-            --button-secondary-bg: var(--light-yellow-green); /* Changed to light-yellow-green */
+            --button-secondary-bg: var(--light-yellow-green); /* Uses another palette color */
             --button-secondary-text: var(--dark-charcoal);
-            --link-color: var(--dark-charcoal); /* Changed from #007bff to dark-charcoal for consistency */
-            --success-color: #28a745; /* Keep standard for clear success indication */
-            --error-color: #dc3545; /* Keep standard for clear error indication */
-            --warning-color: #ffc107; /* Keep standard for clear warning indication */
-            --info-color: #17a2b8; /* Keep standard for clear info indication */
+            --link-color: var(--dark-charcoal); /* Consistent link color */
+            --success-color: #28a745; /* Standard green for success */
+            --error-color: #dc3545; /* Standard red for error */
+            --warning-color: #ffc107; /* Standard yellow for warning */
+            --info-color: #17a2b8; /* Standard blue for info */
             --table-header-bg: var(--dark-charcoal);
             --table-header-text: var(--off-white);
-            --table-row-hover-bg: var(--light-blue-gray); /* Use palette color */
+            --table-row-hover-bg: var(--light-blue-gray);
             --modal-bg: var(--off-white);
             --modal-border: var(--dark-charcoal);
             --input-border: var(--light-blue-gray);
             --input-focus-border: var(--dark-charcoal);
             --chart-color-booked: var(--dark-charcoal);
             --chart-color-cancelled: var(--error-color);
-            --chart-color-platform1: var(--light-green); /* Use palette color */
-            --chart-color-platform2: var(--dark-charcoal); /* Use palette color */
-            --chart-color-platform3: var(--light-yellow-green); /* Use palette color */
-            --chart-color-platform4: #9C27B0; /* Keep if distinct color is desired or map to a new palette color */
-            --chart-color-platform5: #FF5722; /* Keep if distinct color is desired or map to a new palette color */
-            --chart-color-platform6: #607D8B; /* Keep if distinct color is desired or map to a new palette color */
+            --chart-color-platform1: var(--light-green);
+            --chart-color-platform2: var(--dark-charcoal);
+            --chart-color-platform3: var(--light-yellow-green);
+            --chart-color-platform4: #9C27B0; /* Keeping these if no direct palette mapping */
+            --chart-color-platform5: #FF5722;
+            --chart-color-platform6: #607D8B;
         }
 
         body {
@@ -67,28 +67,29 @@
         }
 
         .sidebar {
-            width: 250px;
+            width: 280px; /* Increased width slightly */
             background-color: var(--sidebar-bg);
             color: var(--sidebar-text);
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            position: fixed; /* Keep sidebar fixed */
+            position: fixed;
             height: 100%;
-            overflow-y: auto; /* Enable scrolling if content overflows */
+            overflow-y: auto; /* Ensures scrolling if content overflows */
+            box-sizing: border-box; /* Include padding in width */
         }
 
         .sidebar h2 {
             text-align: center;
             margin-bottom: 30px;
-            color: var(--sidebar-text); /* Ensure title color matches sidebar text */
+            color: var(--sidebar-text);
         }
 
         .sidebar ul {
             list-style: none;
             padding: 0;
-            flex-grow: 1; /* Allow ul to take available space */
+            flex-grow: 1;
         }
 
         .sidebar ul li {
@@ -105,12 +106,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            white-space: nowrap; /* Prevent text wrapping for menu items */
         }
 
         .sidebar ul li a:hover,
         .sidebar ul li a.active {
-            background-color: var(--light-blue-gray); /* Changed hover/active background */
-            color: var(--dark-charcoal); /* Changed hover/active text color */
+            background-color: var(--dark-charcoal); /* Darker hover for contrast */
+            color: var(--off-white);
         }
 
         .sidebar ul li a i {
@@ -120,7 +122,7 @@
         .logout-section {
             margin-top: auto; /* Pushes logout to the bottom */
             padding-top: 20px;
-            border-top: 1px solid var(--light-blue-gray);
+            border-top: 1px solid var(--dark-charcoal); /* Changed border color */
         }
 
         .logout-section a {
@@ -141,7 +143,7 @@
         }
 
         .main-content {
-            margin-left: 250px; /* Offset for fixed sidebar */
+            margin-left: 280px; /* Offset for adjusted fixed sidebar width */
             flex-grow: 1;
             padding: 20px;
         }
@@ -281,16 +283,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: var(--light-blue-gray); /* Use palette color */
+            background-color: var(--light-blue-gray);
             border-radius: 8px;
-            color: var(--dark-charcoal); /* Use palette color */
+            color: var(--dark-charcoal);
         }
 
         /* Request Management Styles */
         .request-tabs {
             display: flex;
             margin-bottom: 20px;
-            border-bottom: 2px solid var(--dark-charcoal); /* Changed to dark-charcoal */
+            border-bottom: 2px solid var(--dark-charcoal);
         }
 
         .request-tabs button {
@@ -341,15 +343,15 @@
         }
 
         .request-item {
-            background-color: var(--light-blue-gray); /* Changed from off-white to light-blue-gray */
-            border: 1px solid var(--dark-charcoal); /* Changed from light-blue-gray to dark-charcoal */
+            background-color: var(--light-green); /* Changed to light-green */
+            border: 1px solid var(--dark-charcoal);
             border-radius: 10px;
             padding: 15px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 150px; /* Ensure consistent height */
+            min-height: 150px;
         }
 
         .request-item p {
@@ -371,8 +373,8 @@
         .status-badge.in_progress { background-color: var(--info-color); color: var(--off-white); }
         .status-badge.completed { background-color: var(--success-color); color: var(--off-white); }
         .status-badge.cancelled { background-color: var(--error-color); color: var(--off-white); }
-        .status-badge.casual_chat { background-color: var(--light-yellow-green); color: var(--dark-charcoal); } /* Changed */
-        .status-badge.general_inquiry { background-color: var(--light-yellow-green); color: var(--dark-charcoal); } /* Changed */
+        .status-badge.casual_chat { background-color: var(--light-yellow-green); color: var(--dark-charcoal); }
+        .status-badge.general_inquiry { background-color: var(--light-yellow-green); color: var(--dark-charcoal); }
 
 
         .request-actions {
@@ -429,12 +431,12 @@
 
         .modal-content {
             background-color: var(--modal-bg);
-            margin: auto; /* Center the modal */
+            margin: auto;
             padding: 30px;
             border: 1px solid var(--modal-border);
             border-radius: 12px;
-            width: 90%; /* Responsive width */
-            max-width: 600px; /* Max width for larger screens */
+            width: 90%;
+            max-width: 600px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             position: relative;
         }
@@ -454,7 +456,7 @@
         }
 
         .close-button {
-            color: var(--dark-charcoal); /* Use palette color */
+            color: var(--dark-charcoal);
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
@@ -482,7 +484,7 @@
         .modal-body input[type="time"],
         .modal-body textarea,
         .modal-body select {
-            width: calc(100% - 20px); /* Adjust for padding */
+            width: calc(100% - 20px);
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid var(--input-border);
@@ -490,6 +492,7 @@
             font-family: 'Inter', sans-serif;
             font-size: 1em;
             transition: border-color 0.3s ease;
+            box-sizing: border-box;
         }
 
         .modal-body input[type="text"]:focus,
@@ -584,7 +587,7 @@
         }
 
         .request-details-modal .modal-body .detail-row strong {
-            flex: 0 0 120px; /* Fixed width for labels */
+            flex: 0 0 120px;
             color: var(--dark-charcoal);
         }
 
@@ -611,7 +614,7 @@
             border: 1px solid var(--light-blue-gray);
             border-radius: 8px;
             padding: 10px;
-            background-color: var(--light-blue-gray); /* Changed from #fcfcfc to light-blue-gray */
+            background-color: var(--light-blue-gray);
         }
 
         .request-details-modal .chat-message {
@@ -621,7 +624,7 @@
         }
 
         .request-details-modal .chat-message.user {
-            background-color: var(--off-white); /* Changed from light-blue-gray to off-white */
+            background-color: var(--off-white); /* Changed for distinction */
             text-align: left;
         }
 
@@ -671,7 +674,7 @@
             margin-top: 20px;
             background-color: var(--card-bg);
             border-radius: 8px;
-            overflow: hidden; /* Ensures rounded corners apply to table content */
+            overflow: hidden;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
@@ -695,21 +698,27 @@
         }
 
         .table-responsive {
-            overflow-x: auto; /* Enables horizontal scrolling on small screens */
-            border-radius: 8px; /* Apply rounded corners to the container */
+            overflow-x: auto;
+            border-radius: 8px;
         }
 
-        /* Form control styling for filter forms */
+        /* Form control styling for filter forms - Using CSS Grid for better layout */
+        .filter-card form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
+            gap: 20px; /* Spacing between fields */
+        }
+
         .form-control {
             width: 100%;
             padding: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 10px; /* Reduced margin-bottom as gap handles spacing */
             border: 1px solid var(--input-border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
             font-size: 1em;
             transition: border-color 0.3s ease;
-            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            box-sizing: border-box;
         }
 
         .form-control:focus {
@@ -718,7 +727,7 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 0; /* Reset margin-bottom as grid gap handles spacing */
         }
 
         .button-primary {
@@ -909,40 +918,39 @@
                     <div class="filter-card card" style="margin-bottom: 20px;">
                         <h3>Filter Assignments</h3>
                         <form id="filterForm" method="GET" action="{% url 'main:guest_management' %}">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div class="form-group">
-                                    <label for="room_number_filter">Room Number:</label>
-                                    <input type="text" id="room_number_filter" name="room_number" value="{{ filter_params.room_number|default:'' }}" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="guest_names_filter">Guest Names:</label>
-                                    <input type="text" id="guest_names_filter" name="guest_names" value="{{ filter_params.guest_names|default:'' }}" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="status_filter">Status:</label>
-                                    <select id="status_filter" name="status" class="form-control">
-                                        <option value="">All</option>
-                                        {% for value, label in assignment_status_choices %}
-                                            <option value="{{ value }}" {% if filter_params.status == value %}selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="check_in_date_from_filter">Check-in Date From:</label>
-                                    <input type="date" id="check_in_date_from_filter" name="check_in_date_from" value="{{ filter_params.check_in_date_from|default:'' }}" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="check_in_date_to_filter">Check-in Date To:</label>
-                                    <input type="date" id="check_in_date_to_filter" name="check_in_date_to" value="{{ filter_params.check_in_date_to|default:'' }}" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="check_out_date_from_filter">Check-out Date From:</label>
-                                    <input type="date" id="check_out_date_from_filter" name="check_out_date_from" value="{{ filter_params.check_out_date_from|default:'' }}" class="form-control">
-                                </div>
-                                <div class="form-group">
-                                    <label for="check_out_date_to_filter">Check-out Date To:</label>
-                                    <input type="date" id="check_out_date_to_to_filter" name="check_out_date_to" value="{{ filter_params.check_out_date_to|default:'' }}" class="form-control">
-                                </div>
+                            <!-- Removed grid classes from div, applied directly to form -->
+                            <div class="form-group">
+                                <label for="room_number_filter">Room Number:</label>
+                                <input type="text" id="room_number_filter" name="room_number" value="{{ filter_params.room_number|default:'' }}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="guest_names_filter">Guest Names:</label>
+                                <input type="text" id="guest_names_filter" name="guest_names" value="{{ filter_params.guest_names|default:'' }}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="status_filter">Status:</label>
+                                <select id="status_filter" name="status" class="form-control">
+                                    <option value="">All</option>
+                                    {% for value, label in assignment_status_choices %}
+                                        <option value="{{ value }}" {% if filter_params.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="check_in_date_from_filter">Check-in Date From:</label>
+                                <input type="date" id="check_in_date_from_filter" name="check_in_date_from" value="{{ filter_params.check_in_date_from|default:'' }}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="check_in_date_to_filter">Check-in Date To:</label>
+                                <input type="date" id="check_in_date_to_filter" name="check_in_date_to" value="{{ filter_params.check_in_date_to|default:'' }}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="check_out_date_from_filter">Check-out Date From:</label>
+                                <input type="date" id="check_out_date_from_filter" name="check_out_date_from" value="{{ filter_params.check_out_date_from|default:'' }}" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="check_out_date_to_filter">Check-out Date To:</label>
+                                <input type="date" id="check_out_date_to_to_filter" name="check_out_date_to" value="{{ filter_params.check_out_date_to|default:'' }}" class="form-control">
                             </div>
                             <button type="submit" class="button-primary" style="margin-top: 20px;">Apply Filters</button>
                             <button type="button" class="button-secondary" style="margin-top: 20px;" onclick="window.location.href='{% url 'main:guest_management' %}'">Clear Filters</button>
@@ -962,6 +970,7 @@
                                         <th>Check-out</th>
                                         <th>Status</th>
                                         <th>Total Bill</th>
+                                        <th>Amount Paid</th> {# Added Amount Paid column header #}
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -974,6 +983,7 @@
                                             <td>{{ assignment.check_out_time|date:"M d, Y H:i" }}</td>
                                             <td><span class="status-badge {{ assignment.status }}">{{ assignment.get_status_display }}</span></td>
                                             <td>${{ assignment.total_bill_amount|floatformat:2 }}</td>
+                                            <td>${{ assignment.amount_paid|floatformat:2 }}</td> {# Display Amount Paid #}
                                             <td>
                                                 <button class="edit-assignment-button" data-assignment-id="{{ assignment.id }}">Edit</button>
                                                 <button class="delete-assignment-button" data-assignment-id="{{ assignment.id }}">Delete</button>
@@ -1093,6 +1103,13 @@
                     <label for="{{ form.total_bill_amount.id_for_label }}">{{ form.total_bill_amount.label }}:</label>
                     {{ form.total_bill_amount }}
                     <div id="totalBillAmountErrors" class="error-message"></div>
+                </div>
+
+                <!-- Amount Paid -->
+                <div class="form-group">
+                    <label for="{{ form.amount_paid.id_for_label }}">{{ form.amount_paid.label }}:</label>
+                    {{ form.amount_paid }}
+                    <div id="amountPaidErrors" class="error-message"></div>
                 </div>
 
                 <!-- Status -->
@@ -1494,13 +1511,6 @@
                     const data = await response.json();
                     if (data.success) {
                         // Populate form fields with existing data
-                        // This part needs to be carefully mapped to your form fields
-                        // Example: document.getElementById('id_guest_names').value = data.guest_names;
-                        // document.getElementById('id_room_number_input').value = data.room_number;
-                        // ... and so on for all fields
-
-                        // Populate the form fields dynamically
-                        // Special handling for date and time fields
                         if (data.assignment.check_in_time) {
                             const checkInDateTime = new Date(data.assignment.check_in_time);
                             assignmentForm.querySelector('[name="check_in_date"]').value = checkInDateTime.toISOString().split('T')[0];
@@ -1512,15 +1522,14 @@
                             assignmentForm.querySelector('[name="check_out_time_input"]').value = checkOutDateTime.toTimeString().slice(0, 5);
                         }
                         
-                        // Populate room_number_input from assignment.room_number.room_number
                         if (data.assignment.room_number && data.assignment.room_number.room_number) {
                             assignmentForm.querySelector('[name="room_number_input"]').value = data.assignment.room_number.room_number;
                         }
 
-                        // Populate other fields by name
                         assignmentForm.querySelector('[name="guest_names"]').value = data.assignment.guest_names;
                         assignmentForm.querySelector('[name="status"]').value = data.assignment.status;
                         assignmentForm.querySelector('[name="total_bill_amount"]').value = data.assignment.total_bill_amount;
+                        assignmentForm.querySelector('[name="amount_paid"]').value = data.assignment.amount_paid; // Populate amount_paid
 
 
                         assignmentModal.classList.add('show');
@@ -1550,8 +1559,8 @@
 
             const formData = new FormData(assignmentForm);
             const assignmentId = document.getElementById('assignmentId').value;
-            const url = assignmentId ? `/api/assignments/${assignmentId}/edit/` : `/dashboard/guests/`; // Use /dashboard/guests/ for new
-            const method = assignmentId ? 'POST' : 'POST'; // Always POST for form submission
+            const url = assignmentId ? `/api/assignments/${assignmentId}/edit/` : `/dashboard/guests/`;
+            const method = assignmentId ? 'POST' : 'POST';
 
             try {
                 const response = await fetch(url, {
@@ -1567,27 +1576,27 @@
                 if (result.success) {
                     showMessage(result.message, 'success');
                     assignmentModal.classList.remove('show');
-                    location.reload(); // Reload page to see new/updated assignment
+                    location.reload();
                 } else {
                     showMessage(result.error || 'Failed to save assignment.', 'error');
-                    // Display specific field errors
                     if (result.errors) {
-                        const errors = JSON.parse(result.errors); // Parse the JSON string of errors
+                        const errors = JSON.parse(result.errors);
                         for (const field in errors) {
                             const errorDiv = document.getElementById(`${field}Errors`);
                             if (errorDiv) {
-                                errorDiv.textContent = errors[field][0].message; // Display the first error message
+                                errorDiv.textContent = errors[field][0].message;
                             } else {
-                                // For non-field errors or general form errors
                                 showMessage(errors[field][0].message, 'error');
                             }
                         }
-                         // Handle errors for room_number_input specifically if it's not directly mapped
                          if (errors.room_number_input) {
                             document.getElementById('roomNumberInputErrors').textContent = errors.room_number_input[0].message;
                         }
                         if (errors.total_bill_amount) {
                             document.getElementById('totalBillAmountErrors').textContent = errors.total_bill_amount[0].message;
+                        }
+                        if (errors.amount_paid) {
+                            document.getElementById('amountPaidErrors').textContent = errors.amount_paid[0].message;
                         }
                     }
                 }
@@ -1630,7 +1639,7 @@
                 clearAmenityFormErrors();
 
                 try {
-                    const response = await fetch(`/api/amenities/${amenityId}/`); // Assuming this URL exists to fetch amenity details
+                    const response = await fetch(`/api/amenities/${amenityId}/`);
                     const data = await response.json();
                     if (data.success) {
                         document.getElementById('id_name').value = data.name;
@@ -1663,7 +1672,7 @@
 
             const formData = new FormData(amenityForm);
             const amenityId = document.getElementById('amenityId').value;
-            const url = amenityId ? `/amenities/${amenityId}/` : `/amenities/`; // Adjust URL based on whether adding or editing
+            const url = amenityId ? `/amenities/${amenityId}/` : `/amenities/`;
             const method = 'POST';
 
             try {
