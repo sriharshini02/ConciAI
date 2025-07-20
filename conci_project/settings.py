@@ -2,7 +2,8 @@
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv # Make sure this is imported
+from dotenv import load_dotenv
+import dj_database_url # Add this import
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,23 +13,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Load SECRET_KEY from environment variable for production
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-insecure-fallback-key-for-development-only')
-# IMPORTANT: Replace 'your-insecure-fallback-key-for-development-only' with a
-# very long, random string for actual development, but ensure it's loaded from
-# .env in production.
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True' # Load DEBUG from env, default to True for dev
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-# ALLOWED_HOSTS must be set in production to your domain names or IP addresses
-# Example: ALLOWED_HOSTS = ['.yourdomain.com', 'your-server-ip']
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-# Ensure your production domain(s) are set in the DJANGO_ALLOWED_HOSTS env var (comma-separated)
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 ROOT_URLCONF = 'conci_project.urls'
 
 TEMPLATES = [
@@ -66,24 +60,20 @@ TEMPLATES = [
     },
 ]
 
-
 WSGI_APPLICATION = 'conci_project.wsgi.application'
+
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# Use dj_database_url to parse the DATABASE_URL environment variable
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'), # Render will provide this env var
+        conn_max_age=600, # Optional: keep connections alive for 10 minutes
+        ssl_require=True # Important for Render's PostgreSQL
+    )
 }
-# For production, you'd typically use PostgreSQL or another robust database.
-# Example PostgreSQL config (requires psycopg2-binary and environment variables):
-# import dj_database_url
-# DATABASE_URL = os.getenv('DATABASE_URL')
-# if DATABASE_URL:
-#     DATABASES['default'] = dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
 
 
 # Password validation
@@ -110,7 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata' # Set your appropriate time zone
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -121,17 +111,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Directory where static files will be collected for production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom user model if you have one
+# AUTH_USER_MODEL = 'main.User' # Keep this commented out if using default Django User
+
 # Login/Logout redirects
-LOGIN_REDIRECT_URL = '/dashboard/' # Or wherever your dashboard home is
-LOGOUT_REDIRECT_URL = '/login/' # Your login page URL
-LOGIN_URL = '/login/' # The URL where the login page is located
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/login/'
 
 # Media files (for user-uploaded content, if applicable)
 MEDIA_URL = '/media/'
