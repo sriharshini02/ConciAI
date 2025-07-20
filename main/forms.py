@@ -24,14 +24,13 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         model = GuestRoomAssignment
         fields = [
             'guest_names',
-            'check_in_time',  # <--- CRITICAL: Include these fields
-            'check_out_time', # <--- CRITICAL: Include these fields
+            # CRITICAL: REMOVE 'check_in_time' and 'check_out_time' from here.
+            # They are handled manually in clean() and save().
             'status', 
             'total_bill_amount',
             'amount_paid', 
         ]
-        # It's good practice to list all fields explicitly, especially if you're manipulating them
-        # in clean() or __init__
+        # Keep field_order for rendering, but it won't affect validation of excluded fields
         field_order = [
             'room_number_input',
             'guest_names',
@@ -45,7 +44,6 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         ]
         widgets = {
             'guest_names': forms.TextInput(attrs={'class': 'form-control'}),
-            # check_in_time and check_out_time are handled by custom fields, no widget needed here
             'status': forms.Select(attrs={'class': 'form-control'}),
             'total_bill_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}), 
@@ -67,6 +65,7 @@ class GuestRoomAssignmentForm(forms.ModelForm):
                 self.fields['check_out_time_input'].initial = self.instance.check_out_time.time()
             if self.instance.room_number:
                 self.fields['room_number_input'].initial = self.instance.room_number.room_number
+            # Ensure amount_paid initial is set for edit
             self.fields['amount_paid'].initial = self.instance.amount_paid
 
 
@@ -91,7 +90,8 @@ class GuestRoomAssignmentForm(forms.ModelForm):
                 )
                 # Add a non-field error to inform the user that a new room was created
                 self.add_error(None, f"Room '{room_number_str}' created and assigned.")
-            self.instance.room_number = room_obj # Assign the Room object to the instance
+            # Assign the Room object to the instance
+            self.instance.room_number = room_obj 
         else:
             self.add_error('room_number_input', "Room number is required.")
 
@@ -101,6 +101,7 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         check_out_time_input = cleaned_data.get('check_out_time_input')
 
         # Combine date and time inputs into DateTimeField for the instance
+        # These will be saved by the custom save method
         if check_in_date and check_in_time_input:
             self.instance.check_in_time = timezone.make_aware(
                 timezone.datetime.combine(check_in_date, check_in_time_input)
@@ -118,11 +119,8 @@ class GuestRoomAssignmentForm(forms.ModelForm):
             self.add_error('check_out_time_input', 'Check-out time is required.')
         
         # Ensure amount_paid is handled (if it's not provided, default to 0.00)
-        amount_paid = cleaned_data.get('amount_paid')
-        if amount_paid is None:
-            cleaned_data['amount_paid'] = 0.00
         # Assign to instance if not already handled by ModelForm
-        self.instance.amount_paid = cleaned_data['amount_paid']
+        self.instance.amount_paid = cleaned_data.get('amount_paid', 0.00)
 
 
         # Perform cross-field validation after individual fields are clean
