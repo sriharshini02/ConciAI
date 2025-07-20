@@ -863,13 +863,13 @@ def get_request_details(request, request_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
-@require_POST
+# REMOVE @require_POST decorator
 def edit_guest_assignment(request, assignment_id):
     """
     API endpoint to handle editing of a guest assignment via AJAX.
+    Handles GET to fetch data and POST to save.
     Matches URL: /api/assignments/<int:assignment_id>/edit/
     """
-    # Safely access user_hotel via UserProfile
     try:
         user_profile = request.user.profile
         user_hotel = user_profile.hotel
@@ -879,27 +879,61 @@ def edit_guest_assignment(request, assignment_id):
         return JsonResponse({'success': False, 'error': 'User profile not linked.'}, status=403)
 
     assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
-    
-    mutable_post = request.POST.copy()
 
-    check_in_date = mutable_post.get('check_in_date')
-    check_in_time_input = mutable_post.get('check_in_time_input')
-    if check_in_date and check_in_time_input:
-        mutable_post['check_in_time'] = f"{check_in_date} {check_in_time_input}"
-    
-    check_out_date = mutable_post.get('check_out_date')
-    check_out_time_input = mutable_post.get('check_out_time_input')
-    if check_out_date and check_out_time_input:
-        mutable_post['check_out_time'] = f"{check_out_date} {check_out_time_input}"
+    if request.method == 'GET':
+        # Logic to fetch data for the form
+        data = {
+            'success': True,
+            'assignment': {
+                'id': assignment.id,
+                'room_number': {
+                    'id': assignment.room_number.id,
+                    'room_number': assignment.room_number.room_number
+                },
+                'guest_names': assignment.guest_names,
+                'check_in_time': assignment.check_in_time.isoformat() if assignment.check_in_time else None,
+                'check_out_time': assignment.check_out_time.isoformat() if assignment.check_out_time else None,
+                'status': assignment.status,
+                'total_bill_amount': str(assignment.total_bill_amount),
+                'amount_paid': str(assignment.amount_paid),
+            }
+        }
+        return JsonResponse(data)
 
-    # Pass hotel to the form when editing as well
-    form = GuestRoomAssignmentForm(mutable_post, instance=assignment, hotel=user_hotel)
+    elif request.method == 'POST':
+        # Your existing logic to handle saving the updated assignment
+        mutable_post = request.POST.copy()
+
+        check_in_date = mutable_post.get('check_in_date')
+        check_in_time_input = mutable_post.get('check_in_time_input')
+        if check_in_date and check_in_time_input:
+            # Note: This is not strictly necessary if forms.py clean() handles it,
+            # but it doesn't hurt. The form's clean method is the primary place.
+            mutable_post['check_in_time'] = f"{check_in_date} {check_in_time_input}"
+        
+        check_out_date = mutable_post.get('check_out_date')
+        check_out_time_input = mutable_post.get('check_out_time_input')
+        if check_out_date and check_out_time_input:
+            # Same note as above
+            mutable_post['check_out_time'] = f"{check_out_date} {check_out_time_input}"
+
+        form = GuestRoomAssignmentForm(mutable_post, instance=assignment, hotel=user_hotel)
+        
+        if form.is_valid():
+            try:
+                form.save()
+                return JsonResponse({'success': True, 'message': 'Assignment updated successfully.'})
+            except Exception as e:
+                print(f"Server error saving guest assignment (edit): {e}")
+                import traceback
+                traceback.print_exc()
+                return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
+        else:
+            print("Guest assignment edit form errors:", form.errors)
+            return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
     
-    if form.is_valid():
-        form.save()
-        return JsonResponse({'success': True, 'message': 'Assignment updated successfully.'})
-    else:
-        return JsonResponse({'success': False, 'errors': json.dumps(form.errors)}, status=400)
+    # Fallback for other methods if needed, though 405 is usually handled by Django
+    return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
 
 @login_required
 @require_POST
