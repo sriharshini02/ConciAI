@@ -563,11 +563,11 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         # --- Apply Filters ---
         filter_params = {}
 
-        room_number = request.GET.get('room_number')
-        if room_number:
-            # CRITICAL FIX: Filter by the related Room object's room_number field
-            all_assignments = all_assignments.filter(room_number__room_number__icontains=room_number)
-            filter_params['room_number'] = room_number
+        room_number_filter_val = request.GET.get('room_number')
+        if room_number_filter_val:
+            # --- CRITICAL FIX: Filter directly on the CharField 'room_number' ---
+            all_assignments = all_assignments.filter(room_number__icontains=room_number_filter_val)
+            filter_params['room_number'] = room_number_filter_val
 
         guest_names = request.GET.get('guest_names')
         if guest_names:
@@ -626,7 +626,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         })
             
     return render(request, 'main/staff_dashboard.html', context)
-
 # --- New Amenity Management View ---
 @login_required
 def amenity_management(request):
@@ -881,34 +880,16 @@ def edit_guest_assignment(request, assignment_id):
 
     if request.method == 'GET':
         # Logic to fetch data for the form
-        room_id = None
-        room_number_str = ''
-
-        # --- CRITICAL FIX: Safely check the type of assignment.room_number ---
-        if isinstance(assignment.room_number, Room):
-            # It's a valid Room object, extract its details
-            room_id = assignment.room_number.id
-            room_number_str = assignment.room_number.room_number
-        elif assignment.room_number is None:
-            # The ForeignKey is null, which is valid if blank=True was allowed
-            room_id = None
-            room_number_str = ''
-        else:
-            # This is the problematic case: assignment.room_number is a string or unexpected type
-            # Log a warning for debugging data issues
-            print(f"WARNING: GuestRoomAssignment ID {assignment.id} has a non-Room object or None in room_number. Type: {type(assignment.room_number)}, Value: {assignment.room_number}")
-            # Attempt to use the string value directly as the room number for display
-            room_number_str = str(assignment.room_number) # Treat it as the room number string
-            room_id = None # Cannot get an ID if it's not a Room object
-
+        # --- CRITICAL FIX: room_number is now a CharField directly on GuestRoomAssignment ---
+        # So, assignment.room_number is already the string.
+        room_number_str = assignment.room_number if assignment.room_number else ''
+        
         data = {
             'success': True,
             'assignment': {
                 'id': assignment.id,
-                'room_number': {
-                    'id': room_id,
-                    'room_number': room_number_str
-                },
+                # Now we only send the room_number string, no 'id' for room_number object
+                'room_number': { 'room_number': room_number_str }, 
                 'guest_names': assignment.guest_names,
                 'check_in_time': assignment.check_in_time.isoformat() if assignment.check_in_time else None,
                 'check_out_time': assignment.check_out_time.isoformat() if assignment.check_out_time else None,
@@ -949,6 +930,7 @@ def edit_guest_assignment(request, assignment_id):
             return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
     
     return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+
 
 @login_required
 @require_POST

@@ -5,7 +5,6 @@ from .models import GuestRoomAssignment, Room, Amenity # Import Amenity model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-
 class GuestRoomAssignmentForm(forms.ModelForm):
     # Change room_number to a CharField for text input
     room_number_input = forms.CharField(
@@ -24,8 +23,9 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         model = GuestRoomAssignment
         fields = [
             'guest_names',
-            # CRITICAL: REMOVE 'check_in_time' and 'check_out_time' from here.
-            # They are handled manually in clean() and save().
+            # 'room_number' is now a CharField in the model, so it can be included directly.
+            # However, we are handling it via 'room_number_input' and then assigning to instance.
+            # So, we still keep it out of 'fields' to manually assign in clean/save.
             'status', 
             'total_bill_amount',
             'amount_paid', 
@@ -56,15 +56,21 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         
         # Set initial values for date/time fields if instance exists
         if self.instance.pk:
-            # Ensure instance.check_in_time and check_out_time are not None before accessing .date() or .time()
+            # Safely set initial values for check-in/out times
             if self.instance.check_in_time:
                 self.fields['check_in_date'].initial = self.instance.check_in_time.date()
                 self.fields['check_in_time_input'].initial = self.instance.check_in_time.time()
             if self.instance.check_out_time:
                 self.fields['check_out_date'].initial = self.instance.check_out_time.date()
                 self.fields['check_out_time_input'].initial = self.instance.check_out_time.time()
-            if self.instance.room_number:
-                self.fields['room_number_input'].initial = self.instance.room_number.room_number
+            
+            # --- CRITICAL FIX: room_number is now a CharField directly on GuestRoomAssignment ---
+            # So, self.instance.room_number is already the string.
+            if self.instance.room_number: # Check if it's not None/empty
+                self.fields['room_number_input'].initial = self.instance.room_number
+            else:
+                self.fields['room_number_input'].initial = '' # Default if room_number is None/empty
+
             # Ensure amount_paid initial is set for edit
             self.fields['amount_paid'].initial = self.instance.amount_paid
 
@@ -90,8 +96,9 @@ class GuestRoomAssignmentForm(forms.ModelForm):
                 )
                 # Add a non-field error to inform the user that a new room was created
                 self.add_error(None, f"Room '{room_number_str}' created and assigned.")
-            # Assign the Room object to the instance
-            self.instance.room_number = room_obj 
+            
+            # --- CRITICAL FIX: Assign the room_number string from room_obj to the instance's CharField ---
+            self.instance.room_number = room_obj.room_number
         else:
             self.add_error('room_number_input', "Room number is required.")
 
@@ -124,15 +131,17 @@ class GuestRoomAssignmentForm(forms.ModelForm):
 
 
         # Perform cross-field validation after individual fields are clean
+        # Note: Overlapping assignments check now uses the string room_number
         if hasattr(self.instance, 'check_in_time') and hasattr(self.instance, 'check_out_time') and \
            self.instance.check_in_time and self.instance.check_out_time: # Ensure they are not None
             if self.instance.check_out_time <= self.instance.check_in_time:
                 self.add_error('check_out_time', 'Check-out time must be after check-in time.')
             
-            # Check for overlapping assignments for the same room
+            # Check for overlapping assignments for the same room (using string room_number)
             if self.instance.room_number: # Only check if room is assigned
                 overlapping_assignments = GuestRoomAssignment.objects.filter(
-                    room_number=self.instance.room_number,
+                    hotel=self.hotel, # Important to filter by hotel too
+                    room_number=self.instance.room_number, # Now comparing strings
                     check_in_time__lt=self.instance.check_out_time,
                     check_out_time__gt=self.instance.check_in_time,
                 ).exclude(pk=self.instance.pk) # Exclude self for updates
@@ -150,14 +159,13 @@ class GuestRoomAssignmentForm(forms.ModelForm):
         if self.hotel and not instance.hotel_id: 
             instance.hotel = self.hotel
         
-        # The room_number, check_in_time, check_out_time, and amount_paid
+        # The room_number (string), check_in_time, check_out_time, and amount_paid
         # are now assigned to self.instance in clean()
         # They will be saved when instance.save() is called.
 
         if commit:
             instance.save()
         return instance
-
 
 
 
