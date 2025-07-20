@@ -511,6 +511,27 @@
             min-height: 80px;
         }
 
+        /* Specific styling for the checkbox in modals */
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-check-input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--dark-charcoal);
+        }
+
+        .form-check-label {
+            margin-bottom: 0;
+            font-weight: 500;
+            color: var(--dark-charcoal);
+            cursor: pointer;
+        }
+
         .modal-footer {
             display: flex;
             justify-content: flex-end;
@@ -624,7 +645,7 @@
         }
 
         .request-details-modal .chat-message.user {
-            background-color: var(--off-white); /* Changed for distinction */
+            background-color: var(--off-white);
             text-align: left;
         }
 
@@ -705,14 +726,14 @@
         /* Form control styling for filter forms - Using CSS Grid for better layout */
         .filter-card form {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
-            gap: 20px; /* Spacing between fields */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         .form-control {
             width: 100%;
             padding: 10px;
-            margin-bottom: 10px; /* Reduced margin-bottom as gap handles spacing */
+            margin-bottom: 10px;
             border: 1px solid var(--input-border);
             border-radius: 8px;
             font-family: 'Inter', sans-serif;
@@ -727,7 +748,7 @@
         }
 
         .form-group {
-            margin-bottom: 0; /* Reset margin-bottom as grid gap handles spacing */
+            margin-bottom: 0;
         }
 
         .button-primary {
@@ -918,7 +939,6 @@
                     <div class="filter-card card" style="margin-bottom: 20px;">
                         <h3>Filter Assignments</h3>
                         <form id="filterForm" method="GET" action="{% url 'main:guest_management' %}">
-                            <!-- Removed grid classes from div, applied directly to form -->
                             <div class="form-group">
                                 <label for="room_number_filter">Room Number:</label>
                                 <input type="text" id="room_number_filter" name="room_number" value="{{ filter_params.room_number|default:'' }}" class="form-control">
@@ -970,7 +990,7 @@
                                         <th>Check-out</th>
                                         <th>Status</th>
                                         <th>Total Bill</th>
-                                        <th>Amount Paid</th> {# Added Amount Paid column header #}
+                                        <th>Amount Paid</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -983,7 +1003,7 @@
                                             <td>{{ assignment.check_out_time|date:"M d, Y H:i" }}</td>
                                             <td><span class="status-badge {{ assignment.status }}">{{ assignment.get_status_display }}</span></td>
                                             <td>${{ assignment.total_bill_amount|floatformat:2 }}</td>
-                                            <td>${{ assignment.amount_paid|floatformat:2 }}</td> {# Display Amount Paid #}
+                                            <td>${{ assignment.amount_paid|floatformat:2 }}</td>
                                             <td>
                                                 <button class="edit-assignment-button" data-assignment-id="{{ assignment.id }}">Edit</button>
                                                 <button class="delete-assignment-button" data-assignment-id="{{ assignment.id }}">Delete</button>
@@ -1205,6 +1225,23 @@
         </div>
     </div>
 
+    <!-- Custom Confirmation Modal for Status Updates -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="confirmationModalTitle">Confirm Action</h2>
+                <span class="close-button confirmation-close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="button-secondary confirmation-cancel-button">No</button>
+                <button type="button" class="button-primary" id="confirmationYesButton">Yes</button>
+            </div>
+        </div>
+    </div>
+
 
     <div id="messageBox"></div>
 
@@ -1378,7 +1415,12 @@
                 const requestId = button.dataset.requestId;
                 try {
                     const response = await fetch(`/api/requests/${requestId}/details/`);
+                    // Log the full response for debugging
+                    console.log('API Response for Request Details:', response);
                     const result = await response.json();
+                    // Log the parsed JSON result
+                    console.log('Parsed JSON for Request Details:', result);
+
 
                     if (result.success) {
                         document.getElementById('detailRoomNumber').textContent = result.room_number;
@@ -1421,6 +1463,8 @@
 
                         requestDetailsModal.classList.add('show'); // Show the modal
                     } else {
+                        // Log the specific error from the backend if available
+                        console.error('Backend reported error for Request Details:', result.error);
                         showMessage(result.error || 'Failed to load request details.', 'error');
                     }
                 }
@@ -1443,34 +1487,63 @@
             });
         }
 
-        // Update Request Status Logic
+        // Custom Confirmation Modal Logic for Status Updates
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const confirmationYesButton = document.getElementById('confirmationYesButton');
+        const confirmationCloseButtons = confirmationModal.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button');
+
+        let currentRequestId = null;
+        let currentNewStatus = null;
+
+        // Function to show the custom confirmation modal
+        function showConfirmationModal(message, requestId, newStatus) {
+            confirmationMessage.textContent = message;
+            currentRequestId = requestId;
+            currentNewStatus = newStatus;
+            confirmationModal.classList.add('show');
+        }
+
+        // Event listener for the "Yes" button in the custom confirmation modal
+        confirmationYesButton.addEventListener('click', async () => {
+            confirmationModal.classList.remove('show'); // Hide modal immediately
+
+            try {
+                const response = await fetch(`/request/${currentRequestId}/update_status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `new_status=${currentNewStatus}`
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('Status updated successfully!', 'success');
+                    location.reload(); // Reload page to reflect changes
+                } else {
+                    showMessage(result.error || 'Failed to update status.', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showMessage('Network error or server issue updating status.', 'error');
+            }
+        });
+
+        // Event listeners to close the custom confirmation modal
+        confirmationCloseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                confirmationModal.classList.remove('show');
+            });
+        });
+
+        // Update Request Status Logic (now uses custom confirmation modal)
         document.querySelectorAll('.update-status').forEach(button => {
-            button.addEventListener('click', async () => {
+            button.addEventListener('click', () => {
                 const requestId = button.dataset.requestId;
                 const newStatus = button.dataset.newStatus;
-                // Replace confirm with a custom modal for production
-                if (confirm(`Are you sure you want to change status to "${newStatus.replace('_', ' ').toUpperCase()}"?`)) {
-                    try {
-                        const response = await fetch(`/request/${requestId}/update_status/`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                                'X-CSRFToken': '{{ csrf_token }}'
-                            },
-                            body: `new_status=${newStatus}`
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showMessage('Status updated successfully!', 'success');
-                            location.reload(); // Reload page to reflect changes
-                        } else {
-                            showMessage(result.error || 'Failed to update status.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error updating status:', error);
-                        showMessage('Network error or server issue updating status.', 'error');
-                    }
-                }
+                const statusDisplayName = newStatus.replace('_', ' ').toUpperCase();
+                showConfirmationModal(`Are you sure you want to change status to "${statusDisplayName}"?`, requestId, newStatus);
             });
         });
 
@@ -1529,7 +1602,7 @@
                         assignmentForm.querySelector('[name="guest_names"]').value = data.assignment.guest_names;
                         assignmentForm.querySelector('[name="status"]').value = data.assignment.status;
                         assignmentForm.querySelector('[name="total_bill_amount"]').value = data.assignment.total_bill_amount;
-                        assignmentForm.querySelector('[name="amount_paid"]').value = data.assignment.amount_paid; // Populate amount_paid
+                        assignmentForm.querySelector('[name="amount_paid"]').value = data.assignment.amount_paid;
 
 
                         assignmentModal.classList.add('show');
@@ -1714,26 +1787,8 @@
         document.querySelectorAll('.delete-assignment-button').forEach(button => {
             button.addEventListener('click', async () => {
                 const assignmentId = button.dataset.assignmentId;
-                if (confirm('Are you sure you want to delete this guest assignment?')) {
-                    try {
-                        const response = await fetch(`/api/assignments/${assignmentId}/delete/`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token }}'
-                            }
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showMessage('Assignment deleted successfully!', 'success');
-                            location.reload();
-                        } else {
-                            showMessage(result.error || 'Failed to delete assignment.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error deleting assignment:', error);
-                        showMessage('Network error or server issue deleting assignment.', 'error');
-                    }
-                }
+                // Using custom confirmation modal instead of native confirm()
+                showConfirmationModal('Are you sure you want to delete this guest assignment?', assignmentId, 'delete_assignment');
             });
         });
 
@@ -1741,27 +1796,77 @@
         document.querySelectorAll('.delete-amenity-button').forEach(button => {
             button.addEventListener('click', async () => {
                 const amenityId = button.dataset.amenityId;
-                if (confirm('Are you sure you want to delete this amenity? This cannot be undone.')) {
-                    try {
-                        const response = await fetch(`/api/amenities/${amenityId}/delete/`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token }}'
-                            }
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showMessage('Amenity deleted successfully!', 'success');
-                            location.reload();
-                        } else {
-                            showMessage(result.error || 'Failed to delete amenity.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error deleting amenity:', error);
-                        showMessage('Network error or server issue deleting amenity.', 'error');
-                    }
-                }
+                // Using custom confirmation modal instead of native confirm()
+                showConfirmationModal('Are you sure you want to delete this amenity? This cannot be undone.', amenityId, 'delete_amenity');
             });
+        });
+
+        // Handle "Yes" click for delete operations in the custom confirmation modal
+        confirmationYesButton.addEventListener('click', async () => {
+            confirmationModal.classList.remove('show'); // Hide modal immediately
+
+            // Determine which action to take based on currentNewStatus (which now holds the action type)
+            if (currentNewStatus === 'delete_assignment') {
+                try {
+                    const response = await fetch(`/api/assignments/${currentRequestId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showMessage('Assignment deleted successfully!', 'success');
+                        location.reload();
+                    } else {
+                        showMessage(result.error || 'Failed to delete assignment.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting assignment:', error);
+                    showMessage('Network error or server issue deleting assignment.', 'error');
+                }
+            } else if (currentNewStatus === 'delete_amenity') {
+                try {
+                    const response = await fetch(`/api/amenities/${currentRequestId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showMessage('Amenity deleted successfully!', 'success');
+                        location.reload();
+                    } else {
+                        showMessage(result.error || 'Failed to delete amenity.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting amenity:', error);
+                    showMessage('Network error or server issue deleting amenity.', 'error');
+                }
+            } else {
+                // This is the original status update logic
+                try {
+                    const response = await fetch(`/request/${currentRequestId}/update_status/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: `new_status=${currentNewStatus}`
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showMessage('Status updated successfully!', 'success');
+                        location.reload();
+                    } else {
+                        showMessage(result.error || 'Failed to update status.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    showMessage('Network error or server issue updating status.', 'error');
+                }
+            }
         });
 
     </script>
