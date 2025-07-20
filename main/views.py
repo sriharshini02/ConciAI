@@ -361,37 +361,49 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         'not_ready_rooms': not_ready_rooms,
     })
 
-    # --- Handle POST requests first (form submissions) ---
     if request.method == 'POST':
         # --- Handle Guest Assignment Form Submission ---
-        # Identify guest assignment form by a unique field, e.g., 'guest_names' or 'room_number_input'
         if 'guest_names' in request.POST and 'room_number_input' in request.POST:
             assignment_id = request.POST.get('assignment_id')
             
             if assignment_id:
-                # Editing existing assignment
                 assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
                 form = GuestRoomAssignmentForm(request.POST, instance=assignment, hotel=user_hotel)
             else:
-                # Creating new assignment
                 form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
 
+            # print(f"Guest Assignment POST: Form received for ID {assignment_id or 'new'}") # Keep for debugging if needed
+            # print(f"Request POST data: {request.POST}") # Keep for debugging if needed
+
             if form.is_valid():
+                # print("Guest Assignment Form is VALID.") # Keep for debugging if needed
                 try:
-                    form.save()
-                    return JsonResponse({'success': True, 'message': 'Guest assignment saved successfully.'})
+                    instance = form.save(commit=False)
+                    
+                    if not instance.pk and not instance.hotel_id: 
+                        instance.hotel = user_hotel
+                        # print(f"DEBUG: Assigned hotel {user_hotel.name} to new GuestRoomAssignment instance before save.") # Keep for debugging if needed
+                    
+                    instance.save() 
+                    # print(f"DEBUG: Guest assignment for room {instance.room_number} saved to database. ID: {instance.id}") # Keep for debugging if needed
+                    
+                    # --- NEW: Construct the success message based on whether a new room was created ---
+                    message = 'Guest assignment saved successfully.'
+                    if form.new_room_created: # Check the flag from the form
+                        message += f" Room '{instance.room_number}' was created."
+
+                    return JsonResponse({'success': True, 'message': message})
                 except Exception as e:
-                    # Log the actual server-side error for debugging
-                    print(f"Server error saving guest assignment: {e}")
+                    print(f"!!! CRITICAL SERVER ERROR during Guest Assignment form.save(): {e}")
+                    import traceback
+                    traceback.print_exc()
                     return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
             else:
-                # Print form errors to console for debugging
-                print("Guest assignment form errors:", form.errors)
-                # Return JSON response with errors for frontend
+                print("Guest Assignment Form is NOT VALID. Errors:", form.errors)
                 return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
 
-        # --- Handle Amenity Form Submission (if you have one in the same view) ---
-        elif 'amenity_name' in request.POST: # Example field to identify AmenityForm
+        # --- Handle Amenity Form Submission (your existing code) ---
+        elif 'name' in request.POST and 'description' in request.POST and 'price' in request.POST:
             amenity_id = request.POST.get('amenity_id')
             if amenity_id:
                 amenity = get_object_or_404(Amenity, id=amenity_id)
@@ -399,17 +411,25 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             else:
                 form = AmenityForm(request.POST)
 
+            # print(f"Amenity POST: Form received for ID {amenity_id or 'new'}") # Keep for debugging if needed
+
             if form.is_valid():
-                form.save()
-                return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
+                # print("Amenity Form is VALID.") # Keep for debugging if needed
+                try:
+                    form.save()
+                    # print(f"DEBUG: Amenity {form.instance.name} saved to database. ID: {form.instance.id}") # Keep for debugging if needed
+                    return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
+                except Exception as e:
+                    print(f"!!! CRITICAL SERVER ERROR during Amenity form.save(): {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
             else:
-                print("Amenity form errors:", form.errors)
+                print("Amenity Form is NOT VALID. Errors:", form.errors)
                 return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
         
-        # --- Handle other POST requests if any ---
-        # ... (add more elif blocks for other forms if needed) ...
-
-        # If it's a POST but doesn't match any known form, return an error
+        # If it's a POST but doesn't match any known form
+        # print(f"Unknown POST request received. POST data: {request.POST}") # Keep for debugging if needed
         return JsonResponse({'success': False, 'error': 'Unknown form submission or invalid request.'}, status=400)
 
     # --- Handle GET requests (displaying the dashboard) ---
@@ -626,6 +646,8 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         })
             
     return render(request, 'main/staff_dashboard.html', context)
+
+    
 # --- New Amenity Management View ---
 @login_required
 def amenity_management(request):
