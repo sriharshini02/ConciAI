@@ -1,1 +1,1 @@
-web: gunicorn ConciAI.wsgi:application --log-file -
+web: gunicorn conci_project.wsgi:application --log-file -
