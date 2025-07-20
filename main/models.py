@@ -40,7 +40,7 @@ class Room(models.Model):
         ('out_of_service', 'Out of Service'),
     ]
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='rooms')
-    room_number = models.CharField(max_length=10)
+    room_number = models.CharField(max_length=1000)
     room_type = models.CharField(max_length=50, blank=True, null=True) # e.g., "Standard", "Deluxe", "Suite"
     status = models.CharField(max_length=20, choices=ROOM_STATUS_CHOICES, default='available')
     # Add other room details like capacity, amenities etc.
