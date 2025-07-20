@@ -11,46 +11,46 @@
     <!-- D3.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        /* New Color Palette from image_01bb87.png */
+        /* Restored Color Palette from image_ff515c.png (Amenities page) */
         :root {
-            --light-blue-gray: #D8E0E8;
-            --light-green: #D1DFCC;
-            --light-yellow-green: #DFE29D;
-            --off-white: #F8F8F8;
-            --dark-charcoal: #252527;
-
-            /* Mapping new palette to existing UI elements */
-            --sidebar-bg: var(--light-blue-gray); /* Changed to light-blue-gray */
-            --sidebar-text: var(--dark-charcoal); /* Changed for contrast */
-            --header-bg: var(--light-blue-gray);
-            --header-text: var(--dark-charcoal);
-            --main-bg: var(--light-blue-gray); /* Main background */
-            --card-bg: var(--off-white);
-            --card-border: var(--dark-charcoal); /* Stronger definition */
-            --button-primary-bg: var(--dark-charcoal);
-            --button-primary-text: var(--off-white);
-            --button-secondary-bg: var(--light-yellow-green); /* Uses another palette color */
-            --button-secondary-text: var(--dark-charcoal);
-            --link-color: var(--dark-charcoal); /* Consistent link color */
+            --light-gray-bg: #F0F2F5; /* Main background, slightly darker than sidebar */
+            --off-white: #FFFFFF;     /* Sidebar, Card, Modal background */
+            --dark-text: #2C3E50;     /* Dark charcoal for main text, headers, primary buttons */
+            --medium-gray-border: #D1D9E6; /* Light border for cards, inputs */
+            --light-blue-accent: #4A90E2; /* For links, active states */
             --success-color: #28a745; /* Standard green for success */
-            --error-color: #dc3545; /* Standard red for error */
+            --error-color: #dc3545;   /* Standard red for error */
             --warning-color: #ffc107; /* Standard yellow for warning */
-            --info-color: #17a2b8; /* Standard blue for info */
-            --table-header-bg: var(--dark-charcoal);
+            --info-color: #17a2b8;    /* Standard blue for info */
+
+            /* Mapping to UI elements */
+            --sidebar-bg: var(--off-white);
+            --sidebar-text: var(--dark-text);
+            --header-bg: var(--off-white);
+            --header-text: var(--dark-text);
+            --main-bg: var(--light-gray-bg);
+            --card-bg: var(--off-white);
+            --card-border: var(--medium-gray-border);
+            --button-primary-bg: var(--light-blue-accent);
+            --button-primary-text: var(--off-white);
+            --button-secondary-bg: var(--medium-gray-border);
+            --button-secondary-text: var(--dark-text);
+            --link-color: var(--light-blue-accent);
+            --table-header-bg: var(--dark-text);
             --table-header-text: var(--off-white);
-            --table-row-hover-bg: var(--light-blue-gray);
+            --table-row-hover-bg: #E0E6F0; /* Slightly darker hover for light rows */
             --modal-bg: var(--off-white);
-            --modal-border: var(--dark-charcoal);
-            --input-border: var(--light-blue-gray);
-            --input-focus-border: var(--dark-charcoal);
-            --chart-color-booked: var(--dark-charcoal);
+            --modal-border: var(--medium-gray-border);
+            --input-border: var(--medium-gray-border);
+            --input-focus-border: var(--light-blue-accent);
+            --chart-color-booked: var(--light-blue-accent);
             --chart-color-cancelled: var(--error-color);
-            --chart-color-platform1: var(--light-green);
-            --chart-color-platform2: var(--dark-charcoal);
-            --chart-color-platform3: var(--light-yellow-green);
-            --chart-color-platform4: #9C27B0; /* Keeping these if no direct palette mapping */
-            --chart-color-platform5: #FF5722;
-            --chart-color-platform6: #607D8B;
+            --chart-color-platform1: #6A8EAE; /* Muted blues/greens for charts */
+            --chart-color-platform2: #8EB1C7;
+            --chart-color-platform3: #AEC8DC;
+            --chart-color-platform4: #C0D0E0;
+            --chart-color-platform5: #D0D8E8;
+            --chart-color-platform6: #E0E6F0;
         }
 
         body {
@@ -58,32 +58,92 @@
             margin: 0;
             padding: 0;
             background-color: var(--main-bg);
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
+            overflow-x: hidden; /* Prevent horizontal scroll during sidebar transition */
         }
 
         .container {
             display: flex;
             min-height: 100vh;
+            transition: margin-left 0.3s ease; /* Smooth transition for main content */
         }
 
         .sidebar {
-            width: 280px; /* Increased width slightly */
+            width: 280px;
             background-color: var(--sidebar-bg);
             color: var(--sidebar-text);
             padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
             position: fixed;
             height: 100%;
-            overflow-y: auto; /* Ensures scrolling if content overflows */
-            box-sizing: border-box; /* Include padding in width */
+            overflow-y: auto;
+            box-sizing: border-box;
+            transition: width 0.3s ease, transform 0.3s ease; /* Smooth transition for sidebar */
+            z-index: 999; /* Ensure sidebar is above main content */
         }
 
-        .sidebar h2 {
-            text-align: center;
+        .sidebar.collapsed {
+            width: 70px; /* Collapsed width */
+            transform: translateX(0); /* Ensure it's not off-screen */
+        }
+
+        .sidebar.collapsed .sidebar-header h2,
+        .sidebar.collapsed .sidebar-header .toggle-btn i,
+        .sidebar.collapsed .sidebar-header .toggle-btn span,
+        .sidebar.collapsed ul li a span,
+        .sidebar.collapsed .logout-section a span {
+            display: none; /* Hide text and specific elements when collapsed */
+        }
+
+        .sidebar.collapsed .sidebar-header .toggle-btn i {
+             display: inline-block; /* Keep icon visible */
+        }
+
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center; /* Center toggle button */
+        }
+
+        .sidebar.collapsed ul li a {
+            justify-content: center; /* Center icons */
+            padding: 10px; /* Adjust padding for icon-only display */
+        }
+        .sidebar.collapsed .logout-section a {
+            justify-content: center;
+            padding: 10px;
+        }
+
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--medium-gray-border);
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
             color: var(--sidebar-text);
+            font-size: 1.8em;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-header .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar-header .toggle-btn:hover {
+            background-color: rgba(0,0,0,0.05);
         }
 
         .sidebar ul {
@@ -97,44 +157,50 @@
         }
 
         .sidebar ul li a {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             padding: 10px 15px;
             color: var(--sidebar-text);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap; /* Prevent text wrapping for menu items */
+            white-space: nowrap;
+            overflow: hidden; /* Hide overflow text when collapsed */
         }
 
         .sidebar ul li a:hover,
         .sidebar ul li a.active {
-            background-color: var(--dark-charcoal); /* Darker hover for contrast */
+            background-color: var(--light-blue-accent);
             color: var(--off-white);
+        }
+        .sidebar ul li a.active i {
+            color: var(--off-white); /* Ensure icon color matches active text */
         }
 
         .sidebar ul li a i {
             font-size: 1.1em;
+            color: var(--sidebar-text); /* Default icon color */
+            transition: color 0.3s ease;
         }
 
         .logout-section {
-            margin-top: auto; /* Pushes logout to the bottom */
+            margin-top: auto;
             padding-top: 20px;
-            border-top: 1px solid var(--dark-charcoal); /* Changed border color */
+            border-top: 1px solid var(--medium-gray-border);
         }
 
         .logout-section a {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             padding: 10px 15px;
             color: var(--error-color);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .logout-section a:hover {
@@ -143,9 +209,14 @@
         }
 
         .main-content {
-            margin-left: 280px; /* Offset for adjusted fixed sidebar width */
+            margin-left: 280px; /* Initial offset for sidebar */
             flex-grow: 1;
             padding: 20px;
+            transition: margin-left 0.3s ease; /* Smooth transition for main content */
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 70px; /* Adjusted offset when sidebar is collapsed */
         }
 
         .header {
@@ -156,7 +227,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--medium-gray-border);
         }
 
         .header h1 {
@@ -173,7 +245,7 @@
         .header .user-info .notification-bell {
             position: relative;
             cursor: pointer;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             font-size: 1.5em;
         }
 
@@ -205,7 +277,7 @@
             background-color: var(--card-bg);
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
@@ -214,7 +286,7 @@
 
         .card h3 {
             margin-top: 0;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             font-size: 1.2em;
             font-weight: 600;
         }
@@ -222,7 +294,7 @@
         .card p {
             font-size: 1.8em;
             font-weight: 700;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             margin: 10px 0 0;
         }
 
@@ -233,7 +305,7 @@
         }
 
         .card.summary-card .icon-wrapper {
-            background-color: var(--dark-charcoal);
+            background-color: var(--dark-text);
             color: var(--off-white);
             padding: 15px;
             border-radius: 50%;
@@ -258,7 +330,7 @@
             background-color: var(--card-bg);
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--card-border);
             margin-bottom: 20px;
         }
@@ -266,7 +338,7 @@
         .chart-container h3 {
             margin-top: 0;
             margin-bottom: 20px;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             font-size: 1.2em;
             font-weight: 600;
         }
@@ -283,16 +355,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: var(--light-blue-gray);
+            background-color: var(--light-gray-bg);
             border-radius: 8px;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         /* Request Management Styles */
         .request-tabs {
             display: flex;
             margin-bottom: 20px;
-            border-bottom: 2px solid var(--dark-charcoal);
+            border-bottom: 2px solid var(--dark-text);
         }
 
         .request-tabs button {
@@ -302,7 +374,7 @@
             cursor: pointer;
             font-size: 1em;
             font-weight: 500;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
         }
@@ -312,8 +384,8 @@
         }
 
         .request-tabs button.active {
-            color: var(--dark-charcoal);
-            border-bottom-color: var(--dark-charcoal);
+            color: var(--dark-text);
+            border-bottom-color: var(--dark-text);
             font-weight: 600;
         }
 
@@ -322,17 +394,17 @@
             background-color: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--card-border);
         }
 
         .request-category h3 {
             margin-top: 0;
             margin-bottom: 15px;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             font-size: 1.3em;
             font-weight: 600;
-            border-bottom: 1px solid var(--light-blue-gray);
+            border-bottom: 1px solid var(--medium-gray-border);
             padding-bottom: 10px;
         }
 
@@ -343,11 +415,11 @@
         }
 
         .request-item {
-            background-color: var(--light-green); /* Changed to light-green */
-            border: 1px solid var(--dark-charcoal);
+            background-color: var(--light-gray-bg); /* Use a lighter background for items */
+            border: 1px solid var(--medium-gray-border);
             border-radius: 10px;
             padding: 15px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -369,12 +441,12 @@
             margin-top: 10px;
         }
 
-        .status-badge.pending { background-color: var(--warning-color); color: var(--dark-charcoal); }
+        .status-badge.pending { background-color: var(--warning-color); color: var(--dark-text); }
         .status-badge.in_progress { background-color: var(--info-color); color: var(--off-white); }
         .status-badge.completed { background-color: var(--success-color); color: var(--off-white); }
         .status-badge.cancelled { background-color: var(--error-color); color: var(--off-white); }
-        .status-badge.casual_chat { background-color: var(--light-yellow-green); color: var(--dark-charcoal); }
-        .status-badge.general_inquiry { background-color: var(--light-yellow-green); color: var(--dark-charcoal); }
+        .status-badge.casual_chat { background-color: var(--medium-gray-border); color: var(--dark-text); }
+        .status-badge.general_inquiry { background-color: var(--medium-gray-border); color: var(--dark-text); }
 
 
         .request-actions {
@@ -395,19 +467,19 @@
         }
 
         .request-actions button.view-details {
-            background-color: var(--dark-charcoal);
+            background-color: var(--dark-text);
             color: var(--off-white);
         }
         .request-actions button.view-details:hover {
-            background-color: #333;
+            background-color: #4A5C6F; /* Darker hover */
         }
 
         .request-actions button.update-status {
-            background-color: var(--light-green);
-            color: var(--dark-charcoal);
+            background-color: var(--light-blue-accent);
+            color: var(--off-white);
         }
         .request-actions button.update-status:hover {
-            background-color: #c0d0bb;
+            background-color: #3A7BC8; /* Darker hover */
         }
 
         /* Modal Styles */
@@ -446,17 +518,17 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 1px solid var(--light-blue-gray);
+            border-bottom: 1px solid var(--medium-gray-border);
             padding-bottom: 10px;
         }
 
         .modal-header h2 {
             margin: 0;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         .close-button {
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
@@ -465,7 +537,7 @@
 
         .close-button:hover,
         .close-button:focus {
-            color: var(--dark-charcoal);
+            color: var(--light-blue-accent);
             text-decoration: none;
             cursor: pointer;
         }
@@ -474,7 +546,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         .modal-body input[type="text"],
@@ -522,28 +594,28 @@
             margin-right: 10px;
             width: 18px;
             height: 18px;
-            accent-color: var(--dark-charcoal);
+            accent-color: var(--light-blue-accent);
         }
 
         .form-check-label {
             margin-bottom: 0;
             font-weight: 500;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
             cursor: pointer;
         }
 
         /* New: Flex container for date and time inputs */
         .datetime-group {
             display: flex;
-            gap: 15px; /* Space between date and time fields */
-            margin-bottom: 15px; /* Space below the group */
-            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .datetime-group .form-group {
-            flex: 1; /* Each input takes equal space */
-            min-width: 120px; /* Minimum width before wrapping */
-            margin-bottom: 0; /* Remove individual form-group margin as handled by parent */
+            flex: 1;
+            min-width: 120px;
+            margin-bottom: 0;
         }
 
         .modal-footer {
@@ -551,7 +623,7 @@
             justify-content: flex-end;
             gap: 10px;
             margin-top: 20px;
-            border-top: 1px solid var(--light-blue-gray);
+            border-top: 1px solid var(--medium-gray-border);
             padding-top: 15px;
         }
 
@@ -571,7 +643,7 @@
         }
 
         .modal-footer button.save-button:hover {
-            background-color: #333;
+            background-color: #3A7BC8;
         }
 
         .modal-footer button.cancel-button {
@@ -580,7 +652,7 @@
         }
 
         .modal-footer button.cancel-button:hover {
-            background-color: #c0c0c0;
+            background-color: #C0C8D0;
         }
 
         /* Message Box Styles */
@@ -617,39 +689,39 @@
         .request-details-modal .modal-body .detail-row {
             display: flex;
             margin-bottom: 10px;
-            border-bottom: 1px dashed var(--light-blue-gray);
+            border-bottom: 1px dashed var(--medium-gray-border);
             padding-bottom: 5px;
         }
 
         .request-details-modal .modal-body .detail-row strong {
             flex: 0 0 120px;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         .request-details-modal .modal-body .detail-row span {
             flex-grow: 1;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         .request-details-modal .chat-history-section {
             margin-top: 20px;
             padding-top: 15px;
-            border-top: 1px solid var(--light-blue-gray);
+            border-top: 1px solid var(--medium-gray-border);
         }
 
         .request-details-modal .chat-history-section h4 {
             margin-top: 0;
             margin-bottom: 10px;
-            color: var(--dark-charcoal);
+            color: var(--dark-text);
         }
 
         .request-details-modal .chat-messages {
             max-height: 200px;
             overflow-y: auto;
-            border: 1px solid var(--light-blue-gray);
+            border: 1px solid var(--medium-gray-border);
             border-radius: 8px;
             padding: 10px;
-            background-color: var(--light-blue-gray);
+            background-color: var(--light-gray-bg);
         }
 
         .request-details-modal .chat-message {
@@ -664,7 +736,7 @@
         }
 
         .request-details-modal .chat-message.model {
-            background-color: var(--light-green);
+            background-color: #E0F2F7; /* Light blue for model response */
             text-align: left;
         }
 
@@ -678,11 +750,30 @@
                 height: auto;
                 position: relative;
                 box-shadow: none;
-                border-bottom: 2px solid var(--light-blue-gray);
+                border-bottom: 2px solid var(--medium-gray-border);
+                transform: translateX(0); /* Ensure it's visible on mobile */
+            }
+            .sidebar.collapsed {
+                width: 100%; /* No collapse on small screens, just hide content */
+            }
+            .sidebar.collapsed .sidebar-header h2,
+            .sidebar.collapsed ul li a span,
+            .sidebar.collapsed .logout-section a span {
+                display: block; /* Show text on mobile even if technically 'collapsed' */
+                opacity: 1;
+            }
+            .sidebar.collapsed .sidebar-header .toggle-btn i {
+                display: inline-block;
+            }
+            .sidebar-header .toggle-btn {
+                display: none; /* Hide toggle button on mobile if sidebar is always open */
             }
             .main-content {
                 margin-left: 0;
                 padding-top: 20px;
+            }
+            .main-content.sidebar-collapsed {
+                margin-left: 0;
             }
             .header {
                 flex-direction: column;
@@ -703,11 +794,11 @@
             /* Date/Time fields stack on small screens */
             .datetime-group {
                 flex-direction: column;
-                gap: 0; /* Remove gap when stacking */
+                gap: 0;
             }
             .datetime-group .form-group {
-                width: 100%; /* Full width when stacked */
-                margin-bottom: 15px; /* Add back margin for stacked items */
+                width: 100%;
+                margin-bottom: 15px;
             }
         }
 
@@ -719,7 +810,7 @@
             background-color: var(--card-bg);
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
         }
 
         .data-table thead {
@@ -730,7 +821,7 @@
         .data-table th, .data-table td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid var(--light-blue-gray);
+            border-bottom: 1px solid var(--medium-gray-border);
         }
 
         .data-table tbody tr:hover {
@@ -787,7 +878,7 @@
         }
 
         .button-primary:hover {
-            background-color: #333;
+            background-color: #3A7BC8;
         }
 
         .button-secondary {
@@ -803,7 +894,7 @@
         }
 
         .button-secondary:hover {
-            background-color: #c0c0c0;
+            background-color: #C0C8D0;
         }
 
         .error-message {
@@ -815,21 +906,26 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <h2>ConciAI</h2>
+    <div class="container" id="mainContainer">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>ConciAI</h2>
+                <button class="toggle-btn" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             <ul>
-                <li><a href="{% url 'main:home_dashboard' %}" class="{% if current_main_tab == 'home' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="{% url 'main:guest_requests_dashboard' %}" class="{% if current_main_tab == 'requests' %}active{% endif %}"><i class="fas fa-bell"></i> Guest Requests</a></li>
-                <li><a href="{% url 'main:guest_management' %}" class="{% if current_main_tab == 'guest_management' %}active{% endif %}"><i class="fas fa-users"></i> Guest Management</a></li>
-                <li><a href="{% url 'main:amenity_management' %}" class="{% if current_main_tab == 'amenities' %}active{% endif %}"><i class="fas fa-spa"></i> Amenity Management</a></li>
+                <li><a href="{% url 'main:home_dashboard' %}" class="{% if current_main_tab == 'home' %}active{% endif %}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li><a href="{% url 'main:guest_requests_dashboard' %}" class="{% if current_main_tab == 'requests' %}active{% endif %}"><i class="fas fa-bell"></i> <span>Guest Requests</span></a></li>
+                <li><a href="{% url 'main:guest_management' %}" class="{% if current_main_tab == 'guest_management' %}active{% endif %}"><i class="fas fa-users"></i> <span>Guest Management</span></a></li>
+                <li><a href="{% url 'main:amenity_management' %}" class="{% if current_main_tab == 'amenities' %}active{% endif %}"><i class="fas fa-spa"></i> <span>Amenity Management</span></a></li>
             </ul>
             <div class="logout-section">
-                <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
             </div>
         </aside>
 
-        <main class="main-content">
+        <main class="main-content" id="mainContent">
             <header class="header">
                 <h1>{{ page_title }}</h1>
                 <div class="user-info">
@@ -1280,6 +1376,17 @@
             }, 3000); // Hide after 3 seconds
         }
 
+        // Sidebar Toggle Logic
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        });
+
+
         // Notification Bell Logic
         const notificationBell = document.getElementById('notificationBell');
         const notificationBadge = document.getElementById('notificationBadge');
@@ -1410,7 +1517,7 @@
                     .attr("transform", d => `translate(${label.centroid(d)})`)
                     .attr("text-anchor", "middle")
                     .text(d => `${d.data.platform} (${d.data.value}%)`)
-                    .style("fill", "var(--dark-charcoal)")
+                    .style("fill", "var(--dark-text)")
                     .style("font-size", "0.8em");
             }
 
@@ -1511,7 +1618,7 @@
         const confirmationCloseButtons = confirmationModal.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button');
 
         let currentRequestId = null;
-        let currentNewStatus = null; // Will also hold action type for deletes
+        let currentNewStatus = null;
 
         // Function to show the custom confirmation modal
         function showConfirmationModal(message, requestId, newStatus) {
@@ -1537,7 +1644,6 @@
                     const result = await response.json();
                     if (result.success) {
                         showMessage('Assignment deleted successfully!', 'success');
-                        // No need to reload, just remove the row
                         const deletedRow = document.querySelector(`.data-table tbody tr [data-assignment-id="${currentRequestId}"]`).closest('tr');
                         if (deletedRow) {
                             deletedRow.remove();
@@ -1560,7 +1666,6 @@
                     const result = await response.json();
                     if (result.success) {
                         showMessage('Amenity deleted successfully!', 'success');
-                        // No need to reload, just remove the row
                         const deletedRow = document.querySelector(`.data-table tbody tr [data-amenity-id="${currentRequestId}"]`).closest('tr');
                         if (deletedRow) {
                             deletedRow.remove();
@@ -1586,27 +1691,21 @@
                     const result = await response.json();
                     if (result.success) {
                         showMessage('Status updated successfully!', 'success');
-                        // Dynamically update the status badge
                         const requestItem = document.querySelector(`.request-item[data-request-id="${currentRequestId}"]`);
                         if (requestItem) {
                             const statusBadge = requestItem.querySelector('.status-badge');
                             if (statusBadge) {
-                                // Remove old status classes and add new one
                                 statusBadge.classList.remove('pending', 'in_progress', 'completed', 'cancelled', 'casual_chat', 'general_inquiry');
                                 statusBadge.classList.add(currentNewStatus);
-                                // Update text content
-                                statusBadge.textContent = currentNewStatus.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                                statusBadge.textContent = currentNewStatus.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
-                                // Optionally, disable the button that was clicked if it's no longer applicable
                                 const clickedButton = requestItem.querySelector(`button[data-request-id="${currentRequestId}"][data-new-status="${currentNewStatus}"]`);
                                 if (clickedButton) {
-                                    clickedButton.style.display = 'none'; // Hide the button
-                                    // You might want to show the next logical button (e.g., if "Mark In Progress" was clicked, show "Mark Completed")
+                                    clickedButton.style.display = 'none';
                                     if (currentNewStatus === 'in_progress') {
                                         const markCompletedButton = requestItem.querySelector(`button[data-new-status="completed"]`);
                                         if (markCompletedButton) markCompletedButton.style.display = 'inline-block';
                                     } else if (currentNewStatus === 'completed') {
-                                        // Hide all status update buttons if completed
                                         requestItem.querySelectorAll('.update-status').forEach(btn => btn.style.display = 'none');
                                     }
                                 }
