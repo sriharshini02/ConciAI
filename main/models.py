@@ -80,28 +80,15 @@ class GuestRoomAssignment(models.Model):
     guest_names = models.TextField(help_text="Full names of guests, separated by commas if more than one.")
     check_in_time = models.DateTimeField()
     check_out_time = models.DateTimeField()
-    # Renamed bill_amount to base_bill_amount for clarity, and added total_bill_amount
-    base_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,  # type: ignore
-                                           help_text="Base room charges for the stay.")
-    total_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,  # type: ignore
-                                            help_text="Total bill including room charges and amenities.")
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # type: ignore
+    base_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Base room charges for the stay.")
+    total_bill_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total bill including room charges and amenities.")
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['check_in_time'] # Default ordering
-
-    def __str__(self):
-        return f"Assignment for Room {self.room_number} - {self.guest_names} ({self.hotel.name})"
-
-    # Override save to ensure total_bill_amount is at least base_bill_amount initially
-    def save(self, *args, **kwargs):
-        if self.pk is None: # Only on creation
-            self.total_bill_amount = self.base_bill_amount
-        super().save(*args, **kwargs)
-
+        ordering = ['check_in_time']
 
 class GuestRequest(models.Model):
     STATUS_CHOICES = [
