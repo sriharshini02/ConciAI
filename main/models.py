@@ -76,7 +76,7 @@ class GuestRoomAssignment(models.Model):
         ('no_show', 'No Show'),
     ]
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name='guest_assignments')
-    room_number = models.CharField(max_length=10) # Denormalized for easy lookup, should match a Room object
+    room_number = models.CharField(max_length=1000) # Denormalized for easy lookup, should match a Room object
     guest_names = models.TextField(help_text="Full names of guests, separated by commas if more than one.")
     check_in_time = models.DateTimeField()
     check_out_time = models.DateTimeField()
