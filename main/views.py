@@ -308,11 +308,12 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     except UserProfile.DoesNotExist:
         logout(request)
         return redirect('login')
-    except AttributeError:
+    except AttributeError: # Catches if request.user has no profile
         logout(request)
         return redirect('login')
 
     if not user_hotel:
+        # If user has a profile but no hotel assigned (null=True, blank=True on Hotel FK)
         logout(request)
         return redirect('login')
 
@@ -360,6 +361,58 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         'not_ready_rooms': not_ready_rooms,
     })
 
+    # --- Handle POST requests first (form submissions) ---
+    if request.method == 'POST':
+        # --- Handle Guest Assignment Form Submission ---
+        # Identify guest assignment form by a unique field, e.g., 'guest_names' or 'room_number_input'
+        if 'guest_names' in request.POST and 'room_number_input' in request.POST:
+            assignment_id = request.POST.get('assignment_id')
+            
+            if assignment_id:
+                # Editing existing assignment
+                assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
+                form = GuestRoomAssignmentForm(request.POST, instance=assignment, hotel=user_hotel)
+            else:
+                # Creating new assignment
+                form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
+
+            if form.is_valid():
+                try:
+                    form.save()
+                    return JsonResponse({'success': True, 'message': 'Guest assignment saved successfully.'})
+                except Exception as e:
+                    # Log the actual server-side error for debugging
+                    print(f"Server error saving guest assignment: {e}")
+                    return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
+            else:
+                # Print form errors to console for debugging
+                print("Guest assignment form errors:", form.errors)
+                # Return JSON response with errors for frontend
+                return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
+
+        # --- Handle Amenity Form Submission (if you have one in the same view) ---
+        elif 'amenity_name' in request.POST: # Example field to identify AmenityForm
+            amenity_id = request.POST.get('amenity_id')
+            if amenity_id:
+                amenity = get_object_or_404(Amenity, id=amenity_id)
+                form = AmenityForm(request.POST, instance=amenity)
+            else:
+                form = AmenityForm(request.POST)
+
+            if form.is_valid():
+                form.save()
+                return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
+            else:
+                print("Amenity form errors:", form.errors)
+                return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
+        
+        # --- Handle other POST requests if any ---
+        # ... (add more elif blocks for other forms if needed) ...
+
+        # If it's a POST but doesn't match any known form, return an error
+        return JsonResponse({'success': False, 'error': 'Unknown form submission or invalid request.'}, status=400)
+
+    # --- Handle GET requests (displaying the dashboard) ---
     if main_tab == 'home':
         context['page_title'] = 'Dashboard Overview'
 
@@ -406,7 +459,8 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
             cancelled_count = GuestRoomAssignment.objects.filter(
                 hotel=user_hotel,
-                created_at__date=chart_date,
+                # Filter by update_at or status change time if available, or just creation for simplicity
+                created_at__date=chart_date, 
                 status='cancelled'
             ).count()
             
@@ -462,6 +516,9 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         
         # Populate the grouped_requests
         for req in requests_for_hotel:
+            # Note: This `first()` might pick an arbitrary assignment if multiple exist for the room.
+            # You might want to refine this to get the *active* assignment for the room,
+            # or ensure a request is linked to a specific assignment if that's your model's intent.
             assignment = GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=req.room_number).first()
             
             # Ensure the request_type from the DB matches one of our defined choices
@@ -497,6 +554,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         context['page_title'] = 'Guest Management'
         
         # Initialize an empty form for GET requests or if POST fails validation
+        # This 'form' variable will be used in the template for the Add/Edit modal.
         form = GuestRoomAssignmentForm(hotel=user_hotel) 
 
         # Start with all assignments for the user's hotel
@@ -507,7 +565,8 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
         room_number = request.GET.get('room_number')
         if room_number:
-            all_assignments = all_assignments.filter(room_number__icontains=room_number)
+            # CRITICAL FIX: Filter by the related Room object's room_number field
+            all_assignments = all_assignments.filter(room_number__room_number__icontains=room_number)
             filter_params['room_number'] = room_number
 
         guest_names = request.GET.get('guest_names')
@@ -523,12 +582,11 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         check_in_date_from = request.GET.get('check_in_date_from')
         if check_in_date_from:
             try:
-                # Convert to date object for filtering
                 from_date = timezone.datetime.strptime(check_in_date_from, '%Y-%m-%d').date()
                 all_assignments = all_assignments.filter(check_in_time__date__gte=from_date)
                 filter_params['check_in_date_from'] = check_in_date_from
             except ValueError:
-                pass # Handle invalid date format if necessary
+                pass
 
         check_in_date_to = request.GET.get('check_in_date_to')
         if check_in_date_to:
@@ -561,30 +619,13 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         all_assignments = all_assignments.order_by('-check_in_time')
 
         context.update({
-            'form': form, # Pass the form for the add/edit modal
+            'form': form, # Pass the form for the add/edit modal (initialized for GET)
             'all_assignments': all_assignments, # Pass the filtered assignments
             'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES, # Pass choices for status filter
             'filter_params': filter_params, # Pass current filter values to re-populate form fields
         })
-
-        if request.method == 'POST':
-            # This block handles the form submission for adding/editing assignments
-            assignment_id = request.POST.get('assignment_id')
-            
-            if assignment_id:
-                assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
-                form = GuestRoomAssignmentForm(request.POST, instance=assignment, hotel=user_hotel)
-            else:
-                form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
-
-            if form.is_valid():
-                form.save()
-                return JsonResponse({'success': True, 'message': 'Guest assignment saved successfully.'})
-            else:
-                return JsonResponse({'success': False, 'errors': form.errors.as_json()}, status=400)
             
     return render(request, 'main/staff_dashboard.html', context)
-
 
 # --- New Amenity Management View ---
 @login_required
