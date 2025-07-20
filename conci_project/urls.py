@@ -3,10 +3,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
-
+from django.views.generic import RedirectView 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('main.urls')), # Include your main app's URLs
+    path('accounts/', include('django.contrib.auth.urls')), # Django's built-in auth URLs
+    path('', RedirectView.as_view(url='/login/', permanent=True)), # Redirect root to login
 
     # Django's built-in login/logout views
     # This maps /login/ to Django's LoginView, which automatically looks for
@@ -15,7 +16,6 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     # You might also want password reset views here
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
