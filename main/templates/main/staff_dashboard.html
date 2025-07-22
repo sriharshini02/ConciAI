@@ -44,9 +44,17 @@
             --accent-orange-text: #FFC107; /* Dark orange/yellow */
 
             /* Chart Colors */
-            --chart-line-color: #007BFF; /* Vibrant blue for chart line */
+            --chart-color-booked: #007BFF; /* Vibrant blue for chart line */
+            --chart-color-cancelled: #DC3545; /* Red for cancelled */
             --chart-grid-color: #E0E0E0; /* Light grid lines */
             --chart-axis-text: #666666; /* Axis text color */
+            --chart-platform1: #6A8EAE; /* Muted Blue */
+            --chart-platform2: #8EB1C7; /* Lighter Muted Blue */
+            --chart-platform3: #AEC8DC; /* Even Lighter Muted Blue */
+            --chart-platform4: #C0D0E0;
+            --chart-platform5: #D0D8E8;
+            --chart-platform6: #E0E6F0;
+
 
             /* Status Badge Colors (for GuestRoomAssignment and GuestRequest status) */
             --badge-occupied-bg: var(--accent-purple-bg);
@@ -57,15 +65,17 @@
             --badge-available-text: var(--accent-orange-text);
             --badge-not-ready-bg: var(--accent-pink-bg);
             --badge-not-ready-text: var(--accent-pink-text);
-            --badge-pending-bg: var(--border); /* Default light gray */
-            --badge-pending-text: var(--secondary-text);
-            --badge-in_progress-bg: var(--accent-green-bg);
+
+            /* For GuestRequest status badges */
+            --badge-pending-bg: var(--accent-orange-bg); /* Use orange for pending */
+            --badge-pending-text: var(--accent-orange-text);
+            --badge-in_progress-bg: var(--accent-green-bg); /* Use green for in_progress */
             --badge-in_progress-text: var(--accent-green-text);
-            --badge-completed-bg: var(--accent-purple-bg);
+            --badge-completed-bg: var(--accent-purple-bg); /* Use purple for completed */
             --badge-completed-text: var(--accent-purple-text);
-            --badge-cancelled-bg: var(--accent-pink-bg);
+            --badge-cancelled-bg: var(--accent-pink-bg); /* Use pink for cancelled */
             --badge-cancelled-text: var(--accent-pink-text);
-            --badge-default-bg: var(--border);
+            --badge-default-bg: var(--border); /* Fallback for other types like casual_chat */
             --badge-default-text: var(--secondary-text);
         }
 
@@ -101,8 +111,16 @@
 
             /* Chart Colors (lighter versions for dark mode) */
             --chart-line-color: #66B2FF;
+            --chart-color-cancelled: #FF6666;
             --chart-grid-color: #404040;
             --chart-axis-text: #A0A0A0;
+            --chart-platform1: #8EB1C7;
+            --chart-platform2: #AEC8DC;
+            --chart-platform3: #C0D0E0;
+            --chart-platform4: #D0D8E8;
+            --chart-platform5: #E0E6F0;
+            --chart-platform6: #F0F4F8;
+
 
             /* Status Badge Colors (adjusted for dark mode visibility) */
             --badge-occupied-bg: var(--accent-purple-bg);
@@ -113,8 +131,10 @@
             --badge-available-text: var(--accent-orange-text);
             --badge-not-ready-bg: var(--accent-pink-bg);
             --badge-not-ready-text: var(--accent-pink-text);
-            --badge-pending-bg: var(--border);
-            --badge-pending-text: var(--secondary-text);
+
+            /* For GuestRequest status badges */
+            --badge-pending-bg: var(--accent-orange-bg);
+            --badge-pending-text: var(--accent-orange-text);
             --badge-in_progress-bg: var(--accent-green-bg);
             --badge-in_progress-text: var(--accent-green-text);
             --badge-completed-bg: var(--accent-purple-bg);
@@ -159,27 +179,24 @@
         }
 
         .sidebar.collapsed {
-            width: 70px; /* Width when collapsed */
+            width: 70px;
             transform: translateX(0);
         }
 
-        /* Hide text elements when sidebar is collapsed */
         .sidebar.collapsed .sidebar-header h2,
         .sidebar.collapsed ul li a span,
         .sidebar.collapsed .logout-section a span {
             display: none;
         }
 
-        /* Adjust toggle button position when collapsed */
         .sidebar.collapsed .sidebar-header .toggle-btn {
-            margin-left: auto; /* Push to the right */
+            margin-left: auto;
             margin-right: 0;
         }
         .sidebar.collapsed .sidebar-header {
-            justify-content: flex-end; /* Align toggle to end */
+            justify-content: flex-end;
         }
 
-        /* Center icons when collapsed */
         .sidebar.collapsed ul li a,
         .sidebar.collapsed .logout-section a {
             justify-content: center;
@@ -192,7 +209,7 @@
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 10px;
-            border-bottom: none; /* Remove border-bottom from header */
+            border-bottom: none;
         }
 
         .sidebar-header h2 {
@@ -211,7 +228,7 @@
             padding: 5px;
             border-radius: 5px;
             transition: background-color 0.3s ease, color 0.3s ease;
-            line-height: 1; /* Ensure icon is vertically centered */
+            line-height: 1;
         }
 
         .sidebar-header .toggle-btn:hover {
@@ -225,34 +242,34 @@
         }
 
         .sidebar ul li {
-            margin-bottom: 5px; /* Reduced margin for tighter spacing */
+            margin-bottom: 5px;
         }
 
         .sidebar ul li a {
             display: flex;
             align-items: center;
-            gap: 15px; /* Increased gap between icon and text */
-            padding: 12px 15px; /* Adjusted padding */
+            gap: 15px;
+            padding: 12px 15px;
             color: var(--sidebar-text);
             text-decoration: none;
             border-radius: 8px;
-            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease, padding-left 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
             font-weight: 500;
         }
 
         .sidebar ul li a:hover {
-            background-color: var(--sidebar-active-bg); /* Use active background for hover */
+            background-color: var(--sidebar-active-bg);
             color: var(--sidebar-active-text);
-            border-left: 5px solid var(--sidebar-active-border-left); /* Left border on hover */
-            padding-left: 10px; /* Adjust padding to accommodate border */
+            border-left: 5px solid var(--sidebar-active-border-left);
+            padding-left: 10px;
         }
         .sidebar ul li a.active {
             background-color: var(--sidebar-active-bg);
             color: var(--sidebar-active-text);
-            border-left: 5px solid var(--sidebar-active-border-left); /* Solid left border for active */
-            padding-left: 10px; /* Adjust padding to accommodate border */
+            border-left: 5px solid var(--sidebar-active-border-left);
+            padding-left: 10px;
         }
         .sidebar ul li a.active i {
             color: var(--sidebar-active-text);
@@ -273,21 +290,21 @@
         .logout-section a {
             display: flex;
             align-items: center;
-            gap: 15px; /* Increased gap */
-            padding: 12px 15px; /* Adjusted padding */
-            color: var(--status-error-text);
+            gap: 15px;
+            padding: 12px 15px;
+            color: var(--accent-pink-text); /* Using pink accent for logout */
             text-decoration: none;
             border-radius: 8px;
-            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease, padding-left 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
             font-weight: 500;
         }
 
         .logout-section a:hover {
-            background-color: var(--status-error-text);
+            background-color: var(--accent-pink-text);
             color: var(--card-bg);
-            border-left: 5px solid var(--status-error-text); /* Left border on hover */
+            border-left: 5px solid var(--accent-pink-text);
             padding-left: 10px;
         }
 
@@ -340,7 +357,7 @@
             position: absolute;
             top: -5px;
             right: -5px;
-            background-color: var(--status-error-text);
+            background-color: var(--accent-pink-text); /* Notification badge uses pink accent */
             color: var(--card-bg);
             border-radius: 50%;
             padding: 3px 7px;
@@ -567,7 +584,7 @@
         }
 
         .request-item {
-            background-color: var(--bg);
+            background-color: var(--bg); /* Request items use main background */
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 12px;
@@ -819,10 +836,10 @@
             opacity: 1;
             visibility: visible;
         }
-        #messageBox.success { background-color: var(--status-success-bg); color: var(--status-success-text); }
-        #messageBox.error { background-color: var(--status-error-bg); color: var(--status-error-text); }
-        #messageBox.warning { background-color: var(--status-warning-bg); color: var(--status-warning-text); }
-        #messageBox.info { background-color: var(--status-info-bg); color: var(--status-info-text); }
+        #messageBox.success { background-color: var(--accent-green-bg); color: var(--accent-green-text); }
+        #messageBox.error { background-color: var(--accent-pink-bg); color: var(--accent-pink-text); }
+        #messageBox.warning { background-color: var(--accent-orange-bg); color: var(--accent-orange-text); }
+        #messageBox.info { background-color: var(--border); color: var(--text); }
 
 
         /* Request Details Modal Specific Styles */
@@ -879,16 +896,21 @@
             padding: 4px 8px;
             border-radius: 6px;
             transition: background-color 0.3s ease, color 0.3s ease;
+            word-wrap: break-word; /* Ensure long words break */
         }
 
         .request-details-modal .chat-message.user {
-            background-color: var(--card-bg);
+            background-color: var(--card-bg); /* User messages match card background */
             text-align: left;
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         .request-details-modal .chat-message.model {
-            background-color: var(--bg);
+            background-color: var(--bg); /* Model messages match main background */
             text-align: left;
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         /* Responsive adjustments */
@@ -1078,7 +1100,7 @@
         }
 
         .error-message {
-            color: var(--status-error-text);
+            color: var(--accent-pink-text);
             font-size: 0.8em;
             margin-top: 2px;
             margin-bottom: 5px;
@@ -1346,9 +1368,9 @@
                                             <td>${{ amenity.price|floatformat:2 }}</td>
                                             <td>
                                                 {% if amenity.is_available %}
-                                                    <i class="fas fa-check-circle" style="color: var(--status-success-text);"></i> Yes
+                                                    <i class="fas fa-check-circle" style="color: var(--accent-green-text);"></i> Yes
                                                 {% else %}
-                                                    <i class="fas fa-times-circle" style="color: var(--status-error-text);"></i> No
+                                                    <i class="fas fa-times-circle" style="color: var(--accent-pink-text);"></i> No
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -1734,12 +1756,12 @@
 
                 const color = d3.scaleOrdinal()
                     .range([
-                        "var(--chart-color-platform1)",
-                        "var(--chart-color-platform2)",
-                        "var(--chart-color-platform3)",
-                        "var(--chart-color-platform4)",
-                        "var(--chart-color-platform5)",
-                        "var(--chart-color-platform6)"
+                        "var(--chart-platform1)",
+                        "var(--chart-platform2)",
+                        "var(--chart-platform3)",
+                        "var(--chart-platform4)",
+                        "var(--chart-platform5)",
+                        "var(--chart-platform6)"
                     ]);
 
                 const pie = d3.pie()
@@ -1805,8 +1827,13 @@
                         document.getElementById('detailRawText').textContent = result.raw_text;
                         document.getElementById('detailConciResponse').textContent = result.conci_response_text;
                         document.getElementById('detailAiIntent').textContent = result.ai_intent;
-                        document.getElementById('detailAiEntities').textContent = JSON.stringify(result.ai_entities, null, 2);
-                        document.getElementById('detailStaffNotes').textContent = result.staff_notes;
+                        // Handle AI Entities: Check if it's an object/array, then stringify
+                        if (result.ai_entities && typeof result.ai_entities === 'object') {
+                            document.getElementById('detailAiEntities').textContent = JSON.stringify(result.ai_entities, null, 2);
+                        } else {
+                            document.getElementById('detailAiEntities').textContent = result.ai_entities || 'N/A';
+                        }
+                        document.getElementById('detailStaffNotes').textContent = result.staff_notes || 'No staff notes.';
 
                         // Amenity details section
                         const amenityDetailsSection = document.getElementById('amenityDetailsSection');
@@ -1824,11 +1851,14 @@
 
                         const detailChatHistory = document.getElementById('detailChatHistory');
                         detailChatHistory.innerHTML = ''; // Clear previous history
-                        if (result.chat_history && result.chat_history.length > 0) {
+                        // Ensure chat_history is an array before iterating
+                        if (result.chat_history && Array.isArray(result.chat_history) && result.chat_history.length > 0) {
                             result.chat_history.forEach(message => {
                                 const msgDiv = document.createElement('div');
                                 msgDiv.classList.add('chat-message', message.role);
-                                msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${message.parts[0].text}`;
+                                // Check if parts[0] and text exist
+                                const messageText = (message.parts && message.parts.length > 0 && message.parts[0].text) ? message.parts[0].text : 'No text content.';
+                                msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${messageText}`;
                                 detailChatHistory.appendChild(msgDiv);
                             });
                         } else {
