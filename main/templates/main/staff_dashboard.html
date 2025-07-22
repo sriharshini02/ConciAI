@@ -110,7 +110,7 @@
             --accent-orange-text: #FFF3CD;
 
             /* Chart Colors (lighter versions for dark mode) */
-            --chart-line-color: #66B2FF;
+            --chart-color-booked: #66B2FF;
             --chart-color-cancelled: #FF6666;
             --chart-grid-color: #404040;
             --chart-axis-text: #A0A0A0;
@@ -292,7 +292,7 @@
             align-items: center;
             gap: 15px;
             padding: 12px 15px;
-            color: var(--accent-pink-text); /* Using pink accent for logout */
+            color: var(--accent-pink-text);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease, padding-left 0.3s ease;
@@ -357,7 +357,7 @@
             position: absolute;
             top: -5px;
             right: -5px;
-            background-color: var(--accent-pink-text); /* Notification badge uses pink accent */
+            background-color: var(--accent-pink-text);
             color: var(--card-bg);
             border-radius: 50%;
             padding: 3px 7px;
@@ -558,7 +558,7 @@
 
         .request-category {
             margin-bottom: 25px;
-            background-color: var(--card-bg);
+            background-color: var(--card-bg); /* Use card-bg for category containers */
             padding: 18px;
             border-radius: 12px;
             box-shadow: 0 4px 8px var(--shadow-color);
@@ -896,18 +896,18 @@
             padding: 4px 8px;
             border-radius: 6px;
             transition: background-color 0.3s ease, color 0.3s ease;
-            word-wrap: break-word; /* Ensure long words break */
+            word-wrap: break-word;
         }
 
         .request-details-modal .chat-message.user {
-            background-color: var(--card-bg); /* User messages match card background */
+            background-color: var(--card-bg);
             text-align: left;
             border: 1px solid var(--border);
             color: var(--text);
         }
 
         .request-details-modal .chat-message.model {
-            background-color: var(--bg); /* Model messages match main background */
+            background-color: var(--bg);
             text-align: left;
             border: 1px solid var(--border);
             color: var(--text);
@@ -994,7 +994,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            background-color: var(--card-bg);
+            background-color: var(--card-bg); /* Table background uses card-bg */
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 4px var(--shadow-color);
@@ -1004,7 +1004,7 @@
         }
 
         .data-table thead {
-            background-color: var(--bg);
+            background-color: var(--bg); /* Table header matches main background */
             color: var(--text);
         }
 
