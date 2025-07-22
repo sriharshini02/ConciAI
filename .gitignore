@@ -32,3 +32,4 @@ db.sqlite3         # SQLite database file (if using it locally)
 # Operating System files
 .DS_Store
 Thumbs.db
+.env

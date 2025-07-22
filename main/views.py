@@ -13,8 +13,8 @@ import requests
 from asgiref.sync import sync_to_async
 import os
 from dotenv import load_dotenv
-from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest, Amenity
-from .forms import AmenityForm, GuestRoomAssignmentForm
+from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest, Amenity,  StaffMember 
+from .forms import AmenityForm, GuestRoomAssignmentForm, GuestRequestForm
 
 # Load environment variables from .env file
 load_dotenv()
@@ -249,9 +249,9 @@ async def process_guest_command(request):
             # For casual chats or amenity inquiries that are not actionable requests,
             # update the chat_history of the LATEST request or create a new one with 'completed' status.
             if latest_request_for_chat:
-                latest_request_for_chat.chat_history = json.dumps(current_chat_history)
+                latest_request_for_chat.chat_history = json.dumps(current_chat_history) # type: ignore
                 await sync_to_async(latest_request_for_chat.save)()
-                request_obj_id = latest_request_for_chat.id
+                request_obj_id = latest_request_for_chat.id # type: ignore
             else:
                 dummy_request = await sync_to_async(GuestRequest.objects.create)(
                     hotel=hotel,
@@ -262,7 +262,7 @@ async def process_guest_command(request):
                     request_type='casual_chat', # Set type
                     chat_history=json.dumps(current_chat_history)
                 )
-                request_obj_id = dummy_request.id
+                request_obj_id = dummy_request.id      # type: ignore
 
         else: # This is an actionable request (e.g., maintenance, housekeeping, or an actionable amenity_request)
             request_obj = await sync_to_async(GuestRequest.objects.create)(
@@ -279,7 +279,7 @@ async def process_guest_command(request):
                 bill_added=False,
                 chat_history=json.dumps(current_chat_history)
             )
-            request_obj_id = request_obj.id
+            request_obj_id = request_obj.id      # type: ignore
         
         return JsonResponse({
             'success': True,
@@ -294,7 +294,7 @@ async def process_guest_command(request):
         print(f"Error processing guest command: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-# --- Consolidated Staff Dashboard View ---
+
 @login_required
 def staff_dashboard(request, main_tab='home', sub_tab=None):
     """
@@ -302,9 +302,16 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     and sub-tabs for requests (active, archive, all).
     """
     user_hotel = None
+    logged_in_staff_member = None # NEW: To store the StaffMember object for the logged-in user
+
     try:
         user_profile = request.user.profile
         user_hotel = user_profile.hotel
+        # NEW: Try to get the StaffMember profile for the logged-in user
+        try:
+            logged_in_staff_member = StaffMember.objects.get(user=request.user, hotel=user_hotel)
+        except StaffMember.DoesNotExist:
+            logged_in_staff_member = None # User is logged in but not registered as a StaffMember for this hotel
     except UserProfile.DoesNotExist:
         logout(request)
         return redirect('login')
@@ -321,6 +328,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         'page_title': 'Staff Dashboard', # Default title
         'current_main_tab': main_tab,
         'current_sub_tab': sub_tab,
+        'logged_in_staff_member': logged_in_staff_member, # Pass to template
     }
 
     # Common data for all tabs (e.g., room counts)
@@ -372,24 +380,17 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             else:
                 form = GuestRoomAssignmentForm(request.POST, hotel=user_hotel) 
 
-            # print(f"Guest Assignment POST: Form received for ID {assignment_id or 'new'}") # Keep for debugging if needed
-            # print(f"Request POST data: {request.POST}") # Keep for debugging if needed
-
             if form.is_valid():
-                # print("Guest Assignment Form is VALID.") # Keep for debugging if needed
                 try:
                     instance = form.save(commit=False)
                     
                     if not instance.pk and not instance.hotel_id: 
                         instance.hotel = user_hotel
-                        # print(f"DEBUG: Assigned hotel {user_hotel.name} to new GuestRoomAssignment instance before save.") # Keep for debugging if needed
                     
                     instance.save() 
-                    # print(f"DEBUG: Guest assignment for room {instance.room_number} saved to database. ID: {instance.id}") # Keep for debugging if needed
                     
-                    # --- NEW: Construct the success message based on whether a new room was created ---
                     message = 'Guest assignment saved successfully.'
-                    if form.new_room_created: # Check the flag from the form
+                    if form.new_room_created:
                         message += f" Room '{instance.room_number}' was created."
 
                     return JsonResponse({'success': True, 'message': message})
@@ -411,13 +412,9 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             else:
                 form = AmenityForm(request.POST)
 
-            # print(f"Amenity POST: Form received for ID {amenity_id or 'new'}") # Keep for debugging if needed
-
             if form.is_valid():
-                # print("Amenity Form is VALID.") # Keep for debugging if needed
                 try:
                     form.save()
-                    # print(f"DEBUG: Amenity {form.instance.name} saved to database. ID: {form.instance.id}") # Keep for debugging if needed
                     return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
                 except Exception as e:
                     print(f"!!! CRITICAL SERVER ERROR during Amenity form.save(): {e}")
@@ -428,35 +425,29 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
                 print("Amenity Form is NOT VALID. Errors:", form.errors)
                 return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
         
-        # If it's a POST but doesn't match any known form
-        # print(f"Unknown POST request received. POST data: {request.POST}") # Keep for debugging if needed
         return JsonResponse({'success': False, 'error': 'Unknown form submission or invalid request.'}, status=400)
 
     # --- Handle GET requests (displaying the dashboard) ---
     if main_tab == 'home':
         context['page_title'] = 'Dashboard Overview'
 
-        # New Bookings (GuestRoomAssignments created today, regardless of initial status)
         new_bookings_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             created_at__date=today
         ).count()
 
-        # Check-ins Today (GuestRoomAssignments with check_in_time today and status 'checked_in')
         check_ins_today_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             check_in_time__date=today,
             status='checked_in'
         ).count()
 
-        # Check-outs Today (GuestRoomAssignment.objects with check_out_time today and status 'checked_out')
         check_outs_today_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             check_out_time__date=today,
             status='checked_out'
         ).count()
 
-        # Total Requests (all GuestRequest for the hotel)
         total_requests_count = GuestRequest.objects.filter(hotel=user_hotel).count()
 
         context.update({
@@ -466,7 +457,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             'total_requests_count': total_requests_count,
         })
 
-        # --- Dynamic D3 Chart Data for Reservations (Last 7 Days) ---
         reservations_chart_data = []
         for i in range(7):
             chart_date = today - timedelta(days=6 - i)
@@ -479,7 +469,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
             cancelled_count = GuestRoomAssignment.objects.filter(
                 hotel=user_hotel,
-                # Filter by update_at or status change time if available, or just creation for simplicity
                 created_at__date=chart_date, 
                 status='cancelled'
             ).count()
@@ -491,7 +480,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             })
         context['reservations_chart_data'] = json.dumps(reservations_chart_data)
 
-        # Booking by Platform Chart Data (Still hardcoded as 'platform' field is not in model)
         booking_platform_data = json.dumps([
             {"platform": "Direct Booking", "value": 61},
             {"platform": "Booking.com", "value": 12},
@@ -504,7 +492,30 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
     elif main_tab == 'requests':
         context['page_title'] = 'Guest Requests'
+        
+        # NEW: Initialize GuestRequestForm for the modal
+        context['guest_request_form'] = GuestRequestForm(hotel=user_hotel)
+
         requests_for_hotel = GuestRequest.objects.filter(hotel=user_hotel)
+
+        # NEW: Filter requests based on logged-in staff member's role
+        if logged_in_staff_member:
+            # If staff is 'general' or 'concierge', they see all relevant requests
+            if logged_in_staff_member.category == 'general' or logged_in_staff_member.category == 'concierge':
+                # No additional filtering beyond hotel and sub_tab
+                pass
+            else:
+                # Staff members see requests matching their category OR assigned to them
+                # OR unassigned requests that match their category
+                requests_for_hotel = requests_for_hotel.filter(
+                    Q(assigned_staff=logged_in_staff_member) |
+                    Q(request_type=logged_in_staff_member.category) |
+                    Q(assigned_staff__isnull=True, request_type=logged_in_staff_member.category)
+                )
+        else:
+            # If not a recognized staff member, they see all requests for their hotel (as before)
+            pass
+
 
         # Default to 'active' if no sub_tab is specified
         if sub_tab is None:
@@ -512,56 +523,41 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             context['current_sub_tab'] = 'active' # Ensure template reflects default
 
         if sub_tab == 'active':
-            # Active requests are those with 'pending' or 'in_progress' status
-            # AND NOT 'casual_chat' type
             requests_for_hotel = requests_for_hotel.filter(status__in=['pending', 'in_progress']).exclude(request_type='casual_chat')
         elif sub_tab == 'archive':
-            # Archived requests are completed or cancelled
             requests_for_hotel = requests_for_hotel.filter(status__in=['completed', 'cancelled'])
         elif sub_tab == 'all':
-            # For 'all' tab, include all types, including casual_chat
-            pass # No additional filter for 'all' beyond hotel
+            pass # No additional filter for 'all' beyond hotel and staff filtering
 
         requests_for_hotel = requests_for_hotel.order_by('-timestamp')
 
         # Group requests by type for display
         grouped_requests = {}
-        # Use the order defined in the model choices for consistent display
-        # Only iterate through actual REQUEST_TYPE_CHOICES to ensure all categories are considered
         for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
             grouped_requests[choice_value] = {
                 'display_name': choice_label,
                 'requests': []
             }
         
-        # Populate the grouped_requests
         for req in requests_for_hotel:
-            # Note: This `first()` might pick an arbitrary assignment if multiple exist for the room.
-            # You might want to refine this to get the *active* assignment for the room,
-            # or ensure a request is linked to a specific assignment if that's your model's intent.
             assignment = GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=req.room_number).first()
             
-            # Ensure the request_type from the DB matches one of our defined choices
-            # This handles cases where old data might have undefined types
             actual_request_type = req.request_type if req.request_type in [cv for cv, cl in GuestRequest.REQUEST_TYPE_CHOICES] else 'general_inquiry'
 
-            # Only add to grouped_requests if it's not a casual_chat for 'active' tab
             if sub_tab == 'active' and actual_request_type == 'casual_chat':
-                continue # Skip casual chat for active view
+                continue
             
             grouped_requests[actual_request_type]['requests'].append({
                 'request': req,
                 'assignment': assignment,
+                'assigned_staff_name': req.assigned_staff.user.username if req.assigned_staff else None # NEW: Add assigned staff name
             })
 
-        # Convert to a list of (display_name, list_of_requests) for ordered iteration in template
-        # Filter out empty groups if they are not needed, unless it's the 'all' tab and we want to show all categories
         ordered_grouped_requests = []
         has_any_requests = False
         for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
-            # Only include non-casual chat types in the active view, or all types in the 'all'/'archive' views
             if (sub_tab == 'active' and choice_value == 'casual_chat'):
-                continue # Skip casual chat for active tab
+                continue
             
             if grouped_requests[choice_value]['requests']:
                 ordered_grouped_requests.append(grouped_requests[choice_value])
@@ -573,19 +569,14 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     elif main_tab == 'guest_management':
         context['page_title'] = 'Guest Management'
         
-        # Initialize an empty form for GET requests or if POST fails validation
-        # This 'form' variable will be used in the template for the Add/Edit modal.
         form = GuestRoomAssignmentForm(hotel=user_hotel) 
 
-        # Start with all assignments for the user's hotel
         all_assignments = GuestRoomAssignment.objects.filter(hotel=user_hotel)
 
-        # --- Apply Filters ---
         filter_params = {}
 
         room_number_filter_val = request.GET.get('room_number')
         if room_number_filter_val:
-            # --- CRITICAL FIX: Filter directly on the CharField 'room_number' ---
             all_assignments = all_assignments.filter(room_number__icontains=room_number_filter_val)
             filter_params['room_number'] = room_number_filter_val
 
@@ -635,18 +626,239 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             except ValueError:
                 pass
 
-        # Order the filtered results
         all_assignments = all_assignments.order_by('-check_in_time')
 
         context.update({
-            'form': form, # Pass the form for the add/edit modal (initialized for GET)
-            'all_assignments': all_assignments, # Pass the filtered assignments
-            'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES, # Pass choices for status filter
-            'filter_params': filter_params, # Pass current filter values to re-populate form fields
+            'form': form,
+            'all_assignments': all_assignments,
+            'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES,
+            'filter_params': filter_params,
         })
             
+    elif main_tab == 'amenities':
+        context['page_title'] = 'Amenity Management'
+        # Pass an empty form instance for the "Add New Amenity" modal
+        context['form'] = AmenityForm() # Assuming AmenityForm is used for both add/edit
+        context['amenities'] = Amenity.objects.filter(hotel=user_hotel).order_by('name')
+
+
     return render(request, 'main/staff_dashboard.html', context)
 
+
+# NEW API VIEW: Fetch details for a specific GuestRequest (for modal)
+@login_required
+def request_details_api(request, request_id):
+    """
+    API endpoint to fetch details of a single GuestRequest.
+    Includes assigned staff information.
+    """
+    try:
+        user_hotel = request.user.profile.hotel
+        guest_request = get_object_or_404(GuestRequest, id=request_id, hotel=user_hotel)
+
+        amenity_details = None
+        if guest_request.request_type == 'amenity_request' and guest_request.amenity_requested:
+            amenity_details = {
+                'name': guest_request.amenity_requested.name,
+                'quantity': guest_request.amenity_quantity,
+                'price_per_unit': float(guest_request.amenity_requested.price),
+                'total_amenity_cost': float(guest_request.amenity_quantity * guest_request.amenity_requested.price),
+                'bill_added': guest_request.bill_added,
+            }
+
+        # Prepare chat history for JSON response
+        chat_history_data = []
+        if guest_request.chat_history:
+            # chat_history is already a JSONField, so it should be a Python list/dict
+            # Ensure it's iterable and has 'role' and 'parts'
+            if isinstance(guest_request.chat_history, list):
+                for msg in guest_request.chat_history: # type: ignore
+                    if 'role' in msg and 'parts' in msg and isinstance(msg['parts'], list) and len(msg['parts']) > 0:
+                        chat_history_data.append({
+                            'role': msg['role'],
+                            'parts': [{'text': p.get('text', '')} for p in msg['parts'] if 'text' in p]
+                        })
+            elif isinstance(guest_request.chat_history, dict): # Handle cases where chat_history might be a single dict
+                if 'role' in guest_request.chat_history and 'parts' in guest_request.chat_history:
+                    chat_history_data.append({
+                        'role': guest_request.chat_history['role'],
+                        'parts': [{'text': p.get('text', '')} for p in guest_request.chat_history['parts'] if 'text' in p]   # type: ignore
+                    })
+
+
+        return JsonResponse({
+            'success': True,
+            'room_number': guest_request.room_number,
+            'guest_names': GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=guest_request.room_number).first().guest_names if GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=guest_request.room_number).exists() else 'N/A', # type: ignore
+            'status': guest_request.get_status_display(), # Display value # type: ignore 
+            'request_type': guest_request.get_request_type_display(), # Display value # type: ignore
+            'timestamp': guest_request.timestamp.isoformat(),
+            'raw_text': guest_request.raw_text,
+            'conci_response_text': guest_request.conci_response_text,
+            'ai_intent': guest_request.ai_intent,
+            'ai_entities': guest_request.ai_entities, # This is already JSON, will be serialized by JsonResponse
+            'staff_notes': guest_request.staff_notes,
+            'amenity_details': amenity_details,
+            'chat_history': chat_history_data, # Pass the processed chat history
+            'assigned_staff': { # NEW: Include assigned staff details
+                'id': guest_request.assigned_staff.id,
+                'username': guest_request.assigned_staff.user.username,
+                'category': guest_request.assigned_staff.category,
+            } if guest_request.assigned_staff else None,
+            'raw_status_value': guest_request.status, # NEW: Pass raw status for form pre-population
+            'raw_request_type_value': guest_request.request_type, # NEW: Pass raw type for form pre-population
+            'raw_assigned_staff_id': guest_request.assigned_staff.id if guest_request.assigned_staff else '', # NEW: Pass raw ID for form pre-population
+        })
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except Exception as e:
+        print(f"Error fetching request details: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
+
+# NEW API VIEW: Update GuestRequest (status, staff, notes etc.)
+@login_required
+def update_request_api(request, request_id):
+    """
+    API endpoint to update a GuestRequest.
+    Handles status, assigned staff, staff notes, and request type.
+    """
+    if request.method == 'POST':
+        try:
+            user_hotel = request.user.profile.hotel
+            guest_request = get_object_or_404(GuestRequest, id=request_id, hotel=user_hotel)
+
+            form = GuestRequestForm(request.POST, instance=guest_request, hotel=user_hotel)
+
+            if form.is_valid():
+                form.save() # Saves the updated status, assigned_staff, staff_notes, request_type
+                return JsonResponse({'success': True, 'message': 'Request updated successfully!'})
+            else:
+                print("Update Request Form is NOT VALID. Errors:", form.errors)
+                return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
+
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+        except Exception as e:
+            print(f"Error updating request: {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+# Existing API for checking new requests (no changes needed here for staff assignment)
+@login_required
+def check_new_requests(request):
+    """
+    API endpoint to check for new guest requests since the last check.
+    """
+    try:
+        user_hotel = request.user.profile.hotel
+        last_check_str = request.GET.get('last_check')
+        
+        if last_check_str:
+            last_check_time = timezone.datetime.fromisoformat(last_check_str)
+            # Ensure timezone-aware comparison
+            if timezone.is_naive(last_check_time):
+                last_check_time = timezone.make_aware(last_check_time, timezone.get_current_timezone())
+        else:
+            last_check_time = timezone.now() - timedelta(minutes=5) # Default to last 5 minutes if no timestamp
+
+        new_requests_count = GuestRequest.objects.filter(
+            hotel=user_hotel,
+            timestamp__gt=last_check_time,
+            status='pending' # Only count new pending requests
+        ).count()
+
+        return JsonResponse({
+            'success': True,
+            'new_requests_count': new_requests_count,
+            'current_timestamp': timezone.now().isoformat()
+        })
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except Exception as e:
+        print(f"Error checking new requests: {e}")
+        return JsonResponse({'success': False, 'error': 'An error occurred while checking for new requests.'}, status=500)
+
+
+# Existing API for deleting assignments (no changes needed)
+@login_required
+def delete_assignment_api(request, assignment_id):
+    if request.method == 'POST':
+        try:
+            user_hotel = request.user.profile.hotel
+            assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
+            assignment.delete()
+            return JsonResponse({'success': True, 'message': 'Guest assignment deleted successfully.'})
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+# Existing API for editing assignments (no changes needed)
+@login_required
+def edit_assignment_api(request, assignment_id):
+    try:
+        user_hotel = request.user.profile.hotel
+        assignment = get_object_or_404(GuestRoomAssignment, id=assignment_id, hotel=user_hotel)
+        
+        # Prepare data for JSON response
+        assignment_data = {
+            'id': assignment.id,
+            'room_number': {'room_number': assignment.room_number}, # Match expected structure
+            'guest_names': assignment.guest_names,
+            'check_in_time': assignment.check_in_time.isoformat() if assignment.check_in_time else None,
+            'check_out_time': assignment.check_out_time.isoformat() if assignment.check_out_time else None,
+            'status': assignment.status,
+            'total_bill_amount': float(assignment.total_bill_amount),
+            'amount_paid': float(assignment.amount_paid),
+        }
+        return JsonResponse({'success': True, 'assignment': assignment_data})
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+# Existing API for amenities (no changes needed)
+@login_required
+def amenity_detail_api(request, amenity_id):
+    try:
+        user_hotel = request.user.profile.hotel
+        amenity = get_object_or_404(Amenity, id=amenity_id) # No hotel filter here, assuming amenities are global or filtered by form
+        # It's safer to filter by hotel if amenities are hotel-specific
+        # amenity = get_object_or_404(Amenity, id=amenity_id, hotel=user_hotel) 
+        
+        return JsonResponse({
+            'success': True,
+            'id': amenity.id,
+            'name': amenity.name,
+            'description': amenity.description,
+            'price': float(amenity.price),
+            'is_available': amenity.is_available,
+        })
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def delete_amenity_api(request, amenity_id):
+    if request.method == 'POST':
+        try:
+            user_hotel = request.user.profile.hotel
+            amenity = get_object_or_404(Amenity, id=amenity_id) # Add hotel filter if amenities are hotel-specific
+            # amenity = get_object_or_404(Amenity, id=amenity_id, hotel=user_hotel)
+            amenity.delete()
+            return JsonResponse({'success': True, 'message': 'Amenity deleted successfully.'})
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
     
 # --- New Amenity Management View ---
 @login_required

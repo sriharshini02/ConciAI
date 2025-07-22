@@ -1,7 +1,7 @@
 # main/admin.py
 
 from django.contrib import admin
-from .models import  Hotel, UserProfile, HotelConfiguration, Room, GuestRoomAssignment, GuestRequest, Amenity # Import Amenity
+from .models import  Hotel, UserProfile, HotelConfiguration, Room, GuestRoomAssignment, GuestRequest, Amenity, StaffMember
 
 # Register your models here.
 
@@ -95,3 +95,13 @@ class HotelConfigurationAdmin(admin.ModelAdmin):
     list_display = ('hotel', 'key', 'value')
     list_filter = ('hotel', 'key')
     search_fields = ('key', 'value')
+
+
+@admin.register(StaffMember)
+class StaffMemberAdmin(admin.ModelAdmin):
+    list_display = ('user', 'hotel', 'category')
+    list_filter = ('hotel', 'category')
+    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    raw_id_fields = ('user',) # Allows searching for users by ID/username, useful for many users
+    list_editable = ('category',) # Allows quick category changes
+

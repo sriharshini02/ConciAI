@@ -1237,14 +1237,12 @@
                                                 <p><strong>Cost:</strong> ${{ item.request.amenity_requested.price|floatformat:2 }} each</p>
                                             {% endif %}
                                             <p><strong>Status:</strong> <span class="status-badge {{ item.request.status }}">{{ item.request.get_status_display }}</span></p>
+                                            {# NEW: Display assigned staff on the card #}
+                                            <p><strong>Assigned To:</strong> <span class="assigned-staff-name">{{ item.assigned_staff_name|default:"Unassigned" }}</span></p>
                                         </div>
                                         <div class="request-actions">
                                             <button class="view-details" data-request-id="{{ item.request.id }}">View Details</button>
-                                            {% if item.request.status == 'pending' %}
-                                                <button class="update-status" data-request-id="{{ item.request.id }}" data-new-status="in_progress">Mark In Progress</button>
-                                            {% elif item.request.status == 'in_progress' %}
-                                                <button class="update-status" data-request-id="{{ item.request.id }}" data-new-status="completed">Mark Completed</button>
-                                            {% endif %}
+                                            {# Removed direct status update buttons here, as they will be handled in the modal #}
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -1294,7 +1292,7 @@
                                 <input type="date" id="check_out_date_from_filter" name="check_out_date_from" value="{{ filter_params.check_out_date_from|default:'' }}" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label for="check_out_date_to_filter">Check-out Date To:</label>
+                                <label for="check_out_date_to_to_filter">Check-out Date To:</label>
                                 <input type="date" id="check_out_date_to_to_filter" name="check_out_date_to" value="{{ filter_params.check_out_date_to|default:'' }}" class="form-control">
                             </div>
                             <button type="submit" class="button-primary">Apply Filters</button>
@@ -1479,17 +1477,47 @@
                 <h2>Request Details</h2>
                 <span class="close-button" id="closeRequestDetailsModalButton">&times;</span>
             </div>
-            <div class="modal-body">
+            {# NEW: Wrap modal body in a form for updating request details #}
+            <form id="requestUpdateForm" class="modal-body">
+                {% csrf_token %}
+                <input type="hidden" id="modalRequestId" name="request_id"> {# Hidden field to hold request ID #}
+
                 <div class="detail-row"><strong>Room:</strong> <span id="detailRoomNumber"></span></div>
                 <div class="detail-row"><strong>Guest:</strong> <span id="detailGuestNames"></span></div>
-                <div class="detail-row"><strong>Status:</strong> <span id="detailStatus"></span></div>
-                <div class="detail-row"><strong>Type:</strong> <span id="detailRequestType"></span></div>
                 <div class="detail-row"><strong>Timestamp:</strong> <span id="detailTimestamp"></span></div>
                 <div class="detail-row"><strong>Raw Text:</strong> <span id="detailRawText"></span></div>
                 <div class="detail-row"><strong>Conci Response:</strong> <span id="detailConciResponse"></span></div>
                 <div class="detail-row"><strong>AI Intent:</strong> <span id="detailAiIntent"></span></div>
                 <div class="detail-row"><strong>AI Entities:</strong> <span id="detailAiEntities"></span></div>
-                <div class="detail-row"><strong>Staff Notes:</strong> <span id="detailStaffNotes"></span></div>
+                
+                {# NEW: Editable Status Field #}
+                <div class="form-group detail-row">
+                    <label for="{{ guest_request_form.status.id_for_label }}"><strong>Status:</strong></label>
+                    {{ guest_request_form.status }}
+                    <div id="statusErrors" class="error-message"></div>
+                </div>
+
+                {# NEW: Editable Request Type Field #}
+                <div class="form-group detail-row">
+                    <label for="{{ guest_request_form.request_type.id_for_label }}"><strong>Type:</strong></label>
+                    {{ guest_request_form.request_type }}
+                    <div id="requestTypeErrors" class="error-message"></div>
+                </div>
+
+                {# NEW: Assigned Staff Dropdown #}
+                <div class="form-group detail-row">
+                    <label for="{{ guest_request_form.assigned_staff.id_for_label }}"><strong>Assign Staff:</strong></label>
+                    {{ guest_request_form.assigned_staff }}
+                    <div id="assignedStaffErrors" class="error-message"></div>
+                </div>
+
+                {# NEW: Editable Staff Notes Field #}
+                <div class="form-group detail-row">
+                    <label for="{{ guest_request_form.staff_notes.id_for_label }}"><strong>Staff Notes:</strong></label>
+                    {{ guest_request_form.staff_notes }}
+                    <div id="staffNotesErrors" class="error-message"></div>
+                </div>
+
                 <div id="amenityDetailsSection" style="display:none;">
                     <div class="detail-row"><strong>Amenity Name:</strong> <span id="detailAmenityName"></span></div>
                     <div class="detail-row"><strong>Amenity Quantity:</strong> <span id="detailAmenityQuantity"></span></div>
@@ -1503,10 +1531,11 @@
                         <!-- Chat messages will be loaded here -->
                     </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="cancel-button" id="closeRequestDetailsModalButtonFooter">Close</button>
-            </div>
+                <div class="modal-footer">
+                    <button type="submit" class="save-button" id="saveRequestChangesButton">Save Changes</button>
+                    <button type="button" class="cancel-button" id="closeRequestDetailsModalButtonFooter">Close</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1810,6 +1839,15 @@
         const closeRequestDetailsModalButton = document.getElementById('closeRequestDetailsModalButton');
         const closeRequestDetailsModalButtonFooter = document.getElementById('closeRequestDetailsModalButtonFooter');
         const viewDetailsButtons = document.querySelectorAll('.view-details');
+        
+        // NEW: Get form elements from the modal
+        const requestUpdateForm = document.getElementById('requestUpdateForm');
+        const modalRequestId = document.getElementById('modalRequestId');
+        const idStaffNotes = document.getElementById('id_staff_notes'); // This is the textarea for staff notes
+        const idAssignedStaff = document.getElementById('id_assigned_staff'); // This is the select for assigned staff
+        const idStatus = document.getElementById('id_status'); // This is the select for status
+        const idRequestType = document.getElementById('id_request_type'); // This is the select for request type
+        const saveRequestChangesButton = document.getElementById('saveRequestChangesButton');
 
         viewDetailsButtons.forEach(button => {
             button.addEventListener('click', async () => {
@@ -1819,21 +1857,32 @@
                     const result = await response.json();
 
                     if (result.success) {
+                        // Populate static display fields
                         document.getElementById('detailRoomNumber').textContent = result.room_number;
                         document.getElementById('detailGuestNames').textContent = result.guest_names;
-                        document.getElementById('detailStatus').textContent = result.status;
-                        document.getElementById('detailRequestType').textContent = result.request_type;
                         document.getElementById('detailTimestamp').textContent = new Date(result.timestamp).toLocaleString();
                         document.getElementById('detailRawText').textContent = result.raw_text;
                         document.getElementById('detailConciResponse').textContent = result.conci_response_text;
                         document.getElementById('detailAiIntent').textContent = result.ai_intent;
-                        // Handle AI Entities: Check if it's an object/array, then stringify
+                        
                         if (result.ai_entities && typeof result.ai_entities === 'object') {
                             document.getElementById('detailAiEntities').textContent = JSON.stringify(result.ai_entities, null, 2);
                         } else {
                             document.getElementById('detailAiEntities').textContent = result.ai_entities || 'N/A';
                         }
-                        document.getElementById('detailStaffNotes').textContent = result.staff_notes || 'No staff notes.';
+                        
+                        // Populate form fields for editing
+                        modalRequestId.value = requestId;
+                        idStaffNotes.value = result.staff_notes || ''; // Set staff notes
+                        idStatus.value = result.raw_status_value; // Set status dropdown
+                        idRequestType.value = result.raw_request_type_value; // Set request type dropdown
+
+                        // Populate assigned staff dropdown
+                        if (idAssignedStaff) { // Check if the element exists
+                            // Clear existing options first if dynamically adding
+                            // No need to clear if Django renders all options, just set value
+                            idAssignedStaff.value = result.raw_assigned_staff_id || ''; // Set assigned staff dropdown
+                        }
 
                         // Amenity details section
                         const amenityDetailsSection = document.getElementById('amenityDetailsSection');
@@ -1848,21 +1897,45 @@
                             amenityDetailsSection.style.display = 'none';
                         }
 
-
                         const detailChatHistory = document.getElementById('detailChatHistory');
                         detailChatHistory.innerHTML = ''; // Clear previous history
-                        // Ensure chat_history is an array before iterating
                         if (result.chat_history && Array.isArray(result.chat_history) && result.chat_history.length > 0) {
                             result.chat_history.forEach(message => {
                                 const msgDiv = document.createElement('div');
                                 msgDiv.classList.add('chat-message', message.role);
-                                // Check if parts[0] and text exist
                                 const messageText = (message.parts && message.parts.length > 0 && message.parts[0].text) ? message.parts[0].text : 'No text content.';
                                 msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${messageText}`;
                                 detailChatHistory.appendChild(msgDiv);
                             });
                         } else {
                             detailChatHistory.innerHTML = '<p>No detailed conversation history available.</p>';
+                        }
+
+                        // NEW: Conditional disabling of save button based on logged_in_staff_member
+                        // This is a basic example; you might need more complex authorization logic
+                        const loggedInStaffMemberId = "{{ logged_in_staff_member.id|default:'' }}";
+                        const loggedInStaffCategory = "{{ logged_in_staff_member.category|default:'' }}";
+
+                        if (saveRequestChangesButton) {
+                            let canEdit = false;
+                            if (loggedInStaffMemberId) {
+                                // If current user is a general/concierge staff, they can edit anything
+                                if (loggedInStaffCategory === 'general' || loggedInStaffCategory === 'concierge') {
+                                    canEdit = true;
+                                } else {
+                                    // If assigned to current user, they can edit
+                                    if (result.assigned_staff && result.assigned_staff.id == loggedInStaffMemberId) {
+                                        canEdit = true;
+                                    }
+                                    // If unassigned and matches their category, they can edit
+                                    if (!result.assigned_staff && result.raw_request_type_value === loggedInStaffCategory) {
+                                        canEdit = true;
+                                    }
+                                }
+                            }
+                            saveRequestChangesButton.disabled = !canEdit;
+                            // Optionally, hide the button if not allowed to edit
+                            // saveRequestChangesButton.style.display = canEdit ? 'block' : 'none';
                         }
 
                         requestDetailsModal.classList.add('show'); // Show the modal
@@ -1882,13 +1955,74 @@
         if (closeRequestDetailsModalButton) {
             closeRequestDetailsModalButton.addEventListener('click', () => {
                 requestDetailsModal.classList.remove('show');
+                // Clear form errors when closing modal
+                document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
             });
         }
         if (closeRequestDetailsModalButtonFooter) {
             closeRequestDetailsModalButtonFooter.addEventListener('click', () => {
                 requestDetailsModal.classList.remove('show');
+                // Clear form errors when closing modal
+                document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
             });
         }
+
+        // NEW: Submit Request Update Form
+        if (requestUpdateForm) {
+            requestUpdateForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                // Clear previous errors
+                document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
+
+                const requestId = modalRequestId.value;
+                const url = `/api/requests/${requestId}/update/`;
+                
+                const formData = new FormData(requestUpdateForm);
+                // Ensure assigned_staff is sent as an empty string if unassigned
+                if (formData.get('assigned_staff') === '') {
+                    formData.set('assigned_staff', ''); // Explicitly set to empty string for null
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showMessage(result.message, 'success');
+                        requestDetailsModal.classList.remove('show');
+                        location.reload(); // Reload to reflect changes in the list
+                    } else {
+                        let generalErrorMessage = result.error || 'Failed to update request due to validation errors.';
+                        showMessage(generalErrorMessage, 'error');
+
+                        if (result.errors) {
+                            const errors = JSON.parse(result.errors);
+                            for (const field in errors) {
+                                const errorDiv = document.getElementById(`${field}Errors`);
+                                if (errorDiv) {
+                                    errorDiv.textContent = errors[field][0].message;
+                                } else {
+                                    // Fallback for non-field errors or unexpected errors
+                                    console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
+                                    showMessage(`Error: ${errors[field][0].message}`, 'error');
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error submitting request update form:', error);
+                    showMessage('Network error or server issue updating request.', 'error');
+                }
+            });
+        }
+
 
         // Custom Confirmation Modal Logic for Status Updates
         const confirmationModal = document.getElementById('confirmationModal');
@@ -1896,14 +2030,14 @@
         const confirmationYesButton = document.getElementById('confirmationYesButton');
         const confirmationCloseButtons = confirmationModal.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button');
 
-        let currentRequestId = null;
-        let currentNewStatus = null;
+        let currentActionId = null; // Renamed to be more generic for delete/status
+        let currentActionType = null; // 'delete_assignment', 'delete_amenity', 'update_status'
 
         // Function to show the custom confirmation modal
-        function showConfirmationModal(message, requestId, newStatus) {
+        function showConfirmationModal(message, id, actionType) {
             confirmationMessage.textContent = message;
-            currentRequestId = requestId;
-            currentNewStatus = newStatus;
+            currentActionId = id;
+            currentActionType = actionType;
             confirmationModal.classList.add('show');
         }
 
@@ -1911,10 +2045,9 @@
         confirmationYesButton.addEventListener('click', async () => {
             confirmationModal.classList.remove('show'); // Hide modal immediately
 
-            // Determine which action to take based on currentNewStatus (which now holds the action type)
-            if (currentNewStatus === 'delete_assignment') {
+            if (currentActionType === 'delete_assignment') {
                 try {
-                    const response = await fetch(`/api/assignments/${currentRequestId}/delete/`, {
+                    const response = await fetch(`/api/assignments/${currentActionId}/delete/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
@@ -1923,7 +2056,7 @@
                     const result = await response.json();
                     if (result.success) {
                         showMessage('Assignment deleted successfully!', 'success');
-                        const deletedRow = document.querySelector(`.data-table tbody tr [data-assignment-id="${currentRequestId}"]`).closest('tr');
+                        const deletedRow = document.querySelector(`.data-table tbody tr [data-assignment-id="${currentActionId}"]`).closest('tr');
                         if (deletedRow) {
                             deletedRow.remove();
                         }
@@ -1934,9 +2067,9 @@
                     console.error('Error deleting assignment:', error);
                     showMessage('Network error or server issue deleting assignment.', 'error');
                 }
-            } else if (currentNewStatus === 'delete_amenity') {
+            } else if (currentActionType === 'delete_amenity') {
                 try {
-                    const response = await fetch(`/api/amenities/${currentRequestId}/delete/`, {
+                    const response = await fetch(`/api/amenities/${currentActionId}/delete/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'
@@ -1945,7 +2078,7 @@
                     const result = await response.json();
                     if (result.success) {
                         showMessage('Amenity deleted successfully!', 'success');
-                        const deletedRow = document.querySelector(`.data-table tbody tr [data-amenity-id="${currentRequestId}"]`).closest('tr');
+                        const deletedRow = document.querySelector(`.data-table tbody tr [data-amenity-id="${currentActionId}"]`).closest('tr');
                         if (deletedRow) {
                             deletedRow.remove();
                         }
@@ -1956,64 +2089,14 @@
                     console.error('Error deleting amenity:', error);
                     showMessage('Network error or server issue deleting amenity.', 'error');
                 }
-            } else {
-                // This is the original status update logic for Guest Requests
-                try {
-                    const response = await fetch(`/request/${currentRequestId}/update_status/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: `new_status=${currentNewStatus}`
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        showMessage('Status updated successfully!', 'success');
-                        const requestItem = document.querySelector(`.request-item[data-request-id="${currentRequestId}"]`);
-                        if (requestItem) {
-                            const statusBadge = requestItem.querySelector('.status-badge');
-                            if (statusBadge) {
-                                statusBadge.classList.remove('pending', 'in_progress', 'completed', 'cancelled', 'casual_chat', 'general_inquiry');
-                                statusBadge.classList.add(currentNewStatus);
-                                statusBadge.textContent = currentNewStatus.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-
-                                const clickedButton = requestItem.querySelector(`button[data-request-id="${currentRequestId}"][data-new-status="${currentNewStatus}"]`);
-                                if (clickedButton) {
-                                    clickedButton.style.display = 'none';
-                                    if (currentNewStatus === 'in_progress') {
-                                        const markCompletedButton = requestItem.querySelector(`button[data-new-status="completed"]`);
-                                        if (markCompletedButton) markCompletedButton.style.display = 'inline-block';
-                                    } else if (currentNewStatus === 'completed') {
-                                        requestItem.querySelectorAll('.update-status').forEach(btn => btn.style.display = 'none');
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        showMessage(result.error || 'Failed to update status.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error updating status:', error);
-                    showMessage('Network error or server issue updating status.', 'error');
-                }
             }
+            // Removed the old status update logic from here, as it's now handled by requestUpdateForm submission
         });
 
         // Event listeners to close the custom confirmation modal
         confirmationCloseButtons.forEach(button => {
             button.addEventListener('click', () => {
                 confirmationModal.classList.remove('show');
-            });
-        });
-
-        // Update Request Status Logic (now uses custom confirmation modal)
-        document.querySelectorAll('.update-status').forEach(button => {
-            button.addEventListener('click', () => {
-                const requestId = button.dataset.requestId;
-                const newStatus = button.dataset.newStatus;
-                const statusDisplayName = newStatus.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                showConfirmationModal(`Are you sure you want to change status to "${statusDisplayName}"?`, requestId, newStatus);
             });
         });
 
@@ -2025,8 +2108,8 @@
         const assignmentModalTitle = document.getElementById('assignmentModalTitle');
 
         // Function to clear form errors
-        function clearFormErrors() {
-            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        function clearFormErrors(formId) {
+            document.querySelectorAll(`#${formId} .error-message`).forEach(el => el.textContent = '');
         }
 
         // Open Add Assignment Modal
@@ -2035,7 +2118,7 @@
                 assignmentModalTitle.textContent = 'Add New Guest Assignment';
                 assignmentForm.reset(); // Clear form fields
                 document.getElementById('assignmentId').value = ''; // Clear hidden ID
-                clearFormErrors();
+                clearFormErrors('assignmentForm');
                 assignmentModal.classList.add('show');
             });
         }
@@ -2047,7 +2130,7 @@
                 assignmentModalTitle.textContent = 'Edit Guest Assignment';
                 assignmentForm.reset(); // Clear form fields
                 document.getElementById('assignmentId').value = assignmentId; // Set hidden ID
-                clearFormErrors();
+                clearFormErrors('assignmentForm');
 
                 try {
                     const response = await fetch(`/api/assignments/${assignmentId}/edit/`); // Assuming GET request for initial data
@@ -2091,14 +2174,14 @@
         closeAssignmentModalButtons.forEach(button => {
             button.addEventListener('click', () => {
                 assignmentModal.classList.remove('show');
-                clearFormErrors();
+                clearFormErrors('assignmentForm');
             });
         });
 
         // Submit Assignment Form
         assignmentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            clearFormErrors();
+            clearFormErrors('assignmentForm');
 
             const formData = new FormData(assignmentForm);
             const assignmentId = document.getElementById('assignmentId').value;
@@ -2121,7 +2204,6 @@
                     assignmentModal.classList.remove('show');
                     location.reload();
                 } else {
-                    // Display general error message first if available
                     let generalErrorMessage = result.error || 'Failed to save assignment due to validation errors.';
                     showMessage(generalErrorMessage, 'error');
 
@@ -2132,10 +2214,8 @@
                             if (errorDiv) {
                                 errorDiv.textContent = errors[field][0].message;
                             } else if (field === '__all__') {
-                                // For non-field errors, append to the general message or show separately
                                 showMessage(`${generalErrorMessage} (Details: ${errors[field][0].message})`, 'error');
                             } else {
-                                // Fallback for any other unexpected field errors
                                 console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
                                 showMessage(`Error in ${field}: ${errors[field][0].message}`, 'error');
                             }
