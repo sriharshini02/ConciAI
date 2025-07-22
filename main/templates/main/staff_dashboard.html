@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,88 +11,129 @@
     <!-- D3.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        /* Re-introduced Previous Color Palette */
+        /* Define Color Palettes for Light and Dark Mode based on image_2eae9a.jpg */
         :root {
-            --light-blue-gray: #D8E0E8;
-            --light-green: #D1DFCC;
-            --light-yellow-green: #DFE29D;
-            --off-white: #F8F8F8;
-            --dark-charcoal: #252527;
+            /* Light Mode Colors */
+            --bg: #F7F8FA; /* Very light gray background */
+            --card-bg: #FFFFFF; /* White card background */
+            --text: #333333; /* Dark gray text */
+            --secondary-text: #666666; /* Medium gray secondary text */
+            --border: #E0E0E0; /* Light gray border */
+            --shadow-color: rgba(0, 0, 0, 0.05); /* Subtle shadow */
 
-            /* Main Background - Very light blue-gray */
-            --main-bg: #F0F4F8; /* A very subtle light blue-gray, lighter than D8E0E8 */
+            --primary-button-bg: #2C3E50; /* Dark blue/charcoal for primary buttons */
+            --primary-button-text: #FFFFFF;
+            --secondary-button-bg: #F0F0F0; /* Light gray for secondary buttons */
+            --secondary-button-text: #333333;
 
-            /* Sidebar - Keep clean and contrasting */
-            --sidebar-bg: var(--off-white);
-            --sidebar-text: var(--dark-charcoal);
-            
-            /* Header - Keep clean and contrasting */
-            --header-bg: var(--off-white);
-            --header-text: var(--dark-charcoal);
+            --sidebar-bg: #FFFFFF; /* White sidebar */
+            --sidebar-text: #333333;
+            --sidebar-active-bg: #E0E6F0; /* Light blue-gray for active sidebar item as per image */
+            --sidebar-active-text: #2C3E50; /* Dark text for active sidebar item */
+            --sidebar-active-border-left: #2C3E50; /* Dark blue-gray for left border */
 
-            /* Cards & Chart Containers - Use light blue-gray */
-            --card-bg: var(--light-blue-gray);
-            --card-border: #C0C8D0; /* Slightly darker blue-gray for borders */
 
-            /* Primary Buttons - Use light green with dark text */
-            --button-primary-bg: var(--light-green);
-            --button-primary-text: var(--dark-charcoal);
-            --button-primary-hover-bg: #B0C0A8; /* Darker green on hover */
+            /* Accent Colors for Summary Cards (from image) */
+            --accent-purple-bg: #E0CCF6; /* Light purple */
+            --accent-purple-text: #8A2BE2; /* Dark purple */
+            --accent-green-bg: #D1F7E0; /* Light green */
+            --accent-green-text: #28A745; /* Dark green */
+            --accent-pink-bg: #FAD7DD; /* Light pink */
+            --accent-pink-text: #DC3545; /* Dark red/pink */
+            --accent-orange-bg: #FFF3CD; /* Light orange/yellow */
+            --accent-orange-text: #FFC107; /* Dark orange/yellow */
 
-            /* Secondary Buttons - Use light yellow-green with dark text */
-            --button-secondary-bg: var(--light-yellow-green);
-            --button-secondary-text: var(--dark-charcoal);
-            --button-secondary-hover-bg: #C0C480; /* Darker yellow-green on hover */
+            /* Chart Colors */
+            --chart-line-color: #007BFF; /* Vibrant blue for chart line */
+            --chart-grid-color: #E0E0E0; /* Light grid lines */
+            --chart-axis-text: #666666; /* Axis text color */
 
-            /* Links - Dark charcoal for readability */
-            --link-color: var(--dark-charcoal);
+            /* Status Badge Colors (for GuestRoomAssignment and GuestRequest status) */
+            --badge-occupied-bg: var(--accent-purple-bg);
+            --badge-occupied-text: var(--accent-purple-text);
+            --badge-reserved-bg: var(--accent-green-bg);
+            --badge-reserved-text: var(--accent-green-text);
+            --badge-available-bg: var(--accent-orange-bg);
+            --badge-available-text: var(--accent-orange-text);
+            --badge-not-ready-bg: var(--accent-pink-bg);
+            --badge-not-ready-text: var(--accent-pink-text);
+            --badge-pending-bg: var(--border); /* Default light gray */
+            --badge-pending-text: var(--secondary-text);
+            --badge-in_progress-bg: var(--accent-green-bg);
+            --badge-in_progress-text: var(--accent-green-text);
+            --badge-completed-bg: var(--accent-purple-bg);
+            --badge-completed-text: var(--accent-purple-text);
+            --badge-cancelled-bg: var(--accent-pink-bg);
+            --badge-cancelled-text: var(--accent-pink-text);
+            --badge-default-bg: var(--border);
+            --badge-default-text: var(--secondary-text);
+        }
 
-            /* Table Headers - Use light blue-gray with dark text */
-            --table-header-bg: var(--light-blue-gray);
-            --table-header-text: var(--dark-charcoal);
-            --table-row-bg: var(--off-white); /* Table rows are off-white */
-            --table-row-hover-bg: #E0E6F0; /* Light blue-gray on hover */
+        /* Dark Mode Colors */
+        html[data-theme='dark'] {
+            --bg: #1E1E1E; /* Very dark gray/black background */
+            --card-bg: #2C2C2C; /* Darker gray card background */
+            --text: #E0E0E0; /* Light gray text */
+            --secondary-text: #A0A0A0; /* Medium light gray secondary text */
+            --border: #404040; /* Darker gray border */
+            --shadow-color: rgba(0, 0, 0, 0.3); /* More pronounced shadow for dark mode */
 
-            /* Modals - Use light blue-gray */
-            --modal-bg: var(--light-blue-gray);
-            --modal-border: #C0C8D0;
+            --primary-button-bg: #E0E0E0; /* Light gray for primary buttons */
+            --primary-button-text: #1E1E1E;
+            --secondary-button-bg: #404040; /* Darker gray for secondary buttons */
+            --secondary-button-text: #E0E0E0;
 
-            /* Input Fields */
-            --input-border: #B0B8C0;
-            --input-focus-border: var(--dark-charcoal); /* Keep dark focus border for clarity */
+            --sidebar-bg: #212121; /* Darker sidebar */
+            --sidebar-text: #E0E0E0;
+            --sidebar-active-bg: #3A4A5A; /* Darker blue-gray for active sidebar item */
+            --sidebar-active-text: #E0E0E0; /* Light text for active sidebar item */
+            --sidebar-active-border-left: #007BFF; /* Vibrant blue for left border */
 
-            /* Status/Alert Colors */
-            --success-color: var(--light-green);
-            --error-color: #E06666; /* Keep a clear red for error */
-            --warning-color: var(--light-yellow-green);
-            --info-color: #6A8EAE;
+            /* Accent Colors for Summary Cards (adjusted for dark mode visibility) */
+            --accent-purple-bg: #5C3D82;
+            --accent-purple-text: #E0CCF6;
+            --accent-green-bg: #2E6F40;
+            --accent-green-text: #D1F7E0;
+            --accent-pink-bg: #7A2F3A;
+            --accent-pink-text: #FAD7DD;
+            --accent-orange-bg: #8F6C1A;
+            --accent-orange-text: #FFF3CD;
 
-            /* Chart Colors - Adjust if needed, but current ones are muted and can work */
-            --chart-color-booked: var(--dark-charcoal); /* Could be light-green too */
-            --chart-color-cancelled: var(--error-color);
-            --chart-color-platform1: #6A8EAE;
-            --chart-color-platform2: #8EB1C7;
-            --chart-color-platform3: #AEC8DC;
-            --chart-color-platform4: #C0D0E0;
-            --chart-color-platform5: #D0D8E8;
-            --chart-color-platform6: #E0E6F0;
+            /* Chart Colors (lighter versions for dark mode) */
+            --chart-line-color: #66B2FF;
+            --chart-grid-color: #404040;
+            --chart-axis-text: #A0A0A0;
 
-            /* Requests Tab Specific Colors (more vibrant, using the new palette) */
-            --request-tab-bg-inactive: var(--light-blue-gray); /* Inactive tabs: light blue-gray */
-            --request-tab-text-inactive: var(--dark-charcoal);
-            --request-tab-bg-active: var(--light-green); /* Active tab: light green */
-            --request-tab-text-active: var(--dark-charcoal);
-            --request-tab-hover-bg: #C0C8D0; /* Darker blue-gray on hover for inactive */
+            /* Status Badge Colors (adjusted for dark mode visibility) */
+            --badge-occupied-bg: var(--accent-purple-bg);
+            --badge-occupied-text: var(--accent-purple-text);
+            --badge-reserved-bg: var(--accent-green-bg);
+            --badge-reserved-text: var(--accent-green-text);
+            --badge-available-bg: var(--accent-orange-bg);
+            --badge-available-text: var(--accent-orange-text);
+            --badge-not-ready-bg: var(--accent-pink-bg);
+            --badge-not-ready-text: var(--accent-pink-text);
+            --badge-pending-bg: var(--border);
+            --badge-pending-text: var(--secondary-text);
+            --badge-in_progress-bg: var(--accent-green-bg);
+            --badge-in_progress-text: var(--accent-green-text);
+            --badge-completed-bg: var(--accent-purple-bg);
+            --badge-completed-text: var(--accent-purple-text);
+            --badge-cancelled-bg: var(--accent-pink-bg);
+            --badge-cancelled-text: var(--accent-pink-text);
+            --badge-default-bg: var(--border);
+            --badge-default-text: var(--secondary-text);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--main-bg);
-            color: var(--dark-charcoal);
+            background-color: var(--bg);
+            color: var(--text);
             overflow-x: hidden;
             font-size: 0.95em;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
@@ -106,47 +147,44 @@
             background-color: var(--sidebar-bg);
             color: var(--sidebar-text);
             padding: 20px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+            box-shadow: 2px 0 5px var(--shadow-color);
             display: flex;
             flex-direction: column;
             position: fixed;
             height: 100%;
             overflow-y: auto;
             box-sizing: border-box;
-            transition: width 0.3s ease, transform 0.3s ease;
+            transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
             z-index: 999;
         }
 
         .sidebar.collapsed {
-            width: 70px;
+            width: 70px; /* Width when collapsed */
             transform: translateX(0);
         }
 
+        /* Hide text elements when sidebar is collapsed */
         .sidebar.collapsed .sidebar-header h2,
-        .sidebar.collapsed .sidebar-header .toggle-btn i,
-        .sidebar.collapsed .sidebar-header .toggle-btn span,
         .sidebar.collapsed ul li a span,
         .sidebar.collapsed .logout-section a span {
             display: none;
         }
 
-        .sidebar.collapsed .sidebar-header .toggle-btn i {
-             display: inline-block;
+        /* Adjust toggle button position when collapsed */
+        .sidebar.collapsed .sidebar-header .toggle-btn {
+            margin-left: auto; /* Push to the right */
+            margin-right: 0;
         }
-
         .sidebar.collapsed .sidebar-header {
-            justify-content: center;
+            justify-content: flex-end; /* Align toggle to end */
         }
 
-        .sidebar.collapsed ul li a {
-            justify-content: center;
-            padding: 10px;
-        }
+        /* Center icons when collapsed */
+        .sidebar.collapsed ul li a,
         .sidebar.collapsed .logout-section a {
             justify-content: center;
             padding: 10px;
         }
-
 
         .sidebar-header {
             display: flex;
@@ -154,14 +192,14 @@
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 10px;
-            border-bottom: 1px solid var(--medium-gray-border);
+            border-bottom: none; /* Remove border-bottom from header */
         }
 
         .sidebar-header h2 {
             margin: 0;
             color: var(--sidebar-text);
             font-size: 1.8em;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, color 0.3s ease;
         }
 
         .sidebar-header .toggle-btn {
@@ -172,7 +210,8 @@
             cursor: pointer;
             padding: 5px;
             border-radius: 5px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            line-height: 1; /* Ensure icon is vertically centered */
         }
 
         .sidebar-header .toggle-btn:hover {
@@ -186,33 +225,37 @@
         }
 
         .sidebar ul li {
-            margin-bottom: 10px;
+            margin-bottom: 5px; /* Reduced margin for tighter spacing */
         }
 
         .sidebar ul li a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
+            gap: 15px; /* Increased gap between icon and text */
+            padding: 12px 15px; /* Adjusted padding */
             color: var(--sidebar-text);
             text-decoration: none;
             border-radius: 8px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
             font-weight: 500;
         }
 
         .sidebar ul li a:hover {
-            background-color: var(--dark-charcoal);
-            color: var(--off-white);
+            background-color: var(--sidebar-active-bg); /* Use active background for hover */
+            color: var(--sidebar-active-text);
+            border-left: 5px solid var(--sidebar-active-border-left); /* Left border on hover */
+            padding-left: 10px; /* Adjust padding to accommodate border */
         }
         .sidebar ul li a.active {
-            background-color: var(--dark-charcoal);
-            color: var(--off-white);
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text);
+            border-left: 5px solid var(--sidebar-active-border-left); /* Solid left border for active */
+            padding-left: 10px; /* Adjust padding to accommodate border */
         }
         .sidebar ul li a.active i {
-            color: var(--off-white);
+            color: var(--sidebar-active-text);
         }
 
         .sidebar ul li a i {
@@ -224,26 +267,28 @@
         .logout-section {
             margin-top: auto;
             padding-top: 20px;
-            border-top: 1px solid var(--medium-gray-border);
+            border-top: 1px solid var(--border);
         }
 
         .logout-section a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            color: var(--error-color);
+            gap: 15px; /* Increased gap */
+            padding: 12px 15px; /* Adjusted padding */
+            color: var(--status-error-text);
             text-decoration: none;
             border-radius: 8px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, border-left 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
             font-weight: 500;
         }
 
         .logout-section a:hover {
-            background-color: var(--error-color);
-            color: var(--off-white);
+            background-color: var(--status-error-text);
+            color: var(--card-bg);
+            border-left: 5px solid var(--status-error-text); /* Left border on hover */
+            padding-left: 10px;
         }
 
         .main-content {
@@ -258,21 +303,23 @@
         }
 
         .header {
-            background-color: var(--header-bg);
+            background-color: var(--card-bg);
             padding: 15px 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 6px var(--shadow-color);
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .header h1 {
             margin: 0;
-            color: var(--header-text);
+            color: var(--text);
             font-size: 1.5em;
+            transition: color 0.3s ease;
         }
 
         .header .user-info {
@@ -284,16 +331,17 @@
         .header .user-info .notification-bell {
             position: relative;
             cursor: pointer;
-            color: var(--dark-charcoal);
+            color: var(--text);
             font-size: 1.3em;
+            transition: color 0.3s ease;
         }
 
         .header .user-info .notification-bell .badge {
             position: absolute;
             top: -5px;
             right: -5px;
-            background-color: var(--error-color);
-            color: var(--off-white);
+            background-color: var(--status-error-text);
+            color: var(--card-bg);
             border-radius: 50%;
             padding: 3px 7px;
             font-size: 0.7em;
@@ -302,9 +350,25 @@
 
         .header .user-info span {
             font-weight: 500;
-            color: var(--header-text);
+            color: var(--text);
             font-size: 0.9em;
+            transition: color 0.3s ease;
         }
+
+        /* Dark Mode Toggle Button */
+        .theme-toggle-button {
+            background: none;
+            border: none;
+            font-size: 1.3em;
+            color: var(--text);
+            cursor: pointer;
+            margin-left: 15px;
+            transition: color 0.3s ease;
+        }
+        .theme-toggle-button:hover {
+            color: var(--secondary-text);
+        }
+
 
         .dashboard-grid {
             display: grid;
@@ -314,28 +378,31 @@
         }
 
         .card {
-            background-color: var(--card-bg); /* Uses light-blue-gray */
+            background-color: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 8px var(--shadow-color);
+            border: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .card h3 {
             margin-top: 0;
-            color: var(--dark-charcoal);
+            color: var(--text);
             font-size: 1.1em;
             font-weight: 600;
+            transition: color 0.3s ease;
         }
 
         .card p {
             font-size: 1.4em;
             font-weight: 700;
-            color: var(--dark-charcoal);
+            color: var(--text);
             margin: 8px 0 0;
+            transition: color 0.3s ease;
         }
 
         .card.summary-card {
@@ -345,8 +412,8 @@
         }
 
         .card.summary-card .icon-wrapper {
-            background-color: var(--dark-charcoal);
-            color: var(--off-white);
+            background-color: var(--bg);
+            color: var(--text);
             padding: 12px;
             border-radius: 50%;
             font-size: 1.5em;
@@ -356,7 +423,27 @@
             width: 50px;
             height: 50px;
             flex-shrink: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+        /* Specific Summary Card Colors for original content */
+        .card.summary-card.occupied .icon-wrapper { background-color: var(--badge-occupied-bg); color: var(--badge-occupied-text); }
+        .card.summary-card.occupied h3, .card.summary-card.occupied p { color: var(--badge-occupied-text); }
+
+        .card.summary-card.reserved .icon-wrapper { background-color: var(--badge-reserved-bg); color: var(--badge-reserved-text); }
+        .card.summary-card.reserved h3, .card.summary-card.reserved p { color: var(--badge-reserved-text); }
+
+        .card.summary-card.available .icon-wrapper { background-color: var(--badge-available-bg); color: var(--badge-available-text); }
+        .card.summary-card.available h3, .card.summary-card.available p { color: var(--badge-available-text); }
+
+        .card.summary-card.not-ready .icon-wrapper { background-color: var(--badge-not-ready-bg); color: var(--badge-not-ready-text); }
+        .card.summary-card.not-ready h3, .card.summary-card.not-ready p { color: var(--badge-not-ready-text); }
+
+        /* General summary card text color for other cards if no specific class */
+        .card.summary-card .text-content p, .card.summary-card .text-content h3 {
+            color: var(--text);
+        }
+
 
         .card.summary-card .text-content {
             flex-grow: 1;
@@ -367,20 +454,22 @@
         }
 
         .chart-container {
-            background-color: var(--card-bg); /* Uses light-blue-gray */
+            background-color: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 8px var(--shadow-color);
+            border: 1px solid var(--border);
             margin-bottom: 20px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .chart-container h3 {
             margin-top: 0;
             margin-bottom: 15px;
-            color: var(--dark-charcoal);
+            color: var(--text);
             font-size: 1.1em;
             font-weight: 600;
+            transition: color 0.3s ease;
         }
 
         .chart-grid {
@@ -395,68 +484,80 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #E0E6F0; /* A slightly different light blue-gray for contrast */
+            background-color: transparent;
             border-radius: 8px;
-            color: var(--dark-charcoal);
+            color: var(--secondary-text);
         }
+        .chart-placeholder .domain, .chart-placeholder .tick line {
+            stroke: var(--chart-grid-color);
+            transition: stroke 0.3s ease;
+        }
+        .chart-placeholder .tick text {
+            fill: var(--chart-axis-text);
+            transition: fill 0.3s ease;
+        }
+
 
         /* Request Management Styles */
         .request-tabs {
             display: flex;
             margin-bottom: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px var(--shadow-color);
+            border: 1px solid var(--border);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .request-tabs button {
             flex: 1;
-            background-color: var(--request-tab-bg-inactive); /* Light blue-gray for inactive */
+            background-color: var(--card-bg);
             border: none;
             padding: 10px 15px;
             cursor: pointer;
             font-size: 0.95em;
             font-weight: 500;
-            color: var(--request-tab-text-inactive);
-            border-bottom: none;
+            color: var(--text);
             transition: all 0.3s ease;
             text-align: center;
         }
 
         .request-tabs button:hover {
-            background-color: var(--request-tab-hover-bg); /* Darker blue-gray on hover */
-            color: var(--request-tab-text-inactive);
+            background-color: var(--border);
+            color: var(--text);
         }
 
         .request-tabs button.active {
-            background-color: var(--request-tab-bg-active); /* Light green for active */
-            color: var(--request-tab-text-active); /* Dark charcoal text */
+            background-color: var(--primary-button-bg);
+            color: var(--primary-button-text);
             font-weight: 600;
         }
 
         .request-tabs button.active:hover {
-            background-color: var(--request-tab-bg-active);
-            color: var(--request-tab-text-active);
+            background-color: var(--primary-button-bg);
+            color: var(--primary-button-text);
         }
 
 
         .request-category {
             margin-bottom: 25px;
-            background-color: var(--card-bg); /* Uses light blue-gray */
+            background-color: var(--card-bg);
             padding: 18px;
             border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
-            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 8px var(--shadow-color);
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .request-category h3 {
             margin-top: 0;
             margin-bottom: 12px;
-            color: var(--dark-charcoal);
+            color: var(--text);
             font-size: 1.2em;
             font-weight: 600;
-            border-bottom: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--border);
             padding-bottom: 8px;
+            transition: color 0.3s ease, border-color 0.3s ease;
         }
 
         .request-list {
@@ -466,47 +567,64 @@
         }
 
         .request-item {
-            background-color: var(--light-green); /* Request items use light green */
-            border: 1px solid #B0C0A8; /* Slightly darker green border */
+            background-color: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 10px;
             padding: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 2px 4px var(--shadow-color);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             min-height: 140px;
             font-size: 0.9em;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .request-item p {
             margin: 4px 0;
             font-size: 0.9em;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            transition: color 0.3s ease;
         }
 
         .request-item .status-badge {
             padding: 3px 6px;
             font-size: 0.75em;
+            border-radius: 5px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+        /* Status-specific badge colors for GuestRequest status */
+        .status-badge.pending { background-color: var(--badge-pending-bg); color: var(--badge-pending-text); }
+        .status-badge.in_progress { background-color: var(--badge-in_progress-bg); color: var(--badge-in_progress-text); }
+        .status-badge.completed { background-color: var(--badge-completed-bg); color: var(--badge-completed-text); }
+        .status-badge.cancelled { background-color: var(--badge-cancelled-bg); color: var(--badge-cancelled-text); }
+        .status-badge.casual_chat, .status-badge.general_inquiry { background-color: var(--badge-default-bg); color: var(--badge-default-text); }
+
 
         .request-actions {
             margin-top: 12px;
+            display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .request-actions button {
             padding: 7px 10px;
             font-size: 0.85em;
-            background-color: var(--button-primary-bg); /* Primary button style */
-            color: var(--button-primary-text);
+            background-color: var(--primary-button-bg);
+            color: var(--primary-button-text);
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .request-actions button:hover {
-            background-color: var(--button-primary-hover-bg);
+            opacity: 0.9;
         }
 
         /* Modal Styles */
@@ -529,41 +647,52 @@
         }
 
         .modal-content {
-            background-color: var(--modal-bg); /* Uses light-blue-gray */
+            background-color: var(--card-bg);
             margin: auto;
             padding: 25px;
-            border: 1px solid var(--modal-border);
+            border: 1px solid var(--border);
             border-radius: 12px;
             width: 90%;
             max-width: 550px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 15px var(--shadow-color);
             position: relative;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .modal-header {
             margin-bottom: 18px;
             padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .modal-header h2 {
             font-size: 1.4em;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            margin: 0;
+            transition: color 0.3s ease;
         }
 
         .close-button {
             font-size: 26px;
-            color: var(--dark-charcoal);
+            color: var(--secondary-text);
+            cursor: pointer;
+            transition: color 0.3s ease;
         }
 
         .close-button:hover,
         .close-button:focus {
-            color: #4A5C6F;
+            color: var(--text);
         }
 
         .modal-body label {
             margin-bottom: 6px;
             font-size: 0.9em;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            display: block;
+            transition: color 0.3s ease;
         }
 
         .modal-body input[type="text"],
@@ -576,14 +705,14 @@
             width: calc(100% - 16px);
             padding: 8px;
             margin-bottom: 12px;
-            border: 1px solid var(--input-border);
+            border: 1px solid var(--border);
             border-radius: 6px;
             font-family: 'Inter', sans-serif;
             font-size: 0.9em;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
             box-sizing: border-box;
-            color: var(--dark-charcoal);
-            background-color: var(--off-white);
+            color: var(--text);
+            background-color: var(--bg);
         }
 
         .modal-body input[type="text"]:focus,
@@ -593,7 +722,7 @@
         .modal-body input[type="time"]:focus,
         .modal-body textarea:focus,
         .modal-body select:focus {
-            border-color: var(--input-focus-border);
+            border-color: var(--primary-button-bg);
             outline: none;
         }
 
@@ -603,22 +732,31 @@
 
         .form-check {
             margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .form-check-input {
             width: 16px;
             height: 16px;
-            accent-color: var(--dark-charcoal);
+            accent-color: var(--primary-button-bg);
+            transition: accent-color 0.3s ease;
         }
 
         .form-check-label {
             font-size: 0.9em;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            transition: color 0.3s ease;
         }
 
         .datetime-group {
+            display: flex;
             gap: 10px;
             margin-bottom: 12px;
+        }
+        .datetime-group .form-group {
+            flex: 1;
         }
 
         .modal-footer {
@@ -627,90 +765,129 @@
             gap: 8px;
             margin-top: 18px;
             padding-top: 12px;
+            border-top: 1px solid var(--border);
+            transition: border-color 0.3s ease;
         }
 
         .modal-footer .save-button {
-            background-color: var(--button-primary-bg); /* Primary button style */
-            color: var(--button-primary-text);
+            background-color: var(--primary-button-bg);
+            color: var(--primary-button-text);
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .modal-footer .save-button:hover {
-            background-color: var(--button-primary-hover-bg);
+            opacity: 0.9;
         }
 
         .modal-footer .cancel-button {
-            background-color: var(--button-secondary-bg); /* Secondary button style */
-            color: var(--button-secondary-text);
+            background-color: var(--secondary-button-bg);
+            color: var(--secondary-button-text);
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .modal-footer .cancel-button:hover {
-            background-color: var(--button-secondary-hover-bg);
+            opacity: 0.9;
         }
 
         /* Message Box Styles */
         #messageBox {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--card-bg);
+            color: var(--text);
             padding: 12px 20px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px var(--shadow-color);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+            z-index: 1001;
         }
+        #messageBox.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        #messageBox.success { background-color: var(--status-success-bg); color: var(--status-success-text); }
+        #messageBox.error { background-color: var(--status-error-bg); color: var(--status-error-text); }
+        #messageBox.warning { background-color: var(--status-warning-bg); color: var(--status-warning-text); }
+        #messageBox.info { background-color: var(--status-info-bg); color: var(--status-info-text); }
+
 
         /* Request Details Modal Specific Styles */
         .request-details-modal .modal-body .detail-row {
             margin-bottom: 8px;
             padding-bottom: 4px;
             font-size: 0.9em;
+            border-bottom: 1px dashed var(--border);
+            transition: border-color 0.3s ease;
+        }
+        .request-details-modal .modal-body .detail-row:last-of-type {
+            border-bottom: none;
         }
 
         .request-details-modal .modal-body .detail-row strong {
             flex: 0 0 100px;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            display: inline-block;
+            transition: color 0.3s ease;
         }
 
         .request-details-modal .modal-body .detail-row span {
-            color: var(--dark-charcoal);
+            color: var(--secondary-text);
+            transition: color 0.3s ease;
         }
 
         .request-details-modal .chat-history-section {
             margin-top: 18px;
             padding-top: 12px;
+            border-top: 1px solid var(--border);
+            transition: border-color 0.3s ease;
         }
 
         .request-details-modal .chat-history-section h4 {
             margin-bottom: 8px;
             font-size: 1.1em;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            transition: color 0.3s ease;
         }
 
         .request-details-modal .chat-messages {
             max-height: 180px;
             padding: 8px;
             font-size: 0.85em;
-            background-color: #E0E6F0;
+            background-color: var(--bg);
+            border-radius: 8px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .request-details-modal .chat-message {
             margin-bottom: 6px;
-            padding: 4px 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .request-details-modal .chat-message.user {
-            background-color: var(--off-white);
+            background-color: var(--card-bg);
             text-align: left;
         }
 
         .request-details-modal .chat-message.model {
-            background-color: #C8D4E0;
+            background-color: var(--bg);
             text-align: left;
         }
 
@@ -720,17 +897,12 @@
                 flex-direction: column;
             }
             .sidebar {
-                position: relative;
                 width: 100%;
                 height: auto;
-                flex-direction: row;
-                justify-content: space-around;
-                padding: 10px 0;
-                box-shadow: 0 2px 10px var(--shadow-light);
-                border-bottom: 1px solid var(--border-color);
-            }
-            .sidebar-header {
-                display: none;
+                position: relative;
+                box-shadow: none;
+                border-bottom: 2px solid var(--border);
+                transform: translateX(0);
             }
             .sidebar.collapsed {
                 width: 100%;
@@ -800,27 +972,30 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            background-color: var(--table-row-bg); /* Table rows are off-white */
-            border-radius: 8px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 2px 4px var(--shadow-color);
             font-size: 0.9em;
+            border: 1px solid var(--border);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .data-table thead {
-            background-color: var(--table-header-bg); /* Table header is light-blue-gray */
-            color: var(--table-header-text); /* Dark charcoal text */
+            background-color: var(--bg);
+            color: var(--text);
         }
 
         .data-table th, .data-table td {
             padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid var(--card-border);
-            color: var(--dark-charcoal);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            transition: color 0.3s ease, border-color 0.3s ease;
         }
 
         .data-table tbody tr:hover {
-            background-color: var(--table-row-hover-bg); /* Light blue-gray on hover */
+            background-color: var(--border);
         }
 
         .data-table tbody tr:last-child td {
@@ -829,10 +1004,10 @@
 
         .table-responsive {
             overflow-x: auto;
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
-        /* Form control styling for filter forms - Using CSS Grid for better layout */
+        /* Form control styling for filter forms */
         .filter-card form {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -847,65 +1022,67 @@
         .filter-card .form-group label {
             font-size: 0.85em;
             margin-bottom: 4px;
-            color: var(--dark-charcoal);
+            color: var(--text);
+            transition: color 0.3s ease;
         }
 
         .form-control {
             width: 100%;
             padding: 8px;
             margin-bottom: 0;
-            border: 1px solid var(--input-border);
+            border: 1px solid var(--border);
             border-radius: 6px;
             font-family: 'Inter', sans-serif;
             font-size: 0.9em;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
             box-sizing: border-box;
-            color: var(--dark-charcoal);
-            background-color: var(--off-white);
+            color: var(--text);
+            background-color: var(--bg);
         }
 
         .form-control:focus {
-            border-color: var(--input-focus-border);
+            border-color: var(--primary-button-bg);
             outline: none;
         }
 
         .button-primary {
-            background-color: var(--button-primary-bg); /* Light green */
-            color: var(--button-primary-text); /* Dark charcoal */
+            background-color: var(--primary-button-bg);
+            color: var(--primary-button-text);
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .button-primary:hover {
-            background-color: var(--button-primary-hover-bg); /* Darker green */
+            opacity: 0.9;
         }
 
         .button-secondary {
-            background-color: var(--button-secondary-bg); /* Light yellow-green */
-            color: var(--button-secondary-text); /* Dark charcoal */
+            background-color: var(--secondary-button-bg);
+            color: var(--secondary-button-text);
             padding: 8px 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .button-secondary:hover {
-            background-color: var(--button-secondary-hover-bg); /* Darker yellow-green */
+            opacity: 0.9;
         }
 
         .error-message {
-            color: var(--error-color);
+            color: var(--status-error-text);
             font-size: 0.8em;
             margin-top: 2px;
             margin-bottom: 5px;
+            transition: color 0.3s ease;
         }
     </style>
 </head>
@@ -915,23 +1092,15 @@
             <div class="sidebar-header">
                 <h2>ConciAI</h2>
                 <button class="toggle-btn" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
+                    <i class="fas fa-chevron-left"></i> <!-- Default to left chevron -->
                 </button>
             </div>
             <ul>
-                    <li><a href="{% url 'main:home_dashboard' %}" class="nav-link {% if current_main_tab == 'home' %}active{% endif %}">
-                        <i class="fas fa-th-large"></i> <span>Dashboard</span>
-                    </a></li>
-                    <li><a href="{% url 'main:guest_requests_dashboard' %}" class="nav-link {% if current_main_tab == 'requests' %}active{% endif %}">
-                        <i class="fas fa-bell"></i> <span>Requests</span>
-                    </a></li>
-                    <li><a href="{% url 'main:guest_management' %}" class="nav-link {% if current_main_tab == 'guest_management' %}active{% endif %}">
-                        <i class="fas fa-users"></i> <span>Guests</span>
-                    </a></li>
-                    <li><a href="{% url 'main:amenity_management' %}" class="nav-link {% if current_main_tab == 'amenities' %}active{% endif %}">
-                        <i class="fas fa-concierge-bell"></i> <span>Amenities</span>
-                    </a></li>
-                </ul>
+                <li><a href="{% url 'main:home_dashboard' %}" class="{% if current_main_tab == 'home' %}active{% endif %}"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li><a href="{% url 'main:guest_requests_dashboard' %}" class="{% if current_main_tab == 'requests' %}active{% endif %}"><i class="fas fa-bell"></i> <span>Guest Requests</span></a></li>
+                <li><a href="{% url 'main:guest_management' %}" class="{% if current_main_tab == 'guest_management' %}active{% endif %}"><i class="fas fa-users"></i> <span>Guest Management</span></a></li>
+                <li><a href="{% url 'main:amenity_management' %}" class="{% if current_main_tab == 'amenities' %}active{% endif %}"><i class="fas fa-spa"></i> <span>Amenity Management</span></a></li>
+            </ul>
             <div class="logout-section">
                 <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
             </div>
@@ -941,6 +1110,9 @@
             <header class="header">
                 <h1>{{ page_title }}</h1>
                 <div class="user-info">
+                    <button class="theme-toggle-button" id="themeToggleButton">
+                        <i class="fas fa-moon"></i> <!-- Default to moon icon for light mode -->
+                    </button>
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
                         <span class="badge" id="notificationBadge">0</span>
@@ -951,28 +1123,28 @@
 
             {% if current_main_tab == 'home' %}
                 <div class="dashboard-grid">
-                    <div class="card summary-card">
+                    <div class="card summary-card occupied">
                         <div class="icon-wrapper"><i class="fas fa-door-open"></i></div>
                         <div class="text-content">
                             <h3>Occupied Rooms</h3>
                             <p>{{ occupied_rooms }} / {{ total_rooms }}</p>
                         </div>
                     </div>
-                    <div class="card summary-card">
+                    <div class="card summary-card reserved">
                         <div class="icon-wrapper"><i class="fas fa-calendar-check"></i></div>
                         <div class="text-content">
                             <h3>Reserved Rooms</h3>
                             <p>{{ reserved_rooms }}</p>
                         </div>
                     </div>
-                    <div class="card summary-card">
+                    <div class="card summary-card available">
                         <div class="icon-wrapper"><i class="fas fa-bed"></i></div>
                         <div class="text-content">
                             <h3>Available Rooms</h3>
                             <p>{{ available_rooms }}</p>
                         </div>
                     </div>
-                    <div class="card summary-card">
+                    <div class="card summary-card not-ready">
                         <div class="icon-wrapper"><i class="fas fa-tools"></i></div>
                         <div class="text-content">
                             <h3>Rooms Not Ready</h3>
@@ -1033,7 +1205,7 @@
                             <h3>{{ category.display_name }} ({{ category.requests|length }})</h3>
                             <div class="request-list">
                                 {% for item in category.requests %}
-                                    <div class="request-item" data-request-id="{{ item.request.id }}"> {# Added data-request-id here #}
+                                    <div class="request-item" data-request-id="{{ item.request.id }}">
                                         <div>
                                             <p><strong>Room:</strong> {{ item.request.room_number }}</p>
                                             <p><strong>Guest:</strong> {{ item.assignment.guest_names|default:"N/A" }}</p>
@@ -1064,7 +1236,7 @@
 
             {% elif current_main_tab == 'guest_management' %}
                 <div class="guest-management-section">
-                    <button id="addAssignmentButton" class="button-primary" style="margin-bottom: 20px;">+ Add New Guest Assignment</button>
+                    <button id="addAssignmentButton" class="button-primary" style="margin-bottom: 20px;">Add New Guest Assignment</button>
 
                     <!-- Filter Form -->
                     <div class="filter-card card" style="margin-bottom: 20px;">
@@ -1151,7 +1323,7 @@
 
             {% elif current_main_tab == 'amenities' %}
                 <div class="amenity-management-section">
-                    <button id="addAmenityButton" class="button-primary" style="margin-bottom: 20px;">+ Add New Amenity</button>
+                    <button id="addAmenityButton" class="button-primary" style="margin-bottom: 20px;">Add New Amenity</button>
 
                     <h3>Current Amenities</h3>
                     {% if amenities %}
@@ -1174,9 +1346,9 @@
                                             <td>${{ amenity.price|floatformat:2 }}</td>
                                             <td>
                                                 {% if amenity.is_available %}
-                                                    <i class="fas fa-check-circle" style="color: var(--success-color);"></i> Yes
+                                                    <i class="fas fa-check-circle" style="color: var(--status-success-text);"></i> Yes
                                                 {% else %}
-                                                    <i class="fas fa-times-circle" style="color: var(--error-color);"></i> No
+                                                    <i class="fas fa-times-circle" style="color: var(--status-error-text);"></i> No
                                                 {% endif %}
                                             </td>
                                             <td>
@@ -1388,14 +1560,58 @@
             }, 3000); // Hide after 3 seconds
         }
 
+        // Theme Toggle Logic
+        const themeToggleButton = document.getElementById('themeToggleButton');
+        const htmlElement = document.documentElement;
+
+        // Function to set the theme based on localStorage or default
+        function setInitialTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            htmlElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleButton(savedTheme);
+        }
+
+        // Function to update the theme toggle button icon
+        function updateThemeToggleButton(theme) {
+            const icon = themeToggleButton.querySelector('i');
+            if (theme === 'dark') {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        }
+
+        // Event listener for theme toggle button
+        themeToggleButton.addEventListener('click', () => {
+            let currentTheme = htmlElement.getAttribute('data-theme');
+            let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleButton(newTheme);
+        });
+
+        // Set initial theme on page load
+        document.addEventListener('DOMContentLoaded', setInitialTheme);
+
+
         // Sidebar Toggle Logic
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('mainContent');
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarToggleIcon = sidebarToggle.querySelector('i');
 
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
             mainContent.classList.toggle('sidebar-collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                sidebarToggleIcon.classList.remove('fa-chevron-left');
+                sidebarToggleIcon.classList.add('fa-chevron-right');
+            } else {
+                sidebarToggleIcon.classList.remove('fa-chevron-right');
+                sidebarToggleIcon.classList.add('fa-chevron-left');
+            }
         });
 
 
@@ -1430,7 +1646,6 @@
         fetchNewRequests(); // Initial fetch on page load
 
         // D3.js Chart for Reservations (Last 7 Days)
-        // Only include this JavaScript block if current_main_tab is 'home'
         {% if current_main_tab == 'home' %}
             const reservationsData = {{ reservations_chart_data|safe }};
             const bookingPlatformData = {{ booking_platform_data|safe }};
@@ -1456,10 +1671,32 @@
 
                 g.append("g")
                     .attr("transform", `translate(0,${height})`)
-                    .call(d3.axisBottom(x));
+                    .call(d3.axisBottom(x).tickSizeOuter(0))
+                    .selectAll("text")
+                    .style("fill", "var(--chart-axis-text)");
 
                 g.append("g")
-                    .call(d3.axisLeft(y));
+                    .call(d3.axisLeft(y).tickSizeOuter(0))
+                    .selectAll("text")
+                    .style("fill", "var(--chart-axis-text)");
+
+                // Add grid lines
+                g.append("g")
+                    .attr("class", "grid")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x)
+                        .tickSize(-height)
+                        .tickFormat("")
+                    )
+                    .select(".domain").remove();
+
+                g.append("g")
+                    .attr("class", "grid")
+                    .call(d3.axisLeft(y)
+                        .tickSize(-width)
+                        .tickFormat("")
+                    )
+                    .select(".domain").remove();
 
                 // Booked bars
                 g.selectAll(".bar-booked")
@@ -1529,7 +1766,7 @@
                     .attr("transform", d => `translate(${label.centroid(d)})`)
                     .attr("text-anchor", "middle")
                     .text(d => `${d.data.platform} (${d.data.value}%)`)
-                    .style("fill", "var(--dark-charcoal)")
+                    .style("fill", "var(--text)")
                     .style("font-size", "0.8em");
             }
 

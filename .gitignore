@@ -11,7 +11,7 @@ venv/
 env/
 *.env
 .venv/
-
+.env
 # Django specific
 *.log
 *.pot
