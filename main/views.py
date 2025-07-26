@@ -826,10 +826,8 @@ def edit_assignment_api(request, assignment_id):
 @login_required
 def amenity_detail_api(request, amenity_id):
     try:
-        user_hotel = request.user.profile.hotel
-        amenity = get_object_or_404(Amenity, id=amenity_id) # No hotel filter here, assuming amenities are global or filtered by form
-        # It's safer to filter by hotel if amenities are hotel-specific
-        # amenity = get_object_or_404(Amenity, id=amenity_id, hotel=user_hotel) 
+        # FIX: Amenity model does not have a 'hotel' field, so remove the filter
+        amenity = get_object_or_404(Amenity, id=amenity_id)
         
         return JsonResponse({
             'success': True,
@@ -839,8 +837,6 @@ def amenity_detail_api(request, amenity_id):
             'price': float(amenity.price),
             'is_available': amenity.is_available,
         })
-    except UserProfile.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
@@ -849,13 +845,10 @@ def amenity_detail_api(request, amenity_id):
 def delete_amenity_api(request, amenity_id):
     if request.method == 'POST':
         try:
-            user_hotel = request.user.profile.hotel
-            amenity = get_object_or_404(Amenity, id=amenity_id) # Add hotel filter if amenities are hotel-specific
-            # amenity = get_object_or_404(Amenity, id=amenity_id, hotel=user_hotel)
+            # FIX: Amenity model does not have a 'hotel' field, so remove the filter
+            amenity = get_object_or_404(Amenity, id=amenity_id)
             amenity.delete()
             return JsonResponse({'success': True, 'message': 'Amenity deleted successfully.'})
-        except UserProfile.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User profile not found.'}, status=403)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
