@@ -336,7 +336,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     context['staff_members'] = StaffMember.objects.filter(hotel=user_hotel).order_by('user__username')
     context['guest_request_status_choices'] = GuestRequest.STATUS_CHOICES
     context['guest_request_type_choices'] = GuestRequest.REQUEST_TYPE_CHOICES
-
+    
 
     today = timezone.localdate()
     now = timezone.localtime(timezone.now())
@@ -472,6 +472,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         context['booking_platform_data'] = booking_platform_data
 
     elif main_tab == 'requests':
+        
         context['page_title'] = 'Guest Requests'
         
         context['guest_request_form'] = GuestRequestForm(hotel=user_hotel)
