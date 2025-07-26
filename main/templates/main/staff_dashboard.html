@@ -1967,7 +1967,6 @@
             });
         }
 
-        // NEW: Submit Request Update Form
         if (requestUpdateForm) {
             requestUpdateForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1975,19 +1974,27 @@
                 document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
 
                 const requestId = modalRequestId.value;
-                const url = `/api/requests/${requestId}/update/`;
-                
+                // Ensure the URL is correct and uses the request ID
+                const url = `/api/requests/${requestId}/update/`; 
+
                 const formData = new FormData(requestUpdateForm);
-                // Ensure assigned_staff is sent as an empty string if unassigned
-                if (formData.get('assigned_staff') === '') {
-                    formData.set('assigned_staff', ''); // Explicitly set to empty string for null
-                }
+                
+                // IMPORTANT: Ensure assigned_staff is handled correctly.
+                // If it's an empty string from the select, it should be treated as null on the backend.
+                // Django's form will handle '' to None for ForeignKey(null=True).
+                // No explicit formData.set('assigned_staff', ''); needed here, as FormData handles empty select value.
+
+                // Handle checkbox for bill_added
+                // FormData automatically sends "on" or nothing for checkboxes.
+                // Explicitly set to 'True' or 'False' to match Django's BooleanField expectation.
+                formData.set('bill_added', modalAmenityBillAdded.checked ? 'True' : 'False');
+
 
                 try {
                     const response = await fetch(url, {
-                        method: 'POST',
+                        method: 'POST', // Django expects POST for form submissions
                         headers: {
-                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-CSRFToken': csrfToken, // Use the global csrfToken
                         },
                         body: formData
                     });
@@ -2003,10 +2010,12 @@
                         showMessage(generalErrorMessage, 'error');
 
                         if (result.errors) {
+                            // Parse the JSON string of errors
                             const errors = JSON.parse(result.errors);
                             for (const field in errors) {
                                 const errorDiv = document.getElementById(`${field}Errors`);
                                 if (errorDiv) {
+                                    // Display the first error message for the field
                                     errorDiv.textContent = errors[field][0].message;
                                 } else {
                                     // Fallback for non-field errors or unexpected errors

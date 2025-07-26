@@ -26,17 +26,18 @@ urlpatterns = [
     path('api/requests/<int:request_id>/details/', views.request_details_api, name='request_details_api'),
     path('api/assignments/<int:assignment_id>/edit/', views.edit_assignment_api, name='edit_assignment_api'),
     path('api/assignments/<int:assignment_id>/delete/', views.delete_assignment_api, name='delete_assignment_api'),
-    
-    # API Endpoint for Amenity Details
+    # API Endpoint for Amenity Details (used for GET and also for POST/PUT for edit)
     path('api/amenities/<int:amenity_id>/', views.amenity_detail_api, name='amenity_detail_api'),
     # API Endpoint for Amenity Deletion
     path('api/amenities/<int:amenity_id>/delete/', views.delete_amenity_api, name='delete_amenity_api'),
 
-    # NEW: API Endpoint for Adding/Editing Amenities (POST requests)
-    # This URL will handle the form submission from the amenity modal
-    # It points to the staff_dashboard view because that's where your POST logic for amenities is.
-    path('api/amenities/save/', views.staff_dashboard, name='save_amenity_api'),
+    # NEW: API Endpoint for Adding NEW Amenities (POST requests)
+    # This URL specifically handles the creation of new amenities via POST.
+    path('api/amenities/save/', views.staff_dashboard, name='save_amenity_api'), 
 
+    # API: Update GuestRequest (for the requests modal save button)
+    path('api/requests/<int:request_id>/update/', views.update_request_api, name='update_request_api'),
+    
 
     # Guest Interface URLs (assuming these views exist and are correct)
     path('guest/<int:hotel_id>/room/<str:room_number>/', views.guest_interface, name='guest_interface'),
