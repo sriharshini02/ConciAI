@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts - Inter for a modern, clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Shared styles from staff_dashboard.html for consistency */
+        :root {
+            /* Light Mode Colors */
+            --bg: #F7F8FA; /* Very light gray background */
+            --card-bg: #FFFFFF; /* White card background */
+            --text: #333333; /* Dark gray text */
+            --secondary-text: #666666; /* Medium gray secondary text */
+            --border: #E0E0E0; /* Light gray border */
+            --primary: #4A90E2; /* Blue primary color */
+            --primary-dark: #357ABD; /* Darker blue for hover */
+            --accent: #FFC107; /* Amber accent */
+            --success: #28A745; /* Green for success */
+            --error: #DC3545; /* Red for error */
+            --warning: #FFC107; /* Yellow for warning */
+            --info: #17A2B8; /* Cyan for info */
+            --shadow-light: rgba(0, 0, 0, 0.05); /* Light shadow */
+            --input-bg: #F0F2F5; /* Light gray for input backgrounds */
+            --input-border: #D1D5DA; /* Slightly darker gray for input borders */
+            --hover-bg: #E9ECEF; /* Light gray for hover states */
+            --active-bg: #DEE2E6; /* Even lighter gray for active states */
+        }
+
+        /* Dark Mode Colors */
+        html[data-theme='dark'] {
+            --bg: #1A202C; /* Dark blue-gray background */
+            --card-bg: #2D3748; /* Darker blue-gray card background */
+            --text: #E2E8F0; /* Light gray text */
+            --secondary-text: #A0AEC0; /* Medium light gray secondary text */
+            --border: #4A5568; /* Darker gray border */
+            --primary: #63B3ED; /* Lighter blue primary color */
+            --primary-dark: #4299E1; /* Darker blue for hover */
+            --accent: #F6AD55; /* Orange accent */
+            --success: #48BB78; /* Green for success */
+            --error: #FC8181; /* Red for error */
+            --warning: #F6AD55; /* Orange for warning */
+            --info: #63B3ED; /* Light blue for info */
+            --shadow-light: rgba(0, 0, 0, 0.3); /* Darker shadow */
+            --input-bg: #4A5568; /* Dark gray for input backgrounds */
+            --input-border: #6B7280; /* Slightly lighter gray for input borders */
+            --hover-bg: #4A5568; /* Dark gray for hover states */
+            --active-bg: #6B7280; /* Even darker gray for active states */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-light);
+            margin-bottom: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: var(--input-bg);
+            color: var(--secondary-text);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.4);
+        }
+        .btn-success {
+            background-color: var(--success);
+            color: #fff;
+        }
+        .btn-success:hover {
+            background-color: darken(var(--success), 10%);
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .badge-pending { background-color: #FFECB3; color: #FF8F00; }
+        .badge-in_progress { background-color: #BBDEFB; color: #1976D2; }
+        .badge-completed { background-color: #C8E6C9; color: #388E3C; }
+        .badge-cancelled { background-color: #FFCDD2; color: #D32F2F; }
+
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 1001; /* Above modals */
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .message-box.success { background-color: var(--success); }
+        .message-box.error { background-color: var(--error); }
+    </style>
+</head>
+<body>
+    <div class="message-box" id="messageBox"></div>
+
+    <div class="container">
+        <header class="header">
+            <h1>Employee Dashboard</h1>
+            <div>
+                <span>Welcome, {{ logged_in_staff_member.user.username }} ({{ logged_in_staff_member.get_category_display }})</span>
+                <a href="{% url 'logout' %}" class="btn btn-secondary btn-sm" style="margin-left: 15px;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>Your Assigned Tasks</h2>
+            {% if assigned_tasks %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Room</th>
+                                <th>Request Type</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Received At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in assigned_tasks %}
+                                <tr>
+                                    <td>{{ task.id }}</td>
+                                    <td>{{ task.room_number }}</td>
+                                    <td>{{ task.get_request_type_display }}</td>
+                                    <td>{{ task.raw_text|truncatechars:100 }}</td>
+                                    <td><span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span></td>
+                                    <td>{{ task.timestamp|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        {% if task.status != 'completed' %}
+                                            <button class="btn btn-success btn-sm complete-task-button" data-request-id="{{ task.id }}">Mark Complete</button>
+                                        {% else %}
+                                            <span class="badge badge-completed">Completed</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">No assigned tasks found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const messageBox = document.getElementById('messageBox');
+
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box show ${type}`;
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 5000);
+        }
+
+        document.querySelectorAll('.complete-task-button').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const requestId = e.target.dataset.requestId;
+                const url = `/api/employee/requests/${requestId}/complete/`;
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json' // Important for Django's JsonResponse
+                        },
+                        body: JSON.stringify({}) // Send empty JSON body
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showMessage(result.message, 'success');
+                        location.reload(); // Reload to reflect status change
+                    } else {
+                        showMessage(result.error || 'Failed to complete task.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error completing task:', error);
+                    showMessage('Network error or server issue completing task.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

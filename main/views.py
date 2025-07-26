@@ -1,7 +1,7 @@
 # main/views.py
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_POST, require_GET
@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from .models import Hotel, UserProfile, GuestRoomAssignment, Room, GuestRequest, Amenity,  StaffMember 
 from .forms import AmenityForm, GuestRoomAssignmentForm, GuestRequestForm
 
+from django.contrib import messages # Import messages for feedback
 # Load environment variables from .env file
 load_dotenv()
 
@@ -863,7 +864,7 @@ def amenity_detail_api(request, amenity_id):
 
 
 @login_required
-def delete_amenity_api(request, amenity_id):
+def delete_amenity(request, amenity_id):
     if request.method == 'POST':
         try:
             # FIX: Amenity model does not have a 'hotel' field, so remove the filter
@@ -1298,16 +1299,80 @@ def user_logout(request):
 
 # --- API Endpoints for Amenity Management (remain the same) ---
 
+
+def employee_login_view(request):
+    """
+    Handles staff/employee login.
+    """
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            # Check if the user is associated with a StaffMember profile
+            if hasattr(user, 'staff_profile'):
+                login(request, user)
+                return redirect('main:employee_dashboard') # Redirect to the new employee dashboard
+            else:
+                messages.error(request, 'You are not authorized to access the employee dashboard.')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    return render(request, 'main/employee_login.html') # New template for employee login
+
+@login_required
+def employee_dashboard_view(request):
+    """
+    Renders the employee-specific dashboard, showing only assigned tasks.
+    """
+    user_hotel = None
+    logged_in_staff_member = None
+
+    try:
+        user_profile = request.user.profile
+        user_hotel = user_profile.hotel
+        logged_in_staff_member = StaffMember.objects.get(user=request.user, hotel=user_hotel)
+    except (UserProfile.DoesNotExist, StaffMember.DoesNotExist, AttributeError):
+        messages.error(request, 'Access denied. You must be a registered staff member to view this dashboard.')
+        logout(request)
+        return redirect('main:employee_login') # Redirect to employee login if not staff
+
+    # Fetch tasks assigned to this specific staff member
+    # Filter for pending or in-progress tasks
+    assigned_tasks = GuestRequest.objects.filter(
+        assigned_staff=logged_in_staff_member,
+        status__in=['pending', 'in_progress']
+    ).order_by('-timestamp')
+
+    context = {
+        'page_title': f'Employee Dashboard - {logged_in_staff_member.user.username}',
+        'assigned_tasks': assigned_tasks,
+        'logged_in_staff_member': logged_in_staff_member,
+    }
+    return render(request, 'main/employee_dashboard.html', context)
+
 @login_required
 @require_POST
-def delete_amenity(request, amenity_id):
+def complete_employee_request_api(request, request_id):
     """
-    API endpoint to delete an amenity.
+    API endpoint for an assigned staff member to mark their task as complete.
     """
     try:
-        amenity = get_object_or_404(Amenity, id=amenity_id)
-        amenity.delete()
-        return JsonResponse({'success': True, 'message': 'Amenity deleted successfully.'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        user_hotel = request.user.profile.hotel
+        logged_in_staff_member = StaffMember.objects.get(user=request.user, hotel=user_hotel)
+        
+        guest_request = get_object_or_404(GuestRequest, id=request_id, hotel=user_hotel)
 
+        # Ensure the request is assigned to the logged-in staff member
+        if guest_request.assigned_staff != logged_in_staff_member:
+            return JsonResponse({'success': False, 'error': 'You are not authorized to complete this task.'}, status=403)
+
+        # Update status to 'completed'
+        guest_request.status = 'completed'
+        guest_request.save()
+
+        return JsonResponse({'success': True, 'message': 'Task marked as completed.'})
+    except (UserProfile.DoesNotExist, StaffMember.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Authentication error or staff profile not found.'}, status=403)
+    except Exception as e:
+        print(f"Error completing task: {e}")
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
