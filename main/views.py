@@ -117,6 +117,8 @@ async def call_gemini_api(prompt, available_amenities_data):
         },
         "system_instruction": {"parts": [{"text": system_instruction_text}]}
     }
+
+
     try:
         response = requests.post(
             GEMINI_API_URL,
@@ -125,30 +127,172 @@ async def call_gemini_api(prompt, available_amenities_data):
         )
         response.raise_for_status()
         result = response.json()
+        
         if result.get('candidates') and result['candidates'][0].get('content') and result['candidates'][0]['content'].get('parts'):
             json_string = result['candidates'][0]['content']['parts'][0]['text']
-            return json.loads(json_string)
+            parsed_json = json.loads(json_string)
+            return parsed_json
         else:
-            print(f"Unexpected Gemini API response structure: {result}")
             return {
                 "intent": "general_inquiry",
                 "entities": {"query": prompt},
-                "conci_response": "I'm sorry, I couldn't process that request fully. Please try again or contact staff."
+                "conci_response": "I apologize, I could not process your request at this moment. Please try again or contact staff directly."
             }
     except requests.exceptions.RequestException as e:
-        print(f"Gemini API request failed: {e}")
+        print(f"Error calling Gemini API: {e}")
+        # Print the response content for more details on 400 error
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Gemini API Error Response Content: {e.response.text}")
         return {
             "intent": "general_inquiry",
             "entities": {"query": prompt},
-            "conci_response": f"I'm sorry, I'm having trouble connecting to my AI services right now. Please try again later. Error: {e}"
+            "conci_response": "I'm having trouble connecting right now. Please try again in a moment."
         }
     except json.JSONDecodeError as e:
-        print(f"Failed to parse Gemini API response JSON: {e}")
+        print(f"Error decoding Gemini API response JSON: {e}")
+        print("Raw Gemini response:", response.text if 'response' in locals() else "No response text")
         return {
             "intent": "general_inquiry",
             "entities": {"query": prompt},
-            "conci_response": "I'm sorry, I received an unreadable response from my AI services. Please try again or contact staff."
+            "conci_response": "I received an unexpected response. Could you please rephrase your request?"
         }
+    except Exception as e:
+        print(f"An unexpected error occurred in call_gemini_api: {e}")
+        return {
+            "intent": "general_inquiry",
+            "entities": {"query": prompt},
+            "conci_response": "An internal error occurred while processing your request. Please contact staff if the issue persists."
+        }
+
+
+# --- Guest Interface API Endpoints ---
+
+@require_POST
+async def process_guest_command(request):
+    """
+    API endpoint to process a guest's command (new message).
+    This creates a new GuestRequest with 'pending' status if it's an actionable request,
+    or just updates chat history if it's a casual chat.
+    Matches URL: /api/process_command/
+    Expects hotel_id and room_number in the JSON body.
+    """
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message').strip()
+
+        hotel_id = data.get('hotel_id')
+        room_number = data.get('room_number')
+
+        if not user_message or not hotel_id or not room_number:
+            return JsonResponse({'success': False, 'error': 'Missing message, hotel_id, or room_number.'}, status=400)
+
+        hotel = await sync_to_async(get_object_or_404)(Hotel, id=hotel_id)
+
+        # Fetch available amenities with name and price
+        available_amenities_data = await sync_to_async(list)(
+            Amenity.objects.filter(is_available=True).values('name', 'price')
+        )
+        
+        gemini_response = await call_gemini_api(user_message, available_amenities_data)
+        
+        request_type = gemini_response.get('intent', 'general_inquiry')
+        conci_response = gemini_response.get('conci_response', "I apologize, I couldn't fully understand that. Can you please rephrase?")
+        ai_entities = gemini_response.get('entities', {"query": user_message})
+
+        amenity_obj = None
+        amenity_qty = ai_entities.get('quantity', 1)
+
+        is_actionable_amenity_request = False
+
+        if request_type == 'amenity_request':
+            amenity_name_from_ai = ai_entities.get('amenity_name')
+            if amenity_name_from_ai:
+                amenity_obj = await sync_to_async(Amenity.objects.filter(name__iexact=amenity_name_from_ai, is_available=True).first)()
+                if not amenity_obj:
+                    request_type = 'general_inquiry'
+                    conci_response = f"I'm sorry, '{amenity_name_from_ai}' is not currently available or recognized as an amenity. Can I help with something else?"
+                else:
+                    # Check if the AI's response implies a delivery/action, not just info.
+                    # This is a heuristic and might need fine-tuning based on AI's actual responses.
+                    # Look for keywords that suggest confirmation of delivery or action.
+                    conci_response_lower = conci_response.lower()
+                    if "deliver" in conci_response_lower or \
+                       "bring" in conci_response_lower or \
+                       "send" in conci_response_lower or \
+                       "on its way" in conci_response_lower or \
+                       "will be added to your bill" in conci_response_lower:
+                        is_actionable_amenity_request = True
+            else:
+                request_type = 'general_inquiry'
+                conci_response = "I understand you're looking for an amenity, but I didn't catch which one. Could you please specify?"
+
+
+        latest_request_for_chat = await sync_to_async(GuestRequest.objects.filter(
+            hotel=hotel,
+            room_number=room_number
+        ).order_by('-timestamp').first)()
+
+        current_chat_history = []
+        if latest_request_for_chat and latest_request_for_chat.chat_history:
+            try:
+                current_chat_history = json.loads(latest_request_for_chat.chat_history)
+            except json.JSONDecodeError:
+                current_chat_history = []
+
+        current_chat_history.append({"role": "user", "parts": [{"text": user_message}]})
+        current_chat_history.append({"role": "model", "parts": [{"text": conci_response}]})
+
+        request_obj_id = None
+
+        # Only create a new pending request if it's truly actionable
+        if request_type == 'casual_chat' or (request_type == 'amenity_request' and not is_actionable_amenity_request):
+            # For casual chats or amenity inquiries that are not actionable requests,
+            # update the chat_history of the LATEST request or create a new one with 'completed' status.
+            if latest_request_for_chat:
+                latest_request_for_chat.chat_history = json.dumps(current_chat_history) # type: ignore
+                await sync_to_async(latest_request_for_chat.save)()
+                request_obj_id = latest_request_for_chat.id # type: ignore
+            else:
+                dummy_request = await sync_to_async(GuestRequest.objects.create)(
+                    hotel=hotel,
+                    room_number=room_number,
+                    raw_text=user_message,
+                    conci_response_text=conci_response,
+                    status='completed', # Mark as completed so it doesn't show in staff pending
+                    request_type='casual_chat', # Set type
+                    chat_history=json.dumps(current_chat_history)
+                )
+                request_obj_id = dummy_request.id      # type: ignore
+
+        else: # This is an actionable request (e.g., maintenance, housekeeping, or an actionable amenity_request)
+            request_obj = await sync_to_async(GuestRequest.objects.create)(
+                hotel=hotel,
+                room_number=room_number,
+                raw_text=user_message,
+                ai_intent=request_type,
+                ai_entities=json.dumps(ai_entities),
+                conci_response_text=conci_response,
+                status='pending', # New actionable requests start as 'pending'
+                request_type=request_type,
+                amenity_requested=amenity_obj,
+                amenity_quantity=amenity_qty,
+                bill_added=False,
+                chat_history=json.dumps(current_chat_history)
+            )
+            request_obj_id = request_obj.id      # type: ignore
+        
+        return JsonResponse({
+            'success': True,
+            'conci_response': conci_response,
+            'request_id': request_obj_id,
+            'chat_history': current_chat_history,
+        })
+
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON in request body.")
+    except Exception as e:
+        print(f"Error processing guest command: {e}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
@@ -523,8 +667,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
     return render(request, 'main/staff_dashboard.html', context)
 
-
-# NEW API VIEW: Fetch details for a specific GuestRequest (for modal)
 @login_required
 def request_details_api(request, request_id):
     """
