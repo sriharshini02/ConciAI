@@ -44,12 +44,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='guestroomassignment',
             name='base_bill_amount',
-            field=models.DecimalField(decimal_places=2, default=0.0, help_text='Base room charges for the stay.', max_digits=10),
+            field=models.DecimalField(decimal_places=2, default=0.0, help_text='Base room charges for the stay.', max_digits=10), # type: ignore
         ),
         migrations.AddField(
             model_name='guestroomassignment',
             name='total_bill_amount',
-            field=models.DecimalField(decimal_places=2, default=0.0, help_text='Total bill including room charges and amenities.', max_digits=10),
+            field=models.DecimalField(decimal_places=2, default=0.0, help_text='Total bill including room charges and amenities.', max_digits=10), # type: ignore
         ),
         migrations.AlterField(
             model_name='guestrequest',
