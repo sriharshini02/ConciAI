@@ -301,6 +301,7 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     """
     Renders the staff dashboard, handling different tabs (home, requests, guest_management)
     and sub-tabs for requests (active, archive, all).
+    This is the ADMIN-LEVEL dashboard.
     """
     user_hotel = None
     logged_in_staff_member = None
@@ -308,36 +309,39 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     try:
         user_profile = request.user.profile
         user_hotel = user_profile.hotel
-        # NEW: Try to get the StaffMember profile for the logged-in user
         try:
             logged_in_staff_member = StaffMember.objects.get(user=request.user, hotel=user_hotel)
         except StaffMember.DoesNotExist:
-            logged_in_staff_member = None # User is logged in but not registered as a StaffMember for this hotel
+            logged_in_staff_member = None 
     except UserProfile.DoesNotExist:
         logout(request)
         return redirect('login')
-    except AttributeError: # Catches if request.user has no profile
+    except AttributeError: 
         logout(request)
         return redirect('login')
 
     if not user_hotel:
-        # If user has a profile but no hotel assigned (null=True, blank=True on Hotel FK)
         logout(request)
         return redirect('login')
 
     context = {
-        'page_title': 'Staff Dashboard', # Default title
+        'page_title': 'Staff Dashboard', 
         'current_main_tab': main_tab,
         'current_sub_tab': sub_tab,
-        'logged_in_staff_member': logged_in_staff_member, # Pass to template
+        'logged_in_staff_member': logged_in_staff_member, 
     }
 
-    # Common data for all tabs (e.g., room counts)
+    # NEW: Add all staff members for the current hotel to the context
+    # This is needed for the "Assign Staff" dropdown in the requests modal
+    context['staff_members'] = StaffMember.objects.filter(hotel=user_hotel).order_by('user__username')
+    context['guest_request_status_choices'] = GuestRequest.STATUS_CHOICES
+    context['guest_request_type_choices'] = GuestRequest.REQUEST_TYPE_CHOICES
+
+
     today = timezone.localdate()
     now = timezone.localtime(timezone.now())
     total_rooms = user_hotel.total_rooms
     
-    # Occupied rooms (guests currently checked in and status is 'checked_in')
     occupied_rooms = GuestRoomAssignment.objects.filter(
         hotel=user_hotel,
         check_in_time__lte=now,
@@ -345,14 +349,12 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
         status='checked_in'
     ).count()
 
-    # Reserved rooms (future bookings, not yet checked in, status is 'confirmed')
     reserved_rooms = GuestRoomAssignment.objects.filter(
         hotel=user_hotel,
         check_in_time__date__gt=today,
         status='confirmed'
     ).count()
 
-    # Dynamic Not Ready rooms count from Room model
     not_ready_rooms = Room.objects.filter(
         hotel=user_hotel,
         status__in=['cleaning', 'maintenance', 'out_of_service']
@@ -404,55 +406,29 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
                 print("Guest Assignment Form is NOT VALID. Errors:", form.errors)
                 return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
 
-        # --- Handle Amenity Form Submission (your existing code) ---
-        elif 'name' in request.POST and 'description' in request.POST and 'price' in request.POST:
-            amenity_id = request.POST.get('amenity_id')
-            if amenity_id:
-                amenity = get_object_or_404(Amenity, id=amenity_id)
-                form = AmenityForm(request.POST, instance=amenity)
-            else:
-                form = AmenityForm(request.POST)
-
-            if form.is_valid():
-                try:
-                    form.save()
-                    return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
-                except Exception as e:
-                    print(f"!!! CRITICAL SERVER ERROR during Amenity form.save(): {e}")
-                    import traceback
-                    traceback.print_exc()
-                    return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
-            else:
-                print("Amenity Form is NOT VALID. Errors:", form.errors)
-                return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
-        
         return JsonResponse({'success': False, 'error': 'Unknown form submission or invalid request.'}, status=400)
 
     # --- Handle GET requests (displaying the dashboard) ---
     if main_tab == 'home':
         context['page_title'] = 'Dashboard Overview'
 
-        # New Bookings (GuestRoomAssignments created today, regardless of initial status)
         new_bookings_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             created_at__date=today
         ).count()
 
-        # Check-ins Today (GuestRoomAssignments with check_in_time today and status 'checked_in')
         check_ins_today_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             check_in_time__date=today,
             status='checked_in'
         ).count()
 
-        # Check-outs Today (GuestRoomAssignment.objects with check_out_time today and status 'checked_out')
         check_outs_today_count = GuestRoomAssignment.objects.filter(
             hotel=user_hotel,
             check_out_time__date=today,
             status='checked_out'
         ).count()
 
-        # Total Requests (all GuestRequest for the hotel)
         total_requests_count = GuestRequest.objects.filter(hotel=user_hotel).count()
 
         context.update({
@@ -462,7 +438,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             'total_requests_count': total_requests_count,
         })
 
-        # --- Dynamic D3 Chart Data for Reservations (Last 7 Days) ---
         reservations_chart_data = []
         for i in range(7):
             chart_date = today - timedelta(days=6 - i)
@@ -475,7 +450,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
 
             cancelled_count = GuestRoomAssignment.objects.filter(
                 hotel=user_hotel,
-                # Filter by update_at or status change time if available, or just creation for simplicity
                 created_at__date=chart_date, 
                 status='cancelled'
             ).count()
@@ -487,7 +461,6 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             })
         context['reservations_chart_data'] = json.dumps(reservations_chart_data)
 
-        # Booking by Platform Chart Data (Still hardcoded as 'platform' field is not in model)
         booking_platform_data = json.dumps([
             {"platform": "Direct Booking", "value": 61},
             {"platform": "Booking.com", "value": 12},
@@ -501,45 +474,35 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     elif main_tab == 'requests':
         context['page_title'] = 'Guest Requests'
         
-        # NEW: Initialize GuestRequestForm for the modal
         context['guest_request_form'] = GuestRequestForm(hotel=user_hotel)
 
         requests_for_hotel = GuestRequest.objects.filter(hotel=user_hotel)
 
-        # NEW: Filter requests based on logged-in staff member's role
         if logged_in_staff_member:
-            # If staff is 'general' or 'concierge', they see all relevant requests
             if logged_in_staff_member.category == 'general' or logged_in_staff_member.category == 'concierge':
-                # No additional filtering beyond hotel and sub_tab
                 pass
             else:
-                # Staff members see requests matching their category OR assigned to them
-                # OR unassigned requests that match their category
                 requests_for_hotel = requests_for_hotel.filter(
                     Q(assigned_staff=logged_in_staff_member) |
                     Q(request_type=logged_in_staff_member.category) |
                     Q(assigned_staff__isnull=True, request_type=logged_in_staff_member.category)
                 )
         else:
-            # If not a recognized staff member, they see all requests for their hotel (as before)
             pass
 
-
-        # Default to 'active' if no sub_tab is specified
         if sub_tab is None:
             sub_tab = 'active'
-            context['current_sub_tab'] = 'active' # Ensure template reflects default
+            context['current_sub_tab'] = 'active'
 
         if sub_tab == 'active':
             requests_for_hotel = requests_for_hotel.filter(status__in=['pending', 'in_progress']).exclude(request_type='casual_chat')
         elif sub_tab == 'archive':
             requests_for_hotel = requests_for_hotel.filter(status__in=['completed', 'cancelled'])
         elif sub_tab == 'all':
-            pass # No additional filter for 'all' beyond hotel and staff filtering
+            pass
 
         requests_for_hotel = requests_for_hotel.order_by('-timestamp')
 
-        # Group requests by type for display
         grouped_requests = {}
         for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
             grouped_requests[choice_value] = {
@@ -548,33 +511,24 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             }
         
         for req in requests_for_hotel:
-            # Note: This `first()` might pick an arbitrary assignment if multiple exist for the room.
-            # You might want to refine this to get the *active* assignment for the room,
-            # or ensure a request is linked to a specific assignment if that's your model's intent.
             assignment = GuestRoomAssignment.objects.filter(hotel=user_hotel, room_number=req.room_number).first()
             
-            # Ensure the request_type from the DB matches one of our defined choices
-            # This handles cases where old data might have undefined types
             actual_request_type = req.request_type if req.request_type in [cv for cv, cl in GuestRequest.REQUEST_TYPE_CHOICES] else 'general_inquiry'
 
-            # Only add to grouped_requests if it's not a casual_chat for 'active' tab
             if sub_tab == 'active' and actual_request_type == 'casual_chat':
-                continue # Skip casual chat for active view
+                continue
             
             grouped_requests[actual_request_type]['requests'].append({
                 'request': req,
                 'assignment': assignment,
-                'assigned_staff_name': req.assigned_staff.user.username if req.assigned_staff else None # NEW: Add assigned staff name
+                'assigned_staff_name': req.assigned_staff.user.username if req.assigned_staff else None
             })
 
-        # Convert to a list of (display_name, list_of_requests) for ordered iteration in template
-        # Filter out empty groups if they are not needed, unless it's the 'all' tab and we want to show all categories
         ordered_grouped_requests = []
         has_any_requests = False
         for choice_value, choice_label in GuestRequest.REQUEST_TYPE_CHOICES:
-            # Only include non-casual chat types in the active view, or all types in the 'all'/'archive' views
             if (sub_tab == 'active' and choice_value == 'casual_chat'):
-                continue # Skip casual chat for active tab
+                continue
             
             if grouped_requests[choice_value]['requests']:
                 ordered_grouped_requests.append(grouped_requests[choice_value])
@@ -586,19 +540,14 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     elif main_tab == 'guest_management':
         context['page_title'] = 'Guest Management'
         
-        # Initialize an empty form for GET requests or if POST fails validation
-        # This 'form' variable will be used in the template for the Add/Edit modal.
         form = GuestRoomAssignmentForm(hotel=user_hotel) 
 
-        # Start with all assignments for the user's hotel
         all_assignments = GuestRoomAssignment.objects.filter(hotel=user_hotel)
 
-        # --- Apply Filters ---
         filter_params = {}
 
         room_number_filter_val = request.GET.get('room_number')
         if room_number_filter_val:
-            # --- CRITICAL FIX: Filter directly on the CharField 'room_number' ---
             all_assignments = all_assignments.filter(room_number__icontains=room_number_filter_val)
             filter_params['room_number'] = room_number_filter_val
 
@@ -648,25 +597,23 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
             except ValueError:
                 pass
 
-        # Order the filtered results
         all_assignments = all_assignments.order_by('-check_in_time')
 
         context.update({
-            'form': form, # Pass the form for the add/edit modal (initialized for GET)
-            'all_assignments': all_assignments, # Pass the filtered assignments
-            'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES, # Pass choices for status filter
-            'filter_params': filter_params, # Pass current filter values to re-populate form fields
+            'form': form,
+            'all_assignments': all_assignments,
+            'assignment_status_choices': GuestRoomAssignment.STATUS_CHOICES,
+            'filter_params': filter_params,
         })
             
     elif main_tab == 'amenities':
         context['page_title'] = 'Amenity Management'
-        # Pass an empty form instance for the "Add New Amenity" modal
-        context['form'] = AmenityForm() # Assuming AmenityForm is used for both add/edit
-        # FIX: Amenity model does not have a 'hotel' field, so remove the filter
-        context['amenities'] = Amenity.objects.all().order_by('name') # Changed from .filter(hotel=user_hotel)
+        context['form'] = AmenityForm() 
+        context['amenities'] = Amenity.objects.all().order_by('name') 
 
 
     return render(request, 'main/staff_dashboard.html', context)
+
 
 @login_required
 @require_POST

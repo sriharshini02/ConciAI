@@ -1241,9 +1241,12 @@
                                             <p><strong>Assigned To:</strong> <span class="assigned-staff-name">{{ item.assigned_staff_name|default:"Unassigned" }}</span></p>
                                         </div>
                                         <div class="request-actions">
-                                            <button class="view-details" data-request-id="{{ item.request.id }}">View Details</button>
-                                            {# Removed direct status update buttons here, as they will be handled in the modal #}
-                                        </div>
+                                                    <td>
+                                                        <button class="btn btn-primary btn-sm view-request-button" data-request-id="{{ item.request.id }}">View Details</button>
+                                                        <button class="btn btn-info btn-sm assign-request-button" data-request-id="{{ item.request.id }}" {% if item.request.assigned_staff %}disabled{% endif %}>
+                                                            {% if item.request.assigned_staff %}Assigned{% else %}Assign{% endif %}
+                                                        </button>
+                                                    </td>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -1469,7 +1472,33 @@
             </form>
         </div>
     </div>
-
+    <!-- Assign Staff Modal -->
+    <div id="assignStaffModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Assign Request to Staff</h2>
+            </div>
+            <form id="assignStaffForm">
+                {% csrf_token %}
+                <input type="hidden" id="assignRequestId" name="request_id">
+                <div class="form-group">
+                    <label for="assignStaffSelect">Assign to:</label>
+                    <select id="assignStaffSelect" name="assigned_staff" class="form-control" required>
+                        <option value="">Select Staff Member</option>
+                        {% for staff in staff_members %}
+                            <option value="{{ staff.id }}">{{ staff.user.username }} ({{ staff.get_category_display }})</option>
+                        {% endfor %}
+                    </select>
+                    <span id="assigned_staffErrorsAssign" class="error-message"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelAssignButton">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- Request Details Modal -->
     <div id="requestDetailsModal" class="modal request-details-modal">
         <div class="modal-content">
@@ -1492,11 +1521,13 @@
                 
                 {# NEW: Editable Status Field #}
                 <div class="form-group detail-row">
-                    <label for="{{ guest_request_form.status.id_for_label }}"><strong>Status:</strong></label>
-                    {{ guest_request_form.status }}
-                    <div id="statusErrors" class="error-message"></div>
+                    <select id="modalStatus" name="status" class="form-control" disabled>
+                                {% for value, label in guest_request_status_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
                 </div>
-
+                            
                 {# NEW: Editable Request Type Field #}
                 <div class="form-group detail-row">
                     <label for="{{ guest_request_form.request_type.id_for_label }}"><strong>Type:</strong></label>
@@ -2177,7 +2208,190 @@
                 }
             });
         });
+        // Request Details Modal Logic (Existing, just ensuring it's here)
+        const viewRequestButtons = document.querySelectorAll('.view-request-button');
+        const modalRoomNumber = document.getElementById('modalRoomNumber');
+        const modalGuestNames = document.getElementById('modalGuestNames');
+        const modalRawText = document.getElementById('modalRawText');
+        const modalConciResponseText = document.getElementById('modalConciResponseText');
+        const modalAiIntent = document.getElementById('modalAiIntent');
+        const modalAiEntities = document.getElementById('modalAiEntities');
+        const modalStaffNotes = document.getElementById('modalStaffNotes');
+        const modalChatHistory = document.getElementById('modalChatHistory');
+        const modalRequestType = document.getElementById('modalRequestType');
+        const modalStatus = document.getElementById('modalStatus');
+        const modalAssignedStaff = document.getElementById('modalAssignedStaff');
+        const amenityDetailsSection = document.getElementById('amenityDetailsSection');
+        const modalAmenityName = document.getElementById('modalAmenityName');
+        const modalAmenityQuantity = document.getElementById('modalAmenityQuantity');
+        const modalAmenityPricePerUnit = document.getElementById('modalAmenityPricePerUnit');
+        const modalTotalAmenityCost = document.getElementById('modalTotalAmenityCost');
+        const modalAmenityBillAdded = document.getElementById('modalAmenityBillAdded');
 
+
+        viewRequestButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const requestId = button.dataset.requestId;
+                try {
+                    const response = await fetch(`/api/requests/${requestId}/details/`);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        modalRequestId.value = requestId;
+                        modalRoomNumber.textContent = result.room_number;
+                        modalGuestNames.textContent = result.guest_names;
+                        modalRawText.textContent = result.raw_text;
+                        modalConciResponseText.textContent = result.conci_response_text;
+                        modalAiIntent.textContent = result.ai_intent;
+                        modalAiEntities.textContent = JSON.stringify(result.ai_entities, null, 2);
+                        modalStaffNotes.value = result.staff_notes || '';
+
+                        // Populate dropdowns
+                        modalRequestType.value = result.raw_request_type_value;
+                        modalStatus.value = result.raw_status_value;
+                        modalAssignedStaff.value = result.raw_assigned_staff_id || ''; // Set to empty string if null
+
+                        // Populate chat history
+                        modalChatHistory.innerHTML = '<h4>Chat History</h4>'; // Clear previous
+                        if (result.chat_history && result.chat_history.length > 0) {
+                            result.chat_history.forEach(chatMsg => {
+                                const msgDiv = document.createElement('div');
+                                msgDiv.classList.add('chat-message', chatMsg.role);
+                                const roleSpan = document.createElement('strong');
+                                roleSpan.textContent = chatMsg.role === 'user' ? 'Guest:' : 'Conci:';
+                                msgDiv.appendChild(roleSpan);
+                                chatMsg.parts.forEach(part => {
+                                    const p = document.createElement('p');
+                                    p.textContent = part.text;
+                                    msgDiv.appendChild(p);
+                                });
+                                modalChatHistory.appendChild(msgDiv);
+                            });
+                        } else {
+                            modalChatHistory.innerHTML += '<p>No chat history available.</p>';
+                        }
+
+                        // Amenity details section
+                        if (result.amenity_details) {
+                            amenityDetailsSection.style.display = 'block';
+                            modalAmenityName.textContent = result.amenity_details.name;
+                            modalAmenityQuantity.textContent = result.amenity_details.quantity;
+                            modalAmenityPricePerUnit.textContent = `$${result.amenity_details.price_per_unit.toFixed(2)}`;
+                            modalTotalAmenityCost.textContent = `$${result.amenity_details.total_amenity_cost.toFixed(2)}`;
+                            modalAmenityBillAdded.checked = result.amenity_details.bill_added;
+                        } else {
+                            amenityDetailsSection.style.display = 'none';
+                        }
+
+                        requestDetailsModal.classList.add('show');
+                    } else {
+                        showMessage(result.error || 'Failed to load request details.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error fetching request details:', error);
+                    showMessage('Network error or server issue loading request details.', 'error');
+                }
+            });
+        });
+
+        // NEW: Assign Staff Modal Logic
+        const assignStaffModal = document.getElementById('assignStaffModal');
+        const assignStaffForm = document.getElementById('assignStaffForm');
+        const assignRequestIdInput = document.getElementById('assignRequestId');
+        const assignStaffSelect = document.getElementById('assignStaffSelect');
+        const cancelAssignButton = document.getElementById('cancelAssignButton');
+
+        document.querySelectorAll('.assign-request-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const requestId = button.dataset.requestId;
+                assignRequestIdInput.value = requestId;
+                // Reset select and clear errors
+                assignStaffSelect.value = '';
+                document.getElementById('assigned_staffErrorsAssign').textContent = '';
+                assignStaffModal.classList.add('show');
+            });
+        });
+
+        cancelAssignButton.addEventListener('click', () => {
+            assignStaffModal.classList.remove('show');
+        });
+
+        // Submit Assign Staff Form
+        if (assignStaffForm) {
+            assignStaffForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                document.getElementById('assigned_staffErrorsAssign').textContent = ''; // Clear previous error
+
+                const requestId = assignRequestIdInput.value;
+                const assignedStaffId = assignStaffSelect.value;
+                const url = `/api/requests/${requestId}/update/`; // Use the existing update API
+
+                const formData = new FormData();
+                formData.append('request_id', requestId);
+                formData.append('assigned_staff', assignedStaffId); // Send the selected staff ID
+                // Also send current status and request type to satisfy backend form validation
+                // Fetch current values from the request details modal if it was open, or from the table data if possible
+                // For simplicity, we'll assume the backend GuestRequestForm can handle partial updates
+                // or we need to fetch the current request details first.
+                // For now, let's assume the backend form is flexible or we only allow assigning.
+                // If the backend form requires all fields, you'd need to fetch existing data first.
+                // For a quick fix, let's just send the assigned_staff and rely on backend to ignore missing fields
+                // or ensure GuestRequestForm allows partial updates.
+                // A better approach would be to fetch existing data, then update.
+                // Let's add dummy values for required fields if not present, or make them optional in form.
+                // Assuming GuestRequestForm allows partial updates for these fields.
+                
+                // To ensure the Django form validates, we need to send the current status and request_type.
+                // This is a common pattern when updating only a few fields of a model form.
+                // We'll fetch the current request details to get these values.
+                try {
+                    const currentRequestResponse = await fetch(`/api/requests/${requestId}/details/`);
+                    const currentRequestData = await currentRequestResponse.json();
+
+                    if (currentRequestData.success) {
+                        formData.append('status', currentRequestData.raw_status_value);
+                        formData.append('request_type', currentRequestData.raw_request_type_value);
+                        formData.append('staff_notes', currentRequestData.staff_notes || ''); // Include existing notes
+                        formData.append('bill_added', currentRequestData.amenity_details ? currentRequestData.amenity_details.bill_added : 'False'); // Include existing bill_added
+
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage(result.message, 'success');
+                            assignStaffModal.classList.remove('show');
+                            location.reload(); // Reload to reflect changes
+                        } else {
+                            let generalErrorMessage = result.error || 'Failed to assign task due to validation errors.';
+                            showMessage(generalErrorMessage, 'error');
+
+                            if (result.errors) {
+                                const errors = JSON.parse(result.errors);
+                                const errorDiv = document.getElementById('assigned_staffErrorsAssign');
+                                if (errors.assigned_staff && errorDiv) {
+                                    errorDiv.textContent = errors.assigned_staff[0].message;
+                                } else {
+                                    console.error('Unhandled form error:', errors);
+                                    showMessage('Error: ' + JSON.stringify(errors), 'error');
+                                }
+                            }
+                        }
+                    } else {
+                        showMessage(currentRequestData.error || 'Failed to fetch current request details for assignment.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error assigning task:', error);
+                    showMessage('Network error or server issue assigning task.', 'error');
+                }
+            });
+        }
 
         // Close Assignment Modal
         closeAssignmentModalButtons.forEach(button => {
