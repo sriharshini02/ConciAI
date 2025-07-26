@@ -12,11 +12,18 @@ def reapply_staff_and_assigned_staff_sql(apps, schema_editor):
     respective foreign key constraints.
     Uses IF NOT EXISTS and DO $$ BEGIN ... EXCEPTION blocks for idempotency.
     """
+    # Get the actual model classes from the 'apps' registry
+    # This is the correct way to get models within a RunPython operation
+    User = apps.get_model(settings.AUTH_USER_MODEL.split('.')[0], settings.AUTH_USER_MODEL.split('.')[1])
+    Hotel = apps.get_model('main', 'Hotel') # Assuming Hotel is in 'main' app
+
     # Get the actual table names, which include the app prefix (e.g., "main_staffmember")
     staff_member_table = schema_editor.connection.ops.quote_name('main_staffmember')
     guest_request_table = schema_editor.connection.ops.quote_name('main_guestrequest')
-    auth_user_table = schema_editor.connection.ops.quote_name(settings.AUTH_USER_MODEL._meta.db_table)
-    main_hotel_table = schema_editor.connection.ops.quote_name('main_hotel')
+    
+    # CORRECTED: Get db_table from the actual model class
+    auth_user_table = schema_editor.connection.ops.quote_name(User._meta.db_table)
+    main_hotel_table = schema_editor.connection.ops.quote_name(Hotel._meta.db_table)
 
     with schema_editor.connection.cursor() as cursor:
         # --- 1. Create main_staffmember table if it doesn't exist ---
