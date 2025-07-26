@@ -24,7 +24,7 @@ urlpatterns = [
     path('api/assignments/<int:assignment_id>/delete/', views.delete_assignment_api, name='delete_assignment_api'),
     path('api/amenities/<int:amenity_id>/', views.amenity_detail_api, name='amenity_detail_api'),
     path('api/amenities/<int:amenity_id>/delete/', views.delete_amenity, name='delete_amenity_api'),
-    path('api/amenities/save/', views.staff_dashboard, name='save_amenity_api'), # For new amenity creation/update
+    path('api/amenities/save_or_update/', views.save_or_update_amenity_api, name='save_or_update_amenity_api'),
 
     # Guest Interface URLs (assuming these views exist and are correct)
     path('guest/<int:hotel_id>/room/<str:room_number>/', views.guest_interface, name='guest_interface'),

@@ -1228,71 +1228,63 @@
             }
         });
 
-        // Handle Edit Amenity Form Submission
-        if (editAmenityForm) {
-            editAmenityForm.addEventListener('submit', async (e) => {
+                // Submit Amenity Form
+        if (amenityForm) {
+            amenityForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const form = e.target;
-                const amenityId = document.getElementById('editAmenityId').value;
-                const formData = new FormData(form);
-                
-                // Add the amenity_id to the form data for editing
-                formData.append('amenity_id', amenityId);
+                // Clear previous errors
+                document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
 
-                editFormErrorsDiv.innerHTML = '';
-                document.querySelectorAll('#editAmenityForm .errorlist').forEach(el => el.innerHTML = '');
-                document.querySelectorAll('#editAmenityForm input, #editAmenityForm textarea').forEach(input => {
-                    input.classList.remove('input-error');
-                });
+                const amenityId = amenityIdInput.value;
+                // CORRECTED URL: Always use the dedicated API endpoint for saving/updating amenities
+                // This URL handles both new amenity creation and existing amenity updates.
+                const url = '{% url "main:save_or_update_amenity_api" %}'; 
+                
+                const method = 'POST'; // Django forms typically expect POST for both create and update.
+
+                const formData = new FormData(amenityForm);
+                // Ensure is_available checkbox value is correctly sent as 'True' or 'False' string
+                formData.set('is_available', amenityIsAvailableInput.checked ? 'True' : 'False');
 
                 try {
-                    const response = await fetch(`/dashboard/amenities/`, { // Submit to the same amenity_management view
-                        method: 'POST',
-                        body: formData,
+                    const response = await fetch(url, {
+                        method: method, 
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRFToken': csrfToken,
-                        }
+                        },
+                        body: formData
                     });
+
                     const result = await response.json();
-                    if (response.ok && result.success) {
+
+                    if (result.success) {
                         showMessage(result.message, 'success');
-                        editAmenityModal.classList.remove('show');
-                        setTimeout(() => location.reload(), 1000);
+                        amenityModal.classList.remove('show');
+                        location.reload(); // Reload to reflect changes
                     } else {
-                        let errorMessage = 'An error occurred. Please check your input.';
+                        let generalErrorMessage = result.error || 'Failed to save amenity due to validation errors.';
+                        showMessage(generalErrorMessage, 'error');
+
                         if (result.errors) {
                             const errors = JSON.parse(result.errors);
-                            let errorHtml = '';
-                            if (errors.__all__) {
-                                errors.__all__.forEach(error => {
-                                    errorHtml += `<li><strong>Form Error:</strong> ${error.message}</li>`;
-                                });
-                                delete errors.__all__;
-                            }
                             for (const field in errors) {
-                                errors[field].forEach(error => {
-                                    const inputElement = document.getElementById(`edit_id_${field}`);
-                                    if (inputElement) {
-                                        inputElement.classList.add('input-error');
-                                    }
-                                    errorHtml += `<li><strong>${field}:</strong> ${error.message}</li>`;
-                                });
+                                // Construct the ID for the error span based on Django's default naming (fieldErrors)
+                                const errorDiv = document.getElementById(`amenity${field.charAt(0).toUpperCase() + field.slice(1)}Errors`);
+                                if (errorDiv) {
+                                    errorDiv.textContent = errors[field][0].message;
+                                } else {
+                                    showMessage(errors[field][0].message, 'error');
+                                }
                             }
-                            editFormErrorsDiv.innerHTML = errorHtml;
-                            showMessage('Please correct the errors in the form.', 'error');
-                        } else if (result.error) {
-                            showMessage(result.error, 'error');
-                        } else {
-                            showMessage(errorMessage, 'error');
                         }
                     }
                 } catch (error) {
-                    console.error('Error editing amenity:', error);
-                    showMessage('Network error or server issue.', 'error');
+                    console.error('Error submitting amenity form:', error);
+                    showMessage('Network error or server issue saving amenity.', 'error');
                 }
             });
         }
+
 
         // --- Delete Amenity Logic ---
         document.querySelectorAll('.delete-amenity-btn').forEach(button => {

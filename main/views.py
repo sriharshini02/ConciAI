@@ -669,6 +669,34 @@ def staff_dashboard(request, main_tab='home', sub_tab=None):
     return render(request, 'main/staff_dashboard.html', context)
 
 @login_required
+@require_POST
+def save_or_update_amenity_api(request):
+    """
+    API endpoint to save (create or update) an amenity.
+    Handles POST requests from the amenity form.
+    """
+    amenity_id = request.POST.get('amenity_id')
+    if amenity_id:
+        amenity = get_object_or_404(Amenity, id=amenity_id)
+        form = AmenityForm(request.POST, instance=amenity)
+    else:
+        form = AmenityForm(request.POST)
+
+    if form.is_valid():
+        try:
+            form.save()
+            return JsonResponse({'success': True, 'message': 'Amenity saved successfully.'})
+        except Exception as e:
+            print(f"!!! CRITICAL SERVER ERROR during Amenity form.save(): {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': f'A server error occurred: {str(e)}'}, status=500)
+    else:
+        print("Amenity Form is NOT VALID. Errors:", form.errors)
+        return JsonResponse({'success': False, 'error': 'Validation failed.', 'errors': form.errors.as_json()}, status=400)
+
+
+@login_required
 def request_details_api(request, request_id):
     """
     API endpoint to fetch details of a single GuestRequest.
