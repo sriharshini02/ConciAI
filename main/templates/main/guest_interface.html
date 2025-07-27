@@ -20,7 +20,14 @@
             --shadow-light: rgba(0, 0, 0, 0.08); /* Light shadow */
             --success-color: #5cb85c;
             --error-color: #d9534f;
-            --warning-color: #f0ad4e;
+            --user-bubble-bg: var(--primary-color);
+            --user-bubble-text: white;
+            --conci-bubble-bg: #E0F2F7; /* Very light blue for ConciAI */
+            --conci-bubble-text: var(--text-color);
+            --input-bg: var(--card-background);
+            --input-border: var(--border-color);
+            --button-hover-bg: #357ABD;
+            --microphone-active-color: #FF4500; /* Orange-red for active mic */
         }
 
         body {
@@ -35,376 +42,352 @@
             color: var(--text-color);
         }
 
-        .container {
+        .chat-container {
             background-color: var(--card-background);
             border-radius: 15px;
             box-shadow: 0 10px 30px var(--shadow-light);
-            padding: 30px;
             width: 90%;
-            max-width: 500px;
-            text-align: center;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 20px;
             box-sizing: border-box;
         }
 
-        h1 {
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
             color: var(--primary-color);
-            font-size: 2.2em;
-            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8em;
             font-weight: 700;
         }
 
-        .subtitle {
+        .header p {
+            margin: 5px 0 0;
+            font-size: 0.9em;
             color: var(--light-text-color);
+        }
+
+        .message-box {
+            background-color: var(--conci-bubble-bg);
+            color: var(--conci-bubble-text);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             font-size: 1.1em;
-            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative; /* For the speak button */
         }
 
-        .conci-icon {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 25px;
-            /* Reverted filter to original, if any, or a simple one */
-            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1)); 
+        /* Collapsible Chat History Styles */
+        .chat-history-toggle {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            font-size: 1em;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px; /* Added margin-top to separate from main message */
+            margin-bottom: 10px;
+            transition: background-color 0.3s ease;
         }
 
-        .input-area {
+        .chat-history-toggle:hover {
+            background-color: #92C7C7; /* Slightly darker teal */
+        }
+
+        .chat-history-toggle i {
+            transition: transform 0.3s ease;
+        }
+
+        .chat-history-toggle.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        .chat-history-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            border-radius: 10px;
+            background-color: var(--background-color);
+            padding: 0 15px; /* Padding inside when open */
+            margin-bottom: 15px;
+        }
+
+        .chat-history-container.expanded {
+            max-height: 300px; /* Adjust as needed */
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.4;
+            position: relative; /* For speak button */
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background-color: var(--user-bubble-bg);
+            color: var(--user-bubble-text);
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-message.model {
+            align-self: flex-start;
+            background-color: var(--conci-bubble-bg);
+            color: var(--conci-bubble-text);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
+            margin-top: 20px;
         }
 
-        .input-area input[type="text"] {
+        .chat-input {
             flex-grow: 1;
             padding: 12px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 25px;
             font-size: 1em;
+            background-color: var(--input-bg);
+            color: var(--text-color);
             outline: none;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .input-area input[type="text"]:focus {
+        .chat-input:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
         }
 
-        .input-area button {
-            padding: 12px 20px;
+        .send-button, .mic-button {
+            background-color: var(--primary-color);
+            color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
             display: flex;
-            align-items: center;
-            gap: 8px;
             justify-content: center;
-        }
-
-        .input-area button.listen-btn {
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-        }
-
-        .input-area button.listen-btn:hover {
-            background-color: #90C2C2; /* Slightly darker teal */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .input-area button.send-btn {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .input-area button.send-btn:hover {
-            background-color: #3A7AD9; /* Slightly darker blue */
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .response-area { /* This is the main message box, renamed from .response-area to .main-message-box in JS */
-            background-color: #F8F8F8; /* Lighter background for response */
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: left;
-            border: 1px solid var(--border-color);
-            min-height: 50px; /* Ensure it has some height */
-            display: flex; /* Use flex to align content vertically */
-            align-items: center; /* Center content vertically */
-            justify-content: flex-start; /* Align content to start */
-            color: var(--light-text-color);
-        }
-
-        /* Chat History Section */
-        .chat-history-container {
-            margin-top: 25px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 20px;
-            max-height: 300px; /* Limit height */
-            overflow-y: auto; /* Enable scrolling */
-            text-align: left;
-        }
-
-        .chat-history-container h3 {
-            color: var(--text-color);
+            align-items: center;
+            cursor: pointer;
             font-size: 1.2em;
-            margin-bottom: 15px;
-            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            flex-shrink: 0;
         }
 
-        .chat-message {
-            margin-bottom: 10px;
-            padding: 10px 15px;
-            border-radius: 12px;
-            max-width: 85%;
-            word-wrap: break-word;
-            line-height: 1.5;
+        .send-button:hover, .mic-button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
         }
 
-        .chat-message.user {
-            background-color: var(--primary-color);
-            color: white;
-            margin-left: auto; /* Aligns to the right */
-            border-bottom-right-radius: 2px; /* Pointy corner */
-        }
-
-        .chat-message.model {
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            margin-right: auto; /* Aligns to the left */
-            border-bottom-left-radius: 2px; /* Pointy corner */
-        }
-        .chat-message:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Feedback Message Box (for success/error notifications) */
-        .feedback-message-box {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: var(--success-color);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-            transform: translateY(-20px);
-        }
-        .feedback-message-box.error {
-            background-color: var(--error-color);
-        }
-        .feedback-message-box.info { 
-            background-color: #17a2b8; /* Info blue */
-        }
-        .feedback-message-box.warning { /* Added warning type */
-            background-color: var(--warning-color);
-            color: var(--text-color); /* Dark text for warning */
-        }
-        .feedback-message-box.show {
-            display: block;
-            opacity: 1;
+        .send-button:active, .mic-button:active {
             transform: translateY(0);
         }
 
+        .mic-button.active {
+            background-color: var(--microphone-active-color);
+        }
+
+        /* Speak button for ConciAI messages */
+        .speak-button {
+            background: none;
+            border: none;
+            color: var(--light-text-color);
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-left: 5px;
+            transition: color 0.2s ease;
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            opacity: 0.8;
+        }
+
+        .speak-button:hover {
+            color: var(--primary-color);
+            opacity: 1;
+        }
+
+        /* Message box for system messages (like errors/success) */
+        #systemMessageBox {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            color: white;
+        }
+
+        #systemMessageBox.show {
+            opacity: 1;
+            display: block;
+        }
+
+        #systemMessageBox.success {
+            background-color: var(--success-color);
+        }
+
+        #systemMessageBox.error {
+            background-color: var(--error-color);
+        }
+
         @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-                width: 95%;
-            }
-            h1 {
-                font-size: 1.8em;
-            }
-            .subtitle {
-                font-size: 1.1em;
-            }
-            .input-area {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .input-area input[type="text"],
-            .input-area button {
+            .chat-container {
                 width: 100%;
+                margin: 10px;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            body {
+                align-items: flex-start;
             }
             .chat-message {
-                max-width: 95%;
+                max-width: 90%;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to Conci</h1>
-        <p class="subtitle">Your intelligent assistant for Hotel {{ hotel.name }} - Room {{ room_number }}</p>
-        
-        <img src="https://placehold.co/80x80/F0AD4E/FFFFFF?text=AI" alt="Conci AI Icon" class="conci-icon">
+    {% csrf_token %} <!-- CSRF token for Django forms -->
+    <div id="systemMessageBox" class="system-message-box"></div>
 
-        <div class="input-area">
-            <input type="text" id="guestMessageInput" placeholder="Type your request or click Listen">
-            <button id="listenButton" class="listen-btn" type="button"><i class="fas fa-microphone"></i> Listen</button>
-            <button id="sendMessageButton" class="send-btn" type="button"><i class="fas fa-paper-plane"></i> Send</button>
+    <div class="chat-container">
+        <div class="header">
+            <h1>ConciAI</h1>
+            <p>Your Personal Hotel Assistant for Room {{ room_number }}</p>
         </div>
 
-        <div id="mainResponseMessageArea" class="response-area">
+        <div class="message-box" id="conciResponseMessage">
             Welcome! How can I assist you today?
         </div>
 
-        <div class="chat-history-container">
-            <h3>Conversation History:</h3>
-            <div id="chatHistoryDisplay">
-                <!-- Chat messages will be loaded here dynamically -->
+        <!-- Chat Input Area with Mic Button -->
+        <div class="chat-input-area">
+            <input type="text" id="userInput" class="chat-input" placeholder="Type or speak your message...">
+            <button id="micButton" class="mic-button">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button id="sendButton" class="send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+
+        <!-- Collapsible Chat History Section -->
+        <button class="chat-history-toggle" id="chatHistoryToggleButton">
+            <span>Conversation History</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="chat-history-container" id="chatHistoryContainer">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Chat messages will be dynamically added here -->
             </div>
         </div>
     </div>
 
-    <!-- Feedback Message Box -->
-    <div id="feedbackMessageBox" class="feedback-message-box"></div>
-
-    {# Django CSRF token for AJAX POST requests #}
-    {% csrf_token %}
-
     <script>
-        const guestMessageInput = document.getElementById('guestMessageInput');
-        const listenButton = document.getElementById('listenButton');
-        const sendMessageButton = document.getElementById('sendMessageButton');
-        const mainResponseMessageArea = document.getElementById('mainResponseMessageArea'); // Renamed from conciResponseArea
-        const feedbackMessageBox = document.getElementById('feedbackMessageBox');
-        const chatHistoryDisplay = document.getElementById('chatHistoryDisplay');
+        console.log("Guest interface script loading...");
 
-        const hotelId = "{{ hotel.id }}";
         const roomNumber = "{{ room_number }}";
-        let latestRequestId = "{{ latest_request_id|default:'' }}"; // Used for polling updates
-        
-        // Get CSRF token from the hidden input generated by {% csrf_token %}
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        let latestRequestId = "{{ latest_request_id|default:'' }}"; // Initial request ID from backend
 
-        // Function to show feedback messages (success/error/info/warning)
-        function showFeedbackMessage(message, type = 'success') {
-            feedbackMessageBox.innerHTML = message;
-            feedbackMessageBox.className = `feedback-message-box show ${type}`;
-            setTimeout(() => {
-                feedbackMessageBox.classList.remove('show');
-                setTimeout(() => {
-                    feedbackMessageBox.style.display = 'none';
-                }, 500);
-            }, 3000);
-        }
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const micButton = document.getElementById('micButton'); // New mic button
+        const chatMessagesDiv = document.getElementById('chatMessages');
+        const conciResponseMessage = document.getElementById('conciResponseMessage');
+        const chatHistoryToggleButton = document.getElementById('chatHistoryToggleButton');
+        const chatHistoryContainer = document.getElementById('chatHistoryContainer');
+        const chatHistoryIcon = chatHistoryToggleButton.querySelector('i');
+        const systemMessageBox = document.getElementById('systemMessageBox');
 
-        // Function to update the main response message box
-        function updateResponseMessage(message) {
-            mainResponseMessageArea.textContent = message;
-        }
+        // Initialize SpeechSynthesisUtterance for voice output
+        const synth = window.speechSynthesis;
+        let utterance = new SpeechSynthesisUtterance();
+        utterance.lang = 'en-US';
 
-        // Function to render chat history
-        function renderChatHistory(history) {
-            chatHistoryDisplay.innerHTML = ''; // Clear existing history
-            if (history && history.length > 0) {
-                history.forEach(msg => {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.classList.add('chat-message', msg.role);
-                    msgDiv.textContent = msg.parts[0].text;
-                    chatHistoryDisplay.appendChild(msgDiv);
-                });
-                chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight; // Scroll to bottom
-            } else {
-                chatHistoryDisplay.innerHTML = '<p style="color: var(--light-text-color);">No conversation yet.</p>';
-            }
-        }
-
-        // Initial render of chat history from Django context
-        document.addEventListener('DOMContentLoaded', () => {
-            const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
-            renderChatHistory(initialChatHistory);
-        });
-
-        // --- Send Message Button Logic (Direct Send) ---
-        sendMessageButton.addEventListener('click', async () => {
-            const userRequest = guestMessageInput.value.trim();
-            if (userRequest === '') {
-                showFeedbackMessage("Please type your message before sending.", "warning");
-                return;
-            }
-
-            updateResponseMessage("Sending your request...", false);
-            guestMessageInput.value = ''; // Clear input immediately
-
-            try {
-                const response = await fetch('/api/process_command/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({
-                        message: userRequest,
-                        hotel_id: hotelId,
-                        room_number: roomNumber
-                    })
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    latestRequestId = result.request_id;
-                    updateResponseMessage(result.conci_response); // Display Conci's immediate response
-                    renderChatHistory(result.chat_history); // Re-render chat history with new messages
-                    showFeedbackMessage("Request sent!", "success");
-                } else {
-                    updateResponseMessage(result.error || 'Failed to send request.');
-                    showFeedbackMessage(result.error || 'Failed to send request.', 'error');
-                }
-            } catch (error) {
-                console.error('Error sending message:', error);
-                updateResponseMessage('Network error or server issue.');
-                showFeedbackMessage('Network error or server issue.', 'error');
-            }
-        });
-
-        // --- Listen Button Functionality (Web Speech API) ---
-        let recognition;
+        // Initialize SpeechRecognition for voice input
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
         let isListening = false;
 
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = false; // Listen for a single utterance
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Capture a single utterance
             recognition.interimResults = false; // Only return final results
-            recognition.lang = 'en-US'; // Set language
+            recognition.lang = 'en-US';
 
             recognition.onstart = () => {
                 isListening = true;
-                listenButton.classList.add('listening');
-                listenButton.innerHTML = '<i class="fas fa-microphone-alt"></i> Listening...';
-                guestMessageInput.placeholder = "Listening...";
-                guestMessageInput.disabled = true; // Disable input while listening
-                sendMessageButton.disabled = true; // Disable send button
+                micButton.classList.add('active');
+                micButton.querySelector('i').classList.remove('fa-microphone');
+                micButton.querySelector('i').classList.add('fa-microphone-alt-slash'); // Indicate listening
+                console.log("Speech recognition started.");
+                showSystemMessage("Listening...", "info");
             };
 
             recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                guestMessageInput.value = transcript;
-                showFeedbackMessage("Speech recognized. Click Send to add.", "info");
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                showFeedbackMessage(`Speech recognition error: ${event.error}`, "error");
-                updateResponseMessage("Speech recognition failed. Please type your request.");
-                resetListenState();
+                userInput.value = transcript;
+                console.log("Speech recognition result:", transcript);
+                showSystemMessage("Speech recognized.", "success");
+                // Automatically send message after speech recognition
+                sendMessage();
             };
 
             recognition.onend = () => {
-                resetListenState();
+                isListening = false;
+                micButton.classList.remove('active');
+                micButton.querySelector('i').classList.remove('fa-microphone-alt-slash');
+                micButton.querySelector('i').classList.add('fa-microphone');
+                console.log("Speech recognition ended.");
             };
 
-            listenButton.addEventListener('click', () => {
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                isListening = false;
+                micButton.classList.remove('active');
+                micButton.querySelector('i').classList.remove('fa-microphone-alt-slash');
+                micButton.querySelector('i').classList.add('fa-microphone');
+                showSystemMessage(`Speech recognition error: ${event.error}`, "error");
+            };
+
+            micButton.addEventListener('click', () => {
                 if (isListening) {
                     recognition.stop();
                 } else {
@@ -412,34 +395,147 @@
                         recognition.start();
                     } catch (e) {
                         console.error("Error starting speech recognition:", e);
-                        showFeedbackMessage("Could not start listening. Please check microphone permissions.", "error");
-                        updateResponseMessage("Microphone access denied or not supported.");
-                        resetListenState();
+                        showSystemMessage("Could not start voice input. Please check microphone permissions.", "error");
                     }
                 }
             });
-
-            function resetListenState() {
-                isListening = false;
-                listenButton.classList.remove('listening');
-                listenButton.innerHTML = '<i class="fas fa-microphone"></i> Listen';
-                guestMessageInput.placeholder = "Type your request or click Listen";
-                guestMessageInput.disabled = false; // Re-enable input
-                sendMessageButton.disabled = false; // Re-enable send button
-            }
-
         } else {
-            // Browser does not support Web Speech API
-            listenButton.disabled = true;
-            listenButton.innerHTML = '<i class="fas fa-microphone-slash"></i> Not Supported';
-            showFeedbackMessage("Your browser does not support Web Speech API.", "error");
-            console.warn("Web Speech API (webkitSpeechRecognition) not supported in this browser.");
+            micButton.style.display = 'none'; // Hide mic button if not supported
+            console.warn("Web Speech API not supported in this browser.");
+            showSystemMessage("Voice input not supported by your browser.", "error");
         }
 
-        // Polling for new updates from staff (Conci's responses)
+
+        function showSystemMessage(message, type) {
+            systemMessageBox.textContent = message;
+            systemMessageBox.className = ''; // Clear existing classes
+            systemMessageBox.classList.add('show', type);
+            setTimeout(() => {
+                systemMessageBox.classList.remove('show');
+            }, 3000);
+        }
+
+        function speakText(text) {
+            if (synth.speaking) {
+                synth.cancel(); // Stop any current speech
+            }
+            utterance.text = text;
+            synth.speak(utterance);
+        }
+
+        function updateResponseMessage(message) {
+            if (conciResponseMessage) {
+                conciResponseMessage.innerHTML = `${message} <button class="speak-button" data-text="${message}"><i class="fas fa-volume-up"></i></button>`;
+                // Add event listener for the new speak button
+                const newSpeakButton = conciResponseMessage.querySelector('.speak-button');
+                if (newSpeakButton) {
+                    newSpeakButton.addEventListener('click', () => speakText(message));
+                }
+            }
+        }
+
+        function renderChatHistory(history) {
+            chatMessagesDiv.innerHTML = ''; // Clear existing messages
+            history.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('chat-message', msg.role);
+                const messageText = (msg.parts && msg.parts.length > 0 && msg.parts[0].text) ? msg.parts[0].text : 'No text content.';
+                msgDiv.textContent = messageText;
+
+                if (msg.role === 'model') {
+                    const speakBtn = document.createElement('button');
+                    speakBtn.classList.add('speak-button');
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    speakBtn.dataset.text = messageText;
+                    speakBtn.addEventListener('click', () => speakText(messageText));
+                    msgDiv.appendChild(speakBtn);
+                }
+                chatMessagesDiv.appendChild(msgDiv);
+            });
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Scroll to bottom
+        }
+
+        // Initial render of chat history if available
+        {% if chat_history %}
+            const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
+            renderChatHistory(initialChatHistory);
+            // Update the main message box with the latest ConciAI response from initial history
+            const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
+            if (latestConciResponse) {
+                updateResponseMessage(latestConciResponse.parts[0].text);
+            }
+        {% endif %}
+
+        // Toggle chat history visibility
+        chatHistoryToggleButton.addEventListener('click', () => {
+            chatHistoryContainer.classList.toggle('expanded');
+            chatHistoryIcon.classList.toggle('fa-chevron-down');
+            chatHistoryIcon.classList.toggle('fa-chevron-up');
+            if (chatHistoryContainer.classList.contains('expanded')) {
+                // Set max-height dynamically based on content for smooth transition
+                chatHistoryContainer.style.maxHeight = chatHistoryContainer.scrollHeight + "px";
+            } else {
+                chatHistoryContainer.style.maxHeight = "0";
+            }
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) {
+                showSystemMessage("Please enter a message.", "error");
+                return;
+            }
+
+            // Add user message to chat history immediately
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.classList.add('chat-message', 'user');
+            userMsgDiv.textContent = message;
+            chatMessagesDiv.appendChild(userMsgDiv);
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Scroll to bottom
+
+            userInput.value = ''; // Clear input
+
+            try {
+                const response = await fetch(`/api/guest/send_message/${roomNumber}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ message: message, request_id: latestRequestId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    latestRequestId = result.request_id; // Update latest request ID
+                    updateResponseMessage(result.conci_response); // Update main message box
+                    renderChatHistory(result.chat_history); // Re-render full chat history
+                    speakText(result.conci_response); // Speak the new response
+                } else {
+                    showSystemMessage(result.error || "Failed to send message.", "error");
+                    // Optionally, remove the user message if sending failed
+                    userMsgDiv.remove();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showSystemMessage("Network error. Please try again.", "error");
+                // Optionally, remove the user message if network error
+                userMsgDiv.remove();
+            }
+        }
+
+        // Polling for updates
         async function checkForNewUpdates() {
             try {
-                const response = await fetch(`/api/guest/${hotelId}/room/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
+                const response = await fetch(`/api/guest/check_updates/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -448,19 +544,16 @@
                 const result = await response.json();
 
                 if (result.has_new_updates) {
-                    // Update latestRequestId from the backend's latest request ID
                     latestRequestId = result.updated_request_id; 
                     
-                    // Update the main message box with the latest Conci response
                     const latestConciResponse = result.new_messages.slice().reverse().find(msg => msg.role === 'model');
                     if (latestConciResponse) {
                         updateResponseMessage(latestConciResponse.parts[0].text);
+                        speakText(latestConciResponse.parts[0].text); // Speak the new polling response
                     } else {
-                        // If no model response, revert to default message
                         updateResponseMessage("Welcome! How can I assist you today?");
                     }
 
-                    // Re-render chat history with the full updated history
                     renderChatHistory(result.new_messages);
                 }
             } catch (error) {
