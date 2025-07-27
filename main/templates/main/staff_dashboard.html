@@ -965,7 +965,7 @@
                         </div>
                         <div class="form-group" style="flex: 1 1 150px;">
                             <label for="check_out_date_to_filter">Check-out To:</label>
-                            <input type="date" id="check_out_date_to_filter" name="check_out_date_to" class="form-control" value="{{ filter_params.check_out_date_to|default:'' }}">
+                            <input type="date" id="check_out_date_to_to_filter" name="check_out_date_to" class="form-control" value="{{ filter_params.check_out_date_to|default:'' }}">
                         </div>
                         <div style="flex: 1 1 auto; display: flex; gap: 10px;">
                             <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -1327,7 +1327,9 @@
         </div>
     </div>
 
-    <script>
+    <script defer>
+        console.log("Script loading..."); // Debugging: Check if script starts
+
         // Global utility function to show messages
         function showMessage(message, type) {
             const messageBox = document.getElementById('messageBox');
@@ -1342,7 +1344,10 @@
         }
 
         // CSRF Token for AJAX requests
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Ensure this element exists in your HTML
+        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
+        console.log("CSRF Token:", csrfToken ? "Found" : "Not Found"); // Debugging
 
         // Theme Toggle Logic
         const themeToggleButton = document.getElementById('themeToggleButton');
@@ -1353,6 +1358,7 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             htmlElement.setAttribute('data-theme', savedTheme);
             updateThemeToggleButton(savedTheme);
+            console.log("Initial theme set to:", savedTheme); // Debugging
         }
 
         // Function to update the theme toggle button icon
@@ -1366,6 +1372,9 @@
                     icon.classList.remove('fa-sun');
                     icon.classList.add('fa-moon');
                 }
+                console.log("Theme toggle button updated for theme:", theme); // Debugging
+            } else {
+                console.warn("Theme toggle button or its icon not found."); // Debugging
             }
         }
 
@@ -1377,461 +1386,840 @@
                 htmlElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 updateThemeToggleButton(newTheme);
+                console.log("Theme toggled to:", newTheme); // Debugging
             });
+        } else {
+            console.warn("themeToggleButton not found."); // Debugging
         }
 
-        // Set initial theme on page load
-        document.addEventListener('DOMContentLoaded', setInitialTheme);
+        // Set initial theme on page load - This will run after DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOMContentLoaded fired."); // Debugging
+            setInitialTheme();
+            // All other initializations that depend on DOM should go here
+            initializeDashboard();
+        });
 
 
-        // Sidebar Toggle Logic
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebarToggleIcon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
+        // Centralized Initialization Function
+        function initializeDashboard() {
+            console.log("Initializing dashboard elements..."); // Debugging
 
-        if (sidebarToggle) { // Ensure button exists
-            sidebarToggle.addEventListener('click', () => {
-                if (sidebar) sidebar.classList.toggle('collapsed');
-                if (mainContent) mainContent.classList.toggle('sidebar-collapsed');
-                if (sidebar && sidebarToggleIcon) { // Ensure both elements exist
-                    if (sidebar.classList.contains('collapsed')) {
-                        sidebarToggleIcon.classList.remove('fa-chevron-left');
-                        sidebarToggleIcon.classList.add('fa-chevron-right');
-                    } else {
-                        sidebarToggleIcon.classList.remove('fa-chevron-right');
-                        sidebarToggleIcon.classList.add('fa-chevron-left');
-                    }
-                }
-            });
-        }
+            // Sidebar Toggle Logic
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarToggleIcon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
 
-
-        // Notification Bell Logic
-        const notificationBell = document.getElementById('notificationBell');
-        const notificationBadge = document.getElementById('notificationBadge');
-        let lastCheckTimestamp = new Date().toISOString(); // Initialize with current time
-
-        async function fetchNewRequests() {
-            try {
-                const response = await fetch(`/api/check_new_requests/?last_check=${encodeURIComponent(lastCheckTimestamp)}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    if (notificationBadge) { // Ensure badge exists
-                        notificationBadge.textContent = data.new_requests_count;
-                        if (data.new_requests_count > 0) {
-                            notificationBadge.style.display = 'block'; // Show badge
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    if (sidebar) sidebar.classList.toggle('collapsed');
+                    if (mainContent) mainContent.classList.toggle('sidebar-collapsed');
+                    if (sidebar && sidebarToggleIcon) {
+                        if (sidebar.classList.contains('collapsed')) {
+                            sidebarToggleIcon.classList.remove('fa-chevron-left');
+                            sidebarToggleIcon.classList.add('fa-chevron-right');
                         } else {
-                            notificationBadge.style.display = 'none'; // Hide badge
+                            sidebarToggleIcon.classList.remove('fa-chevron-right');
+                            sidebarToggleIcon.classList.add('fa-chevron-left');
                         }
                     }
-                    lastCheckTimestamp = data.current_timestamp; // Update timestamp for next check
-                } else {
-                    console.error('Failed to fetch new requests:', data.error);
-                }
-            } catch (error) {
-                console.error('Network error fetching new requests:', error);
-            }
-        }
-
-        // Fetch new requests every 30 seconds
-        setInterval(fetchNewRequests, 30000);
-        fetchNewRequests(); // Initial fetch on page load
-
-        // D3.js Chart for Reservations (Last 7 Days)
-        {% if current_main_tab == 'home' %}
-            const reservationsData = {{ reservations_chart_data|safe }};
-            const bookingPlatformData = {{ booking_platform_data|safe }};
-
-            function drawReservationsChart() {
-                const svgElement = document.getElementById('reservationsChart');
-                if (!svgElement) return; // Exit if element not found
-
-                const svg = d3.select(svgElement);
-                const margin = {top: 20, right: 30, bottom: 40, left: 40};
-                const width = parseFloat(svg.style("width")) - margin.left - margin.right;
-                const height = parseFloat(svg.style("height")) - margin.top - margin.bottom;
-
-                svg.selectAll("*").remove(); // Clear previous chart
-
-                const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
-                const x = d3.scaleBand()
-                    .domain(reservationsData.map(d => d.date))
-                    .range([0, width])
-                    .padding(0.2);
-
-                const y = d3.scaleLinear()
-                    .domain([0, d3.max(reservationsData, d => Math.max(d.booked, d.cancelled)) + 5])
-                    .range([height, 0]);
-
-                g.append("g")
-                    .attr("transform", `translate(0,${height})`)
-                    .call(d3.axisBottom(x).tickSizeOuter(0))
-                    .selectAll("text")
-                    .style("fill", "var(--chart-axis-text)");
-
-                g.append("g")
-                    .call(d3.axisLeft(y).tickSizeOuter(0))
-                    .selectAll("text")
-                    .style("fill", "var(--chart-axis-text)");
-
-                // Add grid lines
-                g.append("g")
-                    .attr("class", "grid")
-                    .attr("transform", `translate(0,${height})`)
-                    .call(d3.axisBottom(x)
-                        .tickSize(-height)
-                        .tickFormat("")
-                    )
-                    .select(".domain").remove();
-
-                g.append("g")
-                    .attr("class", "grid")
-                    .call(d3.axisLeft(y)
-                        .tickSize(-width)
-                        .tickFormat("")
-                    )
-                    .select(".domain").remove();
-
-                // Booked bars
-                g.selectAll(".bar-booked")
-                    .data(reservationsData)
-                    .enter().append("rect")
-                    .attr("class", "bar-booked")
-                    .attr("x", d => x(d.date))
-                    .attr("y", d => y(d.booked))
-                    .attr("width", x.bandwidth() / 2)
-                    .attr("height", d => height - y(d.booked))
-                    .attr("fill", "var(--chart-color-booked)");
-
-                // Cancelled bars
-                g.selectAll(".bar-cancelled")
-                    .data(reservationsData)
-                    .enter().append("rect")
-                    .attr("class", "bar-cancelled")
-                    .attr("x", d => x(d.date) + x.bandwidth() / 2)
-                    .attr("y", d => y(d.cancelled))
-                    .attr("width", x.bandwidth() / 2)
-                    .attr("height", d => height - y(d.cancelled))
-                    .attr("fill", "var(--chart-color-cancelled)");
+                    console.log("Sidebar toggled."); // Debugging
+                });
+            } else {
+                console.warn("sidebarToggle not found."); // Debugging
             }
 
-            function drawBookingPlatformChart() {
-                const svgElement = document.getElementById('bookingPlatformChart');
-                if (!svgElement) return; // Exit if element not found
+            // Notification Bell Logic
+            const notificationBell = document.getElementById('notificationBell');
+            const notificationBadge = document.getElementById('notificationBadge');
+            let lastCheckTimestamp = new Date().toISOString();
 
-                const svg = d3.select(svgElement);
-                const width = parseFloat(svg.style("width"));
-                const height = parseFloat(svg.style("height"));
-                const radius = Math.min(width, height) / 2 - 20;
-
-                svg.selectAll("*").remove(); // Clear previous chart
-
-                const g = svg.append("g")
-                    .attr("transform", `translate(${width / 2},${height / / 2})`);
-
-                const color = d3.scaleOrdinal()
-                    .range([
-                        "var(--chart-platform1)",
-                        "var(--chart-platform2)",
-                        "var(--chart-platform3)",
-                        "var(--chart-platform4)",
-                        "var(--chart-platform5)",
-                        "var(--chart-platform6)"
-                    ]);
-
-                const pie = d3.pie()
-                    .value(d => d.value);
-
-                const path = d3.arc()
-                    .outerRadius(radius - 10)
-                    .innerRadius(0);
-
-                const label = d3.arc()
-                    .outerRadius(radius)
-                    .innerRadius(radius - 80);
-
-                const arc = g.selectAll(".arc")
-                    .data(pie(bookingPlatformData))
-                    .enter().append("g")
-                    .attr("class", "arc");
-
-                arc.append("path")
-                    .attr("d", path)
-                    .attr("fill", d => color(d.data.platform));
-
-                arc.append("text")
-                    .attr("transform", d => `translate(${label.centroid(d)})`)
-                    .attr("text-anchor", "middle")
-                    .text(d => `${d.data.platform} (${d.data.value}%)`)
-                    .style("fill", "var(--text)")
-                    .style("font-size", "0.8em");
-            }
-
-            // Initial chart drawing
-            window.addEventListener('load', () => {
-                drawReservationsChart();
-                drawBookingPlatformChart();
-            });
-
-            // Redraw charts on window resize
-            window.addEventListener('resize', () => {
-                drawReservationsChart();
-                drawBookingPlatformChart();
-            });
-        {% endif %}
-
-        // Modals (Common declarations and closing logic)
-        const requestDetailsModal = document.getElementById('requestDetailsModal');
-        const amenityModal = document.getElementById('amenityModal');
-        const confirmationModal = document.getElementById('confirmationModal');
-        const assignmentModal = document.getElementById('assignmentModal'); 
-        const assignStaffModal = document.getElementById('assignStaffModal'); // NEW: Assign Staff Modal
-
-        // Consolidated Modal Closing Function
-        function closeAllModals() {
-            if (requestDetailsModal) requestDetailsModal.classList.remove('show');
-            if (amenityModal) amenityModal.classList.remove('show');
-            if (confirmationModal) confirmationModal.classList.remove('show');
-            if (assignmentModal) assignmentModal.classList.remove('show');
-            if (assignStaffModal) assignStaffModal.classList.remove('show'); 
-
-            // Clear form errors for all relevant forms when closing modals
-            document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
-            document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
-            document.querySelectorAll('#assignmentForm .error-message').forEach(el => el.textContent = '');
-            document.querySelectorAll('#assignStaffForm .error-message').forEach(el => el.textContent = ''); 
-        }
-
-        // Event listeners for closing modals (using common classes)
-        document.querySelectorAll('.modal-close-button').forEach(button => {
-            button.addEventListener('click', closeAllModals);
-        });
-        document.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button').forEach(button => {
-            button.addEventListener('click', closeAllModals);
-        });
-        document.querySelectorAll('.close-button, .cancel-button').forEach(button => {
-            button.addEventListener('click', closeAllModals);
-        });
-
-        // Close modal when clicking outside content (consolidated)
-        window.addEventListener('click', (event) => {
-            if (event.target === requestDetailsModal || event.target === amenityModal || 
-                event.target === confirmationModal || event.target === assignmentModal || 
-                event.target === assignStaffModal) {
-                closeAllModals();
-            }
-        });
-
-
-        // Request Details Modal Logic
-        const viewDetailsButtons = document.querySelectorAll('.view-details'); 
-        
-        const requestUpdateForm = document.getElementById('requestUpdateForm');
-        const modalRequestId = document.getElementById('modalRequestId');
-        const idStaffNotes = document.getElementById('id_staff_notes'); 
-        const idAssignedStaff = document.getElementById('id_assigned_staff'); 
-        const idStatus = document.getElementById('id_status'); 
-        const idRequestType = document.getElementById('id_request_type'); 
-        const saveRequestChangesButton = document.getElementById('saveRequestChangesButton'); 
-
-        viewDetailsButtons.forEach(button => {
-            button.addEventListener('click', async () => {
-                const requestId = button.dataset.requestId;
+            async function fetchNewRequests() {
                 try {
-                    const response = await fetch(`/api/requests/${requestId}/details/`);
-                    const result = await response.json();
+                    const response = await fetch(`/api/check_new_requests/?last_check=${encodeURIComponent(lastCheckTimestamp)}`);
+                    const data = await response.json();
 
-                    if (result.success) {
-                        document.getElementById('modalRequestIdDisplay').textContent = requestId; 
-                        document.getElementById('detailRoomNumber').textContent = result.room_number;
-                        document.getElementById('detailGuestNames').textContent = result.guest_names;
-                        document.getElementById('detailTimestamp').textContent = new Date(result.timestamp).toLocaleString();
-                        document.getElementById('detailRawText').textContent = result.raw_text;
-                        document.getElementById('detailConciResponse').textContent = result.conci_response_text;
-                        document.getElementById('detailAiIntent').textContent = result.ai_intent;
-                        
-                        if (result.ai_entities && typeof result.ai_entities === 'object') {
-                            document.getElementById('detailAiEntities').textContent = JSON.stringify(result.ai_entities, null, 2);
-                        } else {
-                            document.getElementById('detailAiEntities').textContent = result.ai_entities || 'N/A';
-                        }
-                        
-                        modalRequestId.value = requestId; 
-                        if (idStaffNotes) idStaffNotes.value = result.staff_notes || ''; 
-                        if (idStatus) idStatus.value = result.raw_status_value; 
-                        if (idRequestType) idRequestType.value = result.raw_request_type_value; 
-
-                        if (idAssignedStaff) { 
-                            idAssignedStaff.value = result.raw_assigned_staff_id || ''; 
-                        }
-
-                        const amenityDetailsSection = document.getElementById('amenityDetailsSection');
-                        if (amenityDetailsSection) { 
-                            if (result.amenity_details) {
-                                amenityDetailsSection.style.display = 'block';
-                                document.getElementById('detailAmenityName').textContent = result.amenity_details.name;
-                                document.getElementById('detailAmenityQuantity').textContent = result.amenity_details.quantity;
-                                document.getElementById('detailPricePerUnit').textContent = `$${result.amenity_details.price_per_unit.toFixed(2)}`;
-                                document.getElementById('detailTotalAmenityCost').textContent = `$${result.amenity_details.total_amenity_cost.toFixed(2)}`;
-                                document.getElementById('detailBillAdded').textContent = result.amenity_details.bill_added ? 'Yes' : 'No';
+                    if (data.success) {
+                        if (notificationBadge) {
+                            notificationBadge.textContent = data.new_requests_count;
+                            if (data.new_requests_count > 0) {
+                                notificationBadge.style.display = 'block';
                             } else {
-                                amenityDetailsSection.style.display = 'none';
+                                notificationBadge.style.display = 'none';
                             }
                         }
-
-                        const detailChatHistory = document.getElementById('detailChatHistory');
-                        if (detailChatHistory) { 
-                            detailChatHistory.innerHTML = ''; 
-                            if (result.chat_history && Array.isArray(result.chat_history) && result.chat_history.length > 0) {
-                                result.chat_history.forEach(message => {
-                                    const msgDiv = document.createElement('div');
-                                    msgDiv.classList.add('chat-message', message.role);
-                                    const messageText = (message.parts && message.parts.length > 0 && message.parts[0].text) ? message.parts[0].text : 'No text content.';
-                                    msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${messageText}`;
-                                    detailChatHistory.appendChild(msgDiv);
-                                });
-                            } else {
-                                detailChatHistory.innerHTML = '<p>No detailed conversation history available.</p>';
-                            }
-                        }
-
-                        const loggedInStaffMemberId = "{{ logged_in_staff_member.id|default:'' }}";
-                        const loggedInStaffCategory = "{{ logged_in_staff_member.category|default:'' }}";
-
-                        if (saveRequestChangesButton) {
-                            let canEdit = false;
-                            if (loggedInStaffCategory === 'general' || loggedInStaffCategory === 'concierge') {
-                                canEdit = true;
-                            } else {
-                                if (result.assigned_staff && result.assigned_staff.id == loggedInStaffMemberId) {
-                                    canEdit = true;
-                                }
-                                if (!result.assigned_staff && result.raw_request_type_value === loggedInStaffCategory) {
-                                    canEdit = true;
-                                }
-                            }
-                            saveRequestChangesButton.disabled = !canEdit;
-                        }
-
-                        requestDetailsModal.classList.add('show'); 
+                        lastCheckTimestamp = data.current_timestamp;
+                        console.log("New requests fetched:", data.new_requests_count); // Debugging
                     } else {
-                        console.error('Backend reported error for Request Details:', result.error);
-                        showMessage(result.error || 'Failed to load request details.', 'error');
-                    }
-                }
-                catch (error) {
-                    console.error('Error fetching request details:', error);
-                    showMessage('Network error or server issue fetching request details.', 'error');
-                }
-            });
-        });
-
-        // Submit Request Update Form
-        if (requestUpdateForm) {
-            requestUpdateForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
-
-                const requestId = modalRequestId.value;
-                const url = `/api/requests/${requestId}/update/`; 
-
-                const formData = new FormData(requestUpdateForm);
-                
-                const modalAmenityBillAddedCheckbox = document.getElementById('modalAmenityBillAdded');
-                if (modalAmenityBillAddedCheckbox) {
-                    formData.set('bill_added', modalAmenityBillAddedCheckbox.checked ? 'True' : 'False');
-                } else {
-                    // Default to false if checkbox is not present (e.g., non-amenity request)
-                    formData.set('bill_added', 'False'); 
-                }
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST', 
-                        headers: {
-                            'X-CSRFToken': csrfToken, 
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        showMessage(result.message, 'success');
-                        if (requestDetailsModal) requestDetailsModal.classList.remove('show');
-                        location.reload(); 
-                    } else {
-                        let generalErrorMessage = result.error || 'Failed to update request due to validation errors.';
-                        showMessage(generalErrorMessage, 'error');
-
-                        if (result.errors) {
-                            const errors = JSON.parse(result.errors);
-                            for (const field in errors) {
-                                const errorDiv = document.getElementById(`${field}Errors`);
-                                if (errorDiv) {
-                                    errorDiv.textContent = errors[field][0].message;
-                                } else {
-                                    console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
-                                    showMessage(`Error: ${errors[field][0].message}`, 'error');
-                                }
-                            }
-                        }
+                        console.error('Failed to fetch new requests:', data.error);
                     }
                 } catch (error) {
-                    console.error('Error submitting request update form:', error);
-                    showMessage('Network error or server issue updating request.', 'error');
+                    console.error('Network error fetching new requests:', error);
+                }
+            }
+
+            setInterval(fetchNewRequests, 30000);
+            fetchNewRequests(); // Initial fetch
+
+            // D3.js Chart for Reservations (Last 7 Days)
+            // The D3 chart code is conditionally rendered by Django, so we check if elements exist
+            {% if current_main_tab == 'home' %}
+                const reservationsData = {{ reservations_chart_data|safe }};
+                const bookingPlatformData = {{ booking_platform_data|safe }};
+
+                function drawReservationsChart() {
+                    const svgElement = document.getElementById('reservationsChart');
+                    if (!svgElement) { console.warn("reservationsChart SVG not found."); return; } // Debugging
+
+                    const svg = d3.select(svgElement);
+                    const margin = {top: 20, right: 30, bottom: 40, left: 40};
+                    const width = parseFloat(svg.style("width")) - margin.left - margin.right;
+                    const height = parseFloat(svg.style("height")) - margin.top - margin.bottom;
+
+                    svg.selectAll("*").remove(); // Clear previous chart
+
+                    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+                    const x = d3.scaleBand()
+                        .domain(reservationsData.map(d => d.date))
+                        .range([0, width])
+                        .padding(0.2);
+
+                    const y = d3.scaleLinear()
+                        .domain([0, d3.max(reservationsData, d => Math.max(d.booked, d.cancelled)) + 5])
+                        .range([height, 0]);
+
+                    g.append("g")
+                        .attr("transform", `translate(0,${height})`)
+                        .call(d3.axisBottom(x).tickSizeOuter(0))
+                        .selectAll("text")
+                        .style("fill", "var(--chart-axis-text)");
+
+                    g.append("g")
+                        .call(d3.axisLeft(y).tickSizeOuter(0))
+                        .selectAll("text")
+                        .style("fill", "var(--chart-axis-text)");
+
+                    g.append("g")
+                        .attr("class", "grid")
+                        .attr("transform", `translate(0,${height})`)
+                        .call(d3.axisBottom(x)
+                            .tickSize(-height)
+                            .tickFormat("")
+                        )
+                        .select(".domain").remove();
+
+                    g.append("g")
+                        .attr("class", "grid")
+                        .call(d3.axisLeft(y)
+                            .tickSize(-width)
+                            .tickFormat("")
+                        )
+                        .select(".domain").remove();
+
+                    g.selectAll(".bar-booked")
+                        .data(reservationsData)
+                        .enter().append("rect")
+                        .attr("class", "bar-booked")
+                        .attr("x", d => x(d.date))
+                        .attr("y", d => y(d.booked))
+                        .attr("width", x.bandwidth() / 2)
+                        .attr("height", d => height - y(d.booked))
+                        .attr("fill", "var(--chart-color-booked)");
+
+                    g.selectAll(".bar-cancelled")
+                        .data(reservationsData)
+                        .enter().append("rect")
+                        .attr("class", "bar-cancelled")
+                        .attr("x", d => x(d.date) + x.bandwidth() / 2)
+                        .attr("y", d => y(d.cancelled))
+                        .attr("width", x.bandwidth() / 2)
+                        .attr("height", d => height - y(d.cancelled))
+                        .attr("fill", "var(--chart-color-cancelled)");
+                }
+
+                function drawBookingPlatformChart() {
+                    const svgElement = document.getElementById('bookingPlatformChart');
+                    if (!svgElement) { console.warn("bookingPlatformChart SVG not found."); return; } // Debugging
+
+                    const svg = d3.select(svgElement);
+                    const width = parseFloat(svg.style("width"));
+                    const height = parseFloat(svg.style("height"));
+                    const radius = Math.min(width, height) / 2 - 20;
+
+                    svg.selectAll("*").remove(); // Clear previous chart
+
+                    const g = svg.append("g")
+                        .attr("transform", `translate(${width / 2},${height / 2})`);
+
+                    const color = d3.scaleOrdinal()
+                        .range([
+                            "var(--chart-platform1)", "var(--chart-platform2)",
+                            "var(--chart-platform3)", "var(--chart-platform4)",
+                            "var(--chart-platform5)", "var(--chart-platform6)"
+                        ]);
+
+                    const pie = d3.pie()
+                        .value(d => d.value);
+
+                    const path = d3.arc()
+                        .outerRadius(radius - 10)
+                        .innerRadius(0);
+
+                    const label = d3.arc()
+                        .outerRadius(radius)
+                        .innerRadius(radius - 80);
+
+                    const arc = g.selectAll(".arc")
+                        .data(pie(bookingPlatformData))
+                        .enter().append("g")
+                        .attr("class", "arc");
+
+                    arc.append("path")
+                        .attr("d", path)
+                        .attr("fill", d => color(d.data.platform));
+
+                    arc.append("text")
+                        .attr("transform", d => `translate(${label.centroid(d)})`)
+                        .attr("text-anchor", "middle")
+                        .text(d => `${d.data.platform} (${d.data.value}%)`)
+                        .style("fill", "var(--text)")
+                        .style("font-size", "0.8em");
+                }
+
+                // Initial chart drawing on DOMContentLoaded
+                drawReservationsChart();
+                drawBookingPlatformChart();
+                console.log("Charts drawn."); // Debugging
+
+                // Redraw charts on window resize
+                window.addEventListener('resize', () => {
+                    drawReservationsChart();
+                    drawBookingPlatformChart();
+                });
+            {% endif %}
+
+            // Modals (Common declarations and closing logic)
+            const requestDetailsModal = document.getElementById('requestDetailsModal');
+            const amenityModal = document.getElementById('amenityModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+            const assignmentModal = document.getElementById('assignmentModal'); 
+            const assignStaffModal = document.getElementById('assignStaffModal'); 
+
+            function closeAllModals() {
+                if (requestDetailsModal) requestDetailsModal.classList.remove('show');
+                if (amenityModal) amenityModal.classList.remove('show');
+                if (confirmationModal) confirmationModal.classList.remove('show');
+                if (assignmentModal) assignmentModal.classList.remove('show');
+                if (assignStaffModal) assignStaffModal.classList.remove('show'); 
+
+                // Clear form errors for all relevant forms when closing modals
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                console.log("All modals closed and errors cleared."); // Debugging
+            }
+
+            // Event listeners for closing modals (using common classes)
+            document.querySelectorAll('.modal-close-button').forEach(button => {
+                button.addEventListener('click', closeAllModals);
+                console.log("Attached event listener to .modal-close-button"); // Debugging
+            });
+            document.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button').forEach(button => {
+                button.addEventListener('click', closeAllModals);
+                console.log("Attached event listener to confirmation close buttons."); // Debugging
+            });
+            document.querySelectorAll('.close-button, .cancel-button').forEach(button => {
+                button.addEventListener('click', closeAllModals);
+                console.log("Attached event listener to assignment/amenity close buttons."); // Debugging
+            });
+
+            // Close modal when clicking outside content (consolidated)
+            window.addEventListener('click', (event) => {
+                if (event.target === requestDetailsModal || event.target === amenityModal || 
+                    event.target === confirmationModal || event.target === assignmentModal || 
+                    event.target === assignStaffModal) {
+                    closeAllModals();
                 }
             });
-        }
+            console.log("Attached window click listener for modals."); // Debugging
 
-        // NEW: Assign Staff Modal Logic
-        document.querySelectorAll('.assign-request-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const requestId = button.dataset.requestId;
-                if (assignRequestIdInput) assignRequestIdInput.value = requestId;
-                if (assignStaffSelect) assignStaffSelect.value = '';
-                const assignErrorsDiv = document.getElementById('assigned_staffErrorsAssign');
-                if (assignErrorsDiv) assignErrorsDiv.textContent = '';
-                if (assignStaffModal) assignStaffModal.classList.add('show');
+
+            // Request Details Modal Logic
+            const viewDetailsButtons = document.querySelectorAll('.view-details'); 
+            
+            const requestUpdateForm = document.getElementById('requestUpdateForm');
+            const modalRequestId = document.getElementById('modalRequestId');
+            const idStaffNotes = document.getElementById('id_staff_notes'); 
+            const idAssignedStaff = document.getElementById('id_assigned_staff'); 
+            const idStatus = document.getElementById('id_status'); 
+            const idRequestType = document.getElementById('id_request_type'); 
+            const saveRequestChangesButton = document.getElementById('saveRequestChangesButton'); 
+
+            viewDetailsButtons.forEach(button => {
+                console.log("Attaching listener to view-details button:", button); // Debugging
+                button.addEventListener('click', async () => {
+                    console.log("View Details button clicked."); // Debugging
+                    const requestId = button.dataset.requestId;
+                    try {
+                        const response = await fetch(`/api/requests/${requestId}/details/`);
+                        const result = await response.json();
+
+                        if (result.success) {
+                            if (document.getElementById('modalRequestIdDisplay')) document.getElementById('modalRequestIdDisplay').textContent = requestId; 
+                            if (document.getElementById('detailRoomNumber')) document.getElementById('detailRoomNumber').textContent = result.room_number;
+                            if (document.getElementById('detailGuestNames')) document.getElementById('detailGuestNames').textContent = result.guest_names;
+                            if (document.getElementById('detailTimestamp')) document.getElementById('detailTimestamp').textContent = new Date(result.timestamp).toLocaleString();
+                            if (document.getElementById('detailRawText')) document.getElementById('detailRawText').textContent = result.raw_text;
+                            if (document.getElementById('detailConciResponse')) document.getElementById('detailConciResponse').textContent = result.conci_response_text;
+                            if (document.getElementById('detailAiIntent')) document.getElementById('detailAiIntent').textContent = result.ai_intent;
+                            
+                            const detailAiEntities = document.getElementById('detailAiEntities');
+                            if (detailAiEntities) {
+                                if (result.ai_entities && typeof result.ai_entities === 'object') {
+                                    detailAiEntities.textContent = JSON.stringify(result.ai_entities, null, 2);
+                                } else {
+                                    detailAiEntities.textContent = result.ai_entities || 'N/A';
+                                }
+                            }
+                            
+                            if (modalRequestId) modalRequestId.value = requestId; 
+                            if (idStaffNotes) idStaffNotes.value = result.staff_notes || ''; 
+                            if (idStatus) idStatus.value = result.raw_status_value; 
+                            if (idRequestType) idRequestType.value = result.raw_request_type_value; 
+
+                            if (idAssignedStaff) { 
+                                idAssignedStaff.value = result.raw_assigned_staff_id || ''; 
+                            }
+
+                            const amenityDetailsSection = document.getElementById('amenityDetailsSection');
+                            if (amenityDetailsSection) { 
+                                if (result.amenity_details) {
+                                    amenityDetailsSection.style.display = 'block';
+                                    if (document.getElementById('detailAmenityName')) document.getElementById('detailAmenityName').textContent = result.amenity_details.name;
+                                    if (document.getElementById('detailAmenityQuantity')) document.getElementById('detailAmenityQuantity').textContent = result.amenity_details.quantity;
+                                    if (document.getElementById('detailPricePerUnit')) document.getElementById('detailPricePerUnit').textContent = `$${result.amenity_details.price_per_unit.toFixed(2)}`;
+                                    if (document.getElementById('detailTotalAmenityCost')) document.getElementById('detailTotalAmenityCost').textContent = `$${result.amenity_details.total_amenity_cost.toFixed(2)}`;
+                                    if (document.getElementById('detailBillAdded')) document.getElementById('detailBillAdded').textContent = result.amenity_details.bill_added ? 'Yes' : 'No';
+                                } else {
+                                    amenityDetailsSection.style.display = 'none';
+                                }
+                            }
+
+                            const detailChatHistory = document.getElementById('detailChatHistory');
+                            if (detailChatHistory) { 
+                                detailChatHistory.innerHTML = ''; 
+                                if (result.chat_history && Array.isArray(result.chat_history) && result.chat_history.length > 0) {
+                                    result.chat_history.forEach(message => {
+                                        const msgDiv = document.createElement('div');
+                                        msgDiv.classList.add('chat-message', message.role);
+                                        const messageText = (message.parts && message.parts.length > 0 && message.parts[0].text) ? message.parts[0].text : 'No text content.';
+                                        msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${messageText}`;
+                                        detailChatHistory.appendChild(msgDiv);
+                                    });
+                                } else {
+                                    detailChatHistory.innerHTML = '<p>No detailed conversation history available.</p>';
+                                }
+                            }
+
+                            const loggedInStaffMemberId = "{{ logged_in_staff_member.id|default:'' }}";
+                            const loggedInStaffCategory = "{{ logged_in_staff_member.category|default:'' }}";
+
+                            if (saveRequestChangesButton) {
+                                let canEdit = false;
+                                if (loggedInStaffCategory === 'general' || loggedInStaffCategory === 'concierge') {
+                                    canEdit = true;
+                                } else {
+                                    if (result.assigned_staff && result.assigned_staff.id == loggedInStaffMemberId) {
+                                        canEdit = true;
+                                    }
+                                    if (!result.assigned_staff && result.raw_request_type_value === loggedInStaffCategory) {
+                                        canEdit = true;
+                                    }
+                                }
+                                saveRequestChangesButton.disabled = !canEdit;
+                                console.log("Save Changes button disabled status:", !canEdit); // Debugging
+                            }
+
+                            if (requestDetailsModal) requestDetailsModal.classList.add('show'); 
+                            console.log("Request Details modal shown."); // Debugging
+                        } else {
+                            console.error('Backend reported error for Request Details:', result.error);
+                            showMessage(result.error || 'Failed to load request details.', 'error');
+                        }
+                    }
+                    catch (error) {
+                        console.error('Error fetching request details:', error);
+                        showMessage('Network error or server issue fetching request details.', 'error');
+                    }
+                });
             });
-        });
+            console.log("Finished attaching listeners to view-details buttons."); // Debugging
 
-        if (cancelAssignButton) { 
-            cancelAssignButton.addEventListener('click', () => {
-                if (assignStaffModal) assignStaffModal.classList.remove('show');
-            });
-        }
+            // Submit Request Update Form
+            if (requestUpdateForm) {
+                console.log("Attaching listener to requestUpdateForm submit."); // Debugging
+                requestUpdateForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log("Request Update Form submitted."); // Debugging
+                    document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
 
+                    const requestId = modalRequestId ? modalRequestId.value : '';
+                    const url = `/api/requests/${requestId}/update/`; 
 
-        // Submit Assign Staff Form
-        if (assignStaffForm) {
-            assignStaffForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const assignErrorsDiv = document.getElementById('assigned_staffErrorsAssign');
-                if (assignErrorsDiv) assignErrorsDiv.textContent = ''; 
+                    const formData = new FormData(requestUpdateForm);
+                    
+                    const modalAmenityBillAddedCheckbox = document.getElementById('modalAmenityBillAdded');
+                    if (modalAmenityBillAddedCheckbox) {
+                        formData.set('bill_added', modalAmenityBillAddedCheckbox.checked ? 'True' : 'False');
+                    } else {
+                        formData.set('bill_added', 'False'); 
+                    }
 
-                const requestId = assignRequestIdInput ? assignRequestIdInput.value : '';
-                const assignedStaffId = assignStaffSelect ? assignStaffSelect.value : '';
-                const url = `/api/requests/${requestId}/update/`; 
-
-                try {
-                    const currentRequestResponse = await fetch(`/api/requests/${requestId}/details/`);
-                    const currentRequestData = await currentRequestResponse.json();
-
-                    if (currentRequestData.success) {
-                        const formData = new FormData();
-                        formData.append('request_id', requestId);
-                        formData.append('assigned_staff', assignedStaffId);
-                        formData.append('status', currentRequestData.raw_status_value);
-                        formData.append('request_type', currentRequestData.raw_request_type_value);
-                        formData.append('staff_notes', currentRequestData.staff_notes || ''); 
-                        formData.append('bill_added', currentRequestData.amenity_details ? currentRequestData.amenity_details.bill_added : 'False'); 
-
+                    try {
                         const response = await fetch(url, {
-                            method: 'POST',
+                            method: 'POST', 
+                            headers: {
+                                'X-CSRFToken': csrfToken, 
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage(result.message, 'success');
+                            if (requestDetailsModal) requestDetailsModal.classList.remove('show');
+                            location.reload(); 
+                        } else {
+                            let generalErrorMessage = result.error || 'Failed to update request due to validation errors.';
+                            showMessage(generalErrorMessage, 'error');
+
+                            if (result.errors) {
+                                const errors = JSON.parse(result.errors);
+                                for (const field in errors) {
+                                    const errorDiv = document.getElementById(`${field}Errors`);
+                                    if (errorDiv) {
+                                        errorDiv.textContent = errors[field][0].message;
+                                    } else {
+                                        console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
+                                        showMessage(`Error: ${errors[field][0].message}`, 'error');
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error submitting request update form:', error);
+                        showMessage('Network error or server issue updating request.', 'error');
+                    }
+                });
+            } else {
+                console.warn("requestUpdateForm not found."); // Debugging
+            }
+
+            // NEW: Assign Staff Modal Logic
+            const assignRequestIdInput = document.getElementById('assignRequestId');
+            const assignStaffSelect = document.getElementById('assignStaffSelect');
+            const cancelAssignButton = document.getElementById('cancelAssignButton');
+            const assignStaffForm = document.getElementById('assignStaffForm');
+
+            document.querySelectorAll('.assign-request-button').forEach(button => {
+                console.log("Attaching listener to assign-request-button:", button); // Debugging
+                button.addEventListener('click', () => {
+                    console.log("Assign Request button clicked."); // Debugging
+                    const requestId = button.dataset.requestId;
+                    if (assignRequestIdInput) assignRequestIdInput.value = requestId;
+                    if (assignStaffSelect) assignStaffSelect.value = '';
+                    const assignErrorsDiv = document.getElementById('assigned_staffErrorsAssign');
+                    if (assignErrorsDiv) assignErrorsDiv.textContent = '';
+                    if (assignStaffModal) assignStaffModal.classList.add('show');
+                    console.log("Assign Staff modal shown."); // Debugging
+                });
+            });
+
+            if (cancelAssignButton) { 
+                cancelAssignButton.addEventListener('click', () => {
+                    if (assignStaffModal) assignStaffModal.classList.remove('show');
+                    console.log("Assign Staff modal canceled."); // Debugging
+                });
+            } else {
+                console.warn("cancelAssignButton not found."); // Debugging
+            }
+
+
+            // Submit Assign Staff Form
+            if (assignStaffForm) {
+                console.log("Attaching listener to assignStaffForm submit."); // Debugging
+                assignStaffForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log("Assign Staff Form submitted."); // Debugging
+                    const assignErrorsDiv = document.getElementById('assigned_staffErrorsAssign');
+                    if (assignErrorsDiv) assignErrorsDiv.textContent = ''; 
+
+                    const requestId = assignRequestIdInput ? assignRequestIdInput.value : '';
+                    const assignedStaffId = assignStaffSelect ? assignStaffSelect.value : '';
+                    const url = `/api/requests/${requestId}/update/`; 
+
+                    try {
+                        const currentRequestResponse = await fetch(`/api/requests/${requestId}/details/`);
+                        const currentRequestData = await currentRequestResponse.json();
+
+                        if (currentRequestData.success) {
+                            const formData = new FormData();
+                            formData.append('request_id', requestId);
+                            formData.append('assigned_staff', assignedStaffId);
+                            formData.append('status', currentRequestData.raw_status_value);
+                            formData.append('request_type', currentRequestData.raw_request_type_value);
+                            formData.append('staff_notes', currentRequestData.staff_notes || ''); 
+                            formData.append('bill_added', currentRequestData.amenity_details ? currentRequestData.amenity_details.bill_added : 'False'); 
+
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken,
+                                },
+                                body: formData
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                showMessage(result.message, 'success');
+                                if (assignStaffModal) assignStaffModal.classList.remove('show');
+                                location.reload(); 
+                            } else {
+                                let generalErrorMessage = result.error || 'Failed to assign task due to validation errors.';
+                                showMessage(generalErrorMessage, 'error');
+
+                                if (result.errors) {
+                                    const errors = JSON.parse(result.errors);
+                                    const errorDiv = document.getElementById('assigned_staffErrorsAssign');
+                                    if (errors.assigned_staff && errorDiv) {
+                                        errorDiv.textContent = errors.assigned_staff[0].message;
+                                    } else {
+                                        console.error('Unhandled form error:', errors);
+                                        showMessage('Error: ' + JSON.stringify(errors), 'error');
+                                    }
+                                }
+                            }
+                        } else {
+                            showMessage(currentRequestData.error || 'Failed to fetch current request details for assignment.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error assigning task:', error);
+                        showMessage('Network error or server issue assigning task.', 'error');
+                    }
+                });
+            } else {
+                console.warn("assignStaffForm not found."); // Debugging
+            }
+
+
+            // Custom Confirmation Modal Logic for Status Updates
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            const confirmationYesButton = document.getElementById('confirmationYesButton');
+            const confirmationCloseButtons = confirmationModal ? confirmationModal.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button') : [];
+
+            let currentActionId = null; 
+            let currentActionType = null; 
+
+            function showConfirmationModal(message, id, actionType) {
+                if (confirmationMessage) confirmationMessage.textContent = message;
+                currentActionId = id;
+                currentActionType = actionType;
+                if (confirmationModal) confirmationModal.classList.add('show');
+                console.log("Confirmation modal shown for action:", actionType, "ID:", id); // Debugging
+            }
+
+            if (confirmationYesButton) { 
+                console.log("Attaching listener to confirmationYesButton."); // Debugging
+                confirmationYesButton.addEventListener('click', async () => {
+                    if (confirmationModal) confirmationModal.classList.remove('show'); 
+
+                    if (currentActionType === 'delete_assignment') {
+                        try {
+                            const response = await fetch(`/api/assignments/${currentActionId}/delete/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken 
+                                }
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                showMessage('Assignment deleted successfully!', 'success');
+                                const deletedRow = document.querySelector(`.data-table tbody tr [data-assignment-id="${currentActionId}"]`);
+                                if (deletedRow) {
+                                    deletedRow.closest('tr').remove(); 
+                                }
+                                console.log("Assignment deleted:", currentActionId); // Debugging
+                            } else {
+                                showMessage(result.error || 'Failed to delete assignment.', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting assignment:', error);
+                            showMessage('Network error or server issue deleting assignment.', 'error');
+                        }
+                    } else if (currentActionType === 'delete_amenity') {
+                        try {
+                            const response = await fetch(`/api/amenities/${currentActionId}/delete/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken 
+                                }
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                showMessage('Amenity deleted successfully!', 'success');
+                                const deletedRow = document.querySelector(`.data-table tbody tr [data-amenity-id="${currentActionId}"]`);
+                                if (deletedRow) {
+                                    deletedRow.closest('tr').remove(); 
+                                }
+                                console.log("Amenity deleted:", currentActionId); // Debugging
+                            } else {
+                                showMessage(result.error || 'Failed to delete amenity.', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting amenity:', error);
+                            showMessage('Network error or server issue deleting amenity.', 'error');
+                        }
+                    }
+                });
+            } else {
+                console.warn("confirmationYesButton not found."); // Debugging
+            }
+
+            if (confirmationCloseButtons) { 
+                confirmationCloseButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        if (confirmationModal) confirmationModal.classList.remove('show');
+                        console.log("Confirmation modal closed."); // Debugging
+                    });
+                });
+            } else {
+                console.warn("confirmationCloseButtons not found."); // Debugging
+            }
+
+
+            // Add/Edit Guest Assignment Modal Logic
+            const addAssignmentButton = document.getElementById('addAssignmentButton');
+            const assignmentForm = document.getElementById('assignmentForm');
+            const assignmentModalTitle = document.getElementById('assignmentModalTitle');
+
+            function clearFormErrors(formId) {
+                document.querySelectorAll(`#${formId} .error-message`).forEach(el => el.textContent = '');
+            }
+
+            if (addAssignmentButton) {
+                console.log("Attaching listener to addAssignmentButton."); // Debugging
+                addAssignmentButton.addEventListener('click', () => {
+                    if (assignmentModalTitle) assignmentModalTitle.textContent = 'Add New Guest Assignment';
+                    if (assignmentForm) assignmentForm.reset(); 
+                    const assignmentIdInput = document.getElementById('assignmentId');
+                    if (assignmentIdInput) assignmentIdInput.value = ''; 
+                    clearFormErrors('assignmentForm');
+                    if (assignmentModal) assignmentModal.classList.add('show');
+                    console.log("Add Assignment modal shown."); // Debugging
+                });
+            } else {
+                console.warn("addAssignmentButton not found."); // Debugging
+            }
+
+            document.querySelectorAll('.edit-assignment-button').forEach(button => {
+                console.log("Attaching listener to edit-assignment-button:", button); // Debugging
+                button.addEventListener('click', async () => {
+                    console.log("Edit Assignment button clicked."); // Debugging
+                    const assignmentId = button.dataset.assignmentId;
+                    if (assignmentModalTitle) assignmentModalTitle.textContent = 'Edit Guest Assignment';
+                    if (assignmentForm) assignmentForm.reset(); 
+                    const assignmentIdInput = document.getElementById('assignmentId');
+                    if (assignmentIdInput) assignmentIdInput.value = assignmentId; 
+                    clearFormErrors('assignmentForm');
+
+                    try {
+                        const response = await fetch(`/api/assignments/${assignmentId}/edit/`); 
+                        const data = await response.json();
+                        if (data.success) {
+                            if (data.assignment.check_in_time) {
+                                const checkInDateTime = new Date(data.assignment.check_in_time);
+                                const checkInDateInput = assignmentForm.querySelector('[name="check_in_date"]');
+                                const checkInTimeInput = assignmentForm.querySelector('[name="check_in_time_input"]');
+                                if (checkInDateInput) checkInDateInput.value = checkInDateTime.toISOString().split('T')[0];
+                                if (checkInTimeInput) checkInTimeInput.value = checkInDateTime.toTimeString().slice(0, 5);
+                            }
+                            if (data.assignment.check_out_time) {
+                                const checkOutDateTime = new Date(data.assignment.check_out_time);
+                                const checkOutDateInput = assignmentForm.querySelector('[name="check_out_date"]');
+                                const checkOutTimeInput = assignmentForm.querySelector('[name="check_out_time_input"]');
+                                if (checkOutDateInput) checkOutDateInput.value = checkOutDateTime.toISOString().split('T')[0];
+                                if (checkOutTimeInput) checkOutTimeInput.value = checkOutDateTime.toTimeString().slice(0, 5);
+                            }
+                            
+                            const roomNumberInput = assignmentForm.querySelector('[name="room_number_input"]');
+                            if (roomNumberInput && data.assignment.room_number && data.assignment.room_number.room_number) {
+                                roomNumberInput.value = data.assignment.room_number.room_number;
+                            }
+
+                            const guestNamesInput = assignmentForm.querySelector('[name="guest_names"]');
+                            if (guestNamesInput) guestNamesInput.value = data.assignment.guest_names;
+                            
+                            const statusSelect = assignmentForm.querySelector('[name="status"]');
+                            if (statusSelect) statusSelect.value = data.assignment.status;
+                            
+                            const totalBillAmountInput = assignmentForm.querySelector('[name="total_bill_amount"]');
+                            if (totalBillAmountInput) totalBillAmountInput.value = data.assignment.total_bill_amount;
+                            
+                            const amountPaidInput = assignmentForm.querySelector('[name="amount_paid"]');
+                            if (amountPaidInput) amountPaidInput.value = data.assignment.amount_paid;
+
+                            if (assignmentModal) assignmentModal.classList.add('show');
+                            console.log("Edit Assignment modal shown with data for ID:", assignmentId); // Debugging
+                        } else {
+                            showMessage(data.error || 'Failed to load assignment details.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching assignment details:', error);
+                        showMessage('Network error or server issue fetching assignment details.', 'error');
+                    }
+                });
+            });
+
+
+            // Close Assignment Modal
+            const closeAssignmentModalButtons = assignmentModal ? assignmentModal.querySelectorAll('.close-button, .cancel-button') : [];
+            closeAssignmentModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (assignmentModal) assignmentModal.classList.remove('show');
+                    clearFormErrors('assignmentForm');
+                    console.log("Assignment modal closed."); // Debugging
+                });
+            });
+
+            // Submit Assignment Form
+            if (assignmentForm) { 
+                console.log("Attaching listener to assignmentForm submit."); // Debugging
+                assignmentForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log("Assignment Form submitted."); // Debugging
+                    clearFormErrors('assignmentForm');
+
+                    const formData = new FormData(assignmentForm);
+                    const assignmentIdInput = document.getElementById('assignmentId');
+                    const assignmentId = assignmentIdInput ? assignmentIdInput.value : '';
+                    const url = assignmentId ? `/api/assignments/${assignmentId}/edit/` : `/dashboard/guests/`;
+                    const method = 'POST'; 
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: {
+                                'X-CSRFToken': csrfToken, 
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage(result.message, 'success');
+                            if (assignmentModal) assignmentModal.classList.remove('show');
+                            location.reload();
+                        } else {
+                            let generalErrorMessage = result.error || 'Failed to save assignment due to validation errors.';
+                            showMessage(generalErrorMessage, 'error');
+
+                            if (result.errors) {
+                                const errors = JSON.parse(result.errors);
+                                for (const field in errors) {
+                                    const errorDiv = document.getElementById(`${field}Errors`);
+                                    if (errorDiv) {
+                                        errorDiv.textContent = errors[field][0].message;
+                                    } else {
+                                        console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
+                                        showMessage(`Error: ${errors[field][0].message}`, 'error');
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error submitting assignment form:', error);
+                        showMessage('Network error or server issue saving assignment.', 'error');
+                    }
+                });
+            } else {
+                console.warn("assignmentForm not found."); // Debugging
+            }
+
+
+            // Amenity Modal Logic
+            const addAmenityButton = document.getElementById('addAmenityButton');
+            const amenityModalTitle = document.getElementById('amenityModalTitle');
+            const amenityForm = document.getElementById('amenityForm');
+            const amenityIdInput = document.getElementById('amenityId');
+            const amenityNameInput = document.getElementById('amenityName');
+            const amenityDescriptionInput = document.getElementById('amenityDescription');
+            const amenityPriceInput = document.getElementById('amenityPrice');
+            const amenityIsAvailableInput = document.getElementById('amenityIsAvailable');
+
+            if (addAmenityButton) { 
+                console.log("Attaching listener to addAmenityButton."); // Debugging
+                addAmenityButton.addEventListener('click', () => {
+                    if (amenityModalTitle) amenityModalTitle.textContent = 'Add New Amenity';
+                    if (amenityForm) amenityForm.reset(); 
+                    if (amenityIdInput) amenityIdInput.value = ''; 
+                    if (amenityModal) amenityModal.classList.add('show');
+                    document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
+                    console.log("Add Amenity modal shown."); // Debugging
+                });
+            } else {
+                console.warn("addAmenityButton not found."); // Debugging
+            }
+
+            document.querySelectorAll('.edit-amenity-button').forEach(button => {
+                console.log("Attaching listener to edit-amenity-button:", button); // Debugging
+                button.addEventListener('click', async () => {
+                    console.log("Edit Amenity button clicked."); // Debugging
+                    const amenityId = button.dataset.amenityId;
+                    try {
+                        const response = await fetch(`/api/amenities/${amenityId}/`);
+                        const result = await response.json();
+                        if (result.success) {
+                            if (amenityModalTitle) amenityModalTitle.textContent = 'Edit Amenity';
+                            if (amenityIdInput) amenityIdInput.value = result.id;
+                            if (amenityNameInput) amenityNameInput.value = result.name;
+                            if (amenityDescriptionInput) amenityDescriptionInput.value = result.description || '';
+                            if (amenityPriceInput) amenityPriceInput.value = result.price;
+                            if (amenityIsAvailableInput) amenityIsAvailableInput.checked = result.is_available;
+                            if (amenityModal) amenityModal.classList.add('show');
+                            document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
+                            console.log("Edit Amenity modal shown with data for ID:", amenityId); // Debugging
+                        } else {
+                            showMessage(result.error || 'Failed to load amenity details.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching amenity details:', error);
+                        showMessage('Network error or server issue loading amenity details.', 'error');
+                    }
+                });
+            });
+
+            // Submit Amenity Form
+            if (amenityForm) { 
+                console.log("Attaching listener to amenityForm submit."); // Debugging
+                amenityForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log("Amenity Form submitted."); // Debugging
+                    document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
+
+                    const amenityId = amenityIdInput ? amenityIdInput.value : '';
+                    const url = '{% url "main:save_or_update_amenity_api" %}'; 
+                    
+                    const method = 'POST'; 
+
+                    const formData = new FormData(amenityForm);
+                    if (amenityIsAvailableInput) formData.set('is_available', amenityIsAvailableInput.checked ? 'True' : 'False');
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method, 
                             headers: {
                                 'X-CSRFToken': csrfToken,
                             },
@@ -1842,361 +2230,54 @@
 
                         if (result.success) {
                             showMessage(result.message, 'success');
-                            if (assignStaffModal) assignStaffModal.classList.remove('show');
+                            if (amenityModal) amenityModal.classList.remove('show');
                             location.reload(); 
                         } else {
-                            let generalErrorMessage = result.error || 'Failed to assign task due to validation errors.';
+                            let generalErrorMessage = result.error || 'Failed to save amenity due to validation errors.';
                             showMessage(generalErrorMessage, 'error');
 
                             if (result.errors) {
                                 const errors = JSON.parse(result.errors);
-                                const errorDiv = document.getElementById('assigned_staffErrorsAssign');
-                                if (errors.assigned_staff && errorDiv) {
-                                    errorDiv.textContent = errors.assigned_staff[0].message;
-                                } else {
-                                    console.error('Unhandled form error:', errors);
-                                    showMessage('Error: ' + JSON.stringify(errors), 'error');
+                                for (const field in errors) {
+                                    const errorDiv = document.getElementById(`amenity${field.charAt(0).toUpperCase() + field.slice(1)}Errors`);
+                                    if (errorDiv) {
+                                        errorDiv.textContent = errors[field][0].message;
+                                    } else {
+                                        showMessage(errors[field][0].message, 'error');
+                                    }
                                 }
                             }
                         }
-                    } else {
-                        showMessage(currentRequestData.error || 'Failed to fetch current request details for assignment.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error assigning task:', error);
-                    showMessage('Network error or server issue assigning task.', 'error');
-                }
-            });
-        }
-
-
-        // Custom Confirmation Modal Logic for Status Updates
-        const confirmationMessage = document.getElementById('confirmationMessage');
-        const confirmationYesButton = document.getElementById('confirmationYesButton');
-        const confirmationCloseButtons = confirmationModal ? confirmationModal.querySelectorAll('.confirmation-close-button, .confirmation-cancel-button') : [];
-
-        let currentActionId = null; 
-        let currentActionType = null; 
-
-        function showConfirmationModal(message, id, actionType) {
-            if (confirmationMessage) confirmationMessage.textContent = message;
-            currentActionId = id;
-            currentActionType = actionType;
-            if (confirmationModal) confirmationModal.classList.add('show');
-        }
-
-        if (confirmationYesButton) { 
-            confirmationYesButton.addEventListener('click', async () => {
-                if (confirmationModal) confirmationModal.classList.remove('show'); 
-
-                if (currentActionType === 'delete_assignment') {
-                    try {
-                        const response = await fetch(`/api/assignments/${currentActionId}/delete/`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken 
-                            }
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showMessage('Assignment deleted successfully!', 'success');
-                            const deletedRow = document.querySelector(`.data-table tbody tr [data-assignment-id="${currentActionId}"]`);
-                            if (deletedRow) {
-                                deletedRow.closest('tr').remove(); 
-                            }
-                        } else {
-                            showMessage(result.error || 'Failed to delete assignment.', 'error');
-                        }
                     } catch (error) {
-                        console.error('Error deleting assignment:', error);
-                        showMessage('Network error or server issue deleting assignment.', 'error');
+                        console.error('Error submitting amenity form:', error);
+                        showMessage('Network error or server issue saving amenity.', 'error');
                     }
-                } else if (currentActionType === 'delete_amenity') {
-                    try {
-                        const response = await fetch(`/api/amenities/${currentActionId}/delete/`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken 
-                            }
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showMessage('Amenity deleted successfully!', 'success');
-                            const deletedRow = document.querySelector(`.data-table tbody tr [data-amenity-id="${currentActionId}"]`);
-                            if (deletedRow) {
-                                deletedRow.closest('tr').remove(); 
-                            }
-                        } else {
-                            showMessage(result.error || 'Failed to delete amenity.', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error deleting amenity:', error);
-                        showMessage('Network error or server issue deleting amenity.', 'error');
-                    }
-                }
-            });
-        }
+                });
+            } else {
+                console.warn("amenityForm not found."); // Debugging
+            }
 
-        if (confirmationCloseButtons) { 
-            confirmationCloseButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (confirmationModal) confirmationModal.classList.remove('show');
+            // Delete Assignment Logic
+            document.querySelectorAll('.delete-assignment-button').forEach(button => {
+                console.log("Attaching listener to delete-assignment-button:", button); // Debugging
+                button.addEventListener('click', async () => {
+                    console.log("Delete Assignment button clicked."); // Debugging
+                    const assignmentId = button.dataset.assignmentId;
+                    showConfirmationModal('Are you sure you want to delete this guest assignment?', assignmentId, 'delete_assignment');
                 });
             });
+
+            // Delete Amenity Logic
+            document.querySelectorAll('.delete-amenity-button').forEach(button => {
+                console.log("Attaching listener to delete-amenity-button:", button); // Debugging
+                button.addEventListener('click', async () => {
+                    console.log("Delete Amenity button clicked."); // Debugging
+                    const amenityId = button.dataset.amenityId;
+                    showConfirmationModal('Are you sure you want to delete this amenity? This cannot be undone.', amenityId, 'delete_amenity');
+                });
+            });
+            console.log("Dashboard initialization complete."); // Debugging
         }
-
-
-        // Add/Edit Guest Assignment Modal Logic
-        const addAssignmentButton = document.getElementById('addAssignmentButton');
-        const assignmentForm = document.getElementById('assignmentForm');
-        const closeAssignmentModalButtons = assignmentModal ? assignmentModal.querySelectorAll('.close-button, .cancel-button') : [];
-        const assignmentModalTitle = document.getElementById('assignmentModalTitle');
-
-        function clearFormErrors(formId) {
-            document.querySelectorAll(`#${formId} .error-message`).forEach(el => el.textContent = '');
-        }
-
-        if (addAssignmentButton) {
-            addAssignmentButton.addEventListener('click', () => {
-                if (assignmentModalTitle) assignmentModalTitle.textContent = 'Add New Guest Assignment';
-                if (assignmentForm) assignmentForm.reset(); 
-                const assignmentIdInput = document.getElementById('assignmentId');
-                if (assignmentIdInput) assignmentIdInput.value = ''; 
-                clearFormErrors('assignmentForm');
-                if (assignmentModal) assignmentModal.classList.add('show');
-            });
-        }
-
-        document.querySelectorAll('.edit-assignment-button').forEach(button => {
-            button.addEventListener('click', async () => {
-                const assignmentId = button.dataset.assignmentId;
-                if (assignmentModalTitle) assignmentModalTitle.textContent = 'Edit Guest Assignment';
-                if (assignmentForm) assignmentForm.reset(); 
-                const assignmentIdInput = document.getElementById('assignmentId');
-                if (assignmentIdInput) assignmentIdInput.value = assignmentId; 
-                clearFormErrors('assignmentForm');
-
-                try {
-                    const response = await fetch(`/api/assignments/${assignmentId}/edit/`); 
-                    const data = await response.json();
-                    if (data.success) {
-                        if (data.assignment.check_in_time) {
-                            const checkInDateTime = new Date(data.assignment.check_in_time);
-                            const checkInDateInput = assignmentForm.querySelector('[name="check_in_date"]');
-                            const checkInTimeInput = assignmentForm.querySelector('[name="check_in_time_input"]');
-                            if (checkInDateInput) checkInDateInput.value = checkInDateTime.toISOString().split('T')[0];
-                            if (checkInTimeInput) checkInTimeInput.value = checkInDateTime.toTimeString().slice(0, 5);
-                        }
-                        if (data.assignment.check_out_time) {
-                            const checkOutDateTime = new Date(data.assignment.check_out_time);
-                            const checkOutDateInput = assignmentForm.querySelector('[name="check_out_date"]');
-                            const checkOutTimeInput = assignmentForm.querySelector('[name="check_out_time_input"]');
-                            if (checkOutDateInput) checkOutDateInput.value = checkOutDateTime.toISOString().split('T')[0];
-                            if (checkOutTimeInput) checkOutTimeInput.value = checkOutDateTime.toTimeString().slice(0, 5);
-                        }
-                        
-                        const roomNumberInput = assignmentForm.querySelector('[name="room_number_input"]');
-                        if (roomNumberInput && data.assignment.room_number && data.assignment.room_number.room_number) {
-                            roomNumberInput.value = data.assignment.room_number.room_number;
-                        }
-
-                        const guestNamesInput = assignmentForm.querySelector('[name="guest_names"]');
-                        if (guestNamesInput) guestNamesInput.value = data.assignment.guest_names;
-                        
-                        const statusSelect = assignmentForm.querySelector('[name="status"]');
-                        if (statusSelect) statusSelect.value = data.assignment.status;
-                        
-                        const totalBillAmountInput = assignmentForm.querySelector('[name="total_bill_amount"]');
-                        if (totalBillAmountInput) totalBillAmountInput.value = data.assignment.total_bill_amount;
-                        
-                        const amountPaidInput = assignmentForm.querySelector('[name="amount_paid"]');
-                        if (amountPaidInput) amountPaidInput.value = data.assignment.amount_paid;
-
-                        if (assignmentModal) assignmentModal.classList.add('show');
-                    } else {
-                        showMessage(data.error || 'Failed to load assignment details.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error fetching assignment details:', error);
-                    showMessage('Network error or server issue fetching assignment details.', 'error');
-                }
-            });
-        });
-
-
-        // Close Assignment Modal
-        closeAssignmentModalButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (assignmentModal) assignmentModal.classList.remove('show');
-                clearFormErrors('assignmentForm');
-            });
-        });
-
-        // Submit Assignment Form
-        if (assignmentForm) { 
-            assignmentForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                clearFormErrors('assignmentForm');
-
-                const formData = new FormData(assignmentForm);
-                const assignmentIdInput = document.getElementById('assignmentId');
-                const assignmentId = assignmentIdInput ? assignmentIdInput.value : '';
-                const url = assignmentId ? `/api/assignments/${assignmentId}/edit/` : `/dashboard/guests/`;
-                const method = assignmentId ? 'POST' : 'POST'; 
-
-                try {
-                    const response = await fetch(url, {
-                        method: method,
-                        headers: {
-                            'X-CSRFToken': csrfToken, 
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        showMessage(result.message, 'success');
-                        if (assignmentModal) assignmentModal.classList.remove('show');
-                        location.reload();
-                    } else {
-                        let generalErrorMessage = result.error || 'Failed to save assignment due to validation errors.';
-                        showMessage(generalErrorMessage, 'error');
-
-                        if (result.errors) {
-                            const errors = JSON.parse(result.errors);
-                            for (const field in errors) {
-                                const errorDiv = document.getElementById(`${field}Errors`);
-                                if (errorDiv) {
-                                    errorDiv.textContent = errors[field][0].message;
-                                } else {
-                                    console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
-                                    showMessage(`Error: ${errors[field][0].message}`, 'error');
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error submitting assignment form:', error);
-                    showMessage('Network error or server issue saving assignment.', 'error');
-                }
-            });
-        }
-
-
-        // Amenity Modal Logic
-        const addAmenityButton = document.getElementById('addAmenityButton');
-        const amenityModalTitle = document.getElementById('amenityModalTitle');
-        const amenityForm = document.getElementById('amenityForm');
-        const amenityIdInput = document.getElementById('amenityId');
-        const amenityNameInput = document.getElementById('amenityName');
-        const amenityDescriptionInput = document.getElementById('amenityDescription');
-        const amenityPriceInput = document.getElementById('amenityPrice');
-        const amenityIsAvailableInput = document.getElementById('amenityIsAvailable');
-
-        if (addAmenityButton) { 
-            addAmenityButton.addEventListener('click', () => {
-                if (amenityModalTitle) amenityModalTitle.textContent = 'Add New Amenity';
-                if (amenityForm) amenityForm.reset(); 
-                if (amenityIdInput) amenityIdInput.value = ''; 
-                if (amenityModal) amenityModal.classList.add('show');
-                document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
-            });
-        }
-
-        document.querySelectorAll('.edit-amenity-button').forEach(button => {
-            button.addEventListener('click', async () => {
-                const amenityId = button.dataset.amenityId;
-                try {
-                    const response = await fetch(`/api/amenities/${amenityId}/`);
-                    const result = await response.json();
-                    if (result.success) {
-                        if (amenityModalTitle) amenityModalTitle.textContent = 'Edit Amenity';
-                        if (amenityIdInput) amenityIdInput.value = result.id;
-                        if (amenityNameInput) amenityNameInput.value = result.name;
-                        if (amenityDescriptionInput) amenityDescriptionInput.value = result.description || '';
-                        if (amenityPriceInput) amenityPriceInput.value = result.price;
-                        if (amenityIsAvailableInput) amenityIsAvailableInput.checked = result.is_available;
-                        if (amenityModal) amenityModal.classList.add('show');
-                        document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
-                    } else {
-                        showMessage(result.error || 'Failed to load amenity details.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error fetching amenity details:', error);
-                    showMessage('Network error or server issue loading amenity details.', 'error');
-                }
-            });
-        });
-
-        // Submit Amenity Form
-        if (amenityForm) { 
-            amenityForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                document.querySelectorAll('#amenityForm .error-message').forEach(el => el.textContent = '');
-
-                const amenityId = amenityIdInput ? amenityIdInput.value : '';
-                const url = '{% url "main:save_or_update_amenity_api" %}'; 
-                
-                const method = 'POST'; 
-
-                const formData = new FormData(amenityForm);
-                if (amenityIsAvailableInput) formData.set('is_available', amenityIsAvailableInput.checked ? 'True' : 'False');
-
-                try {
-                    const response = await fetch(url, {
-                        method: method, 
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        showMessage(result.message, 'success');
-                        if (amenityModal) amenityModal.classList.remove('show');
-                        location.reload(); 
-                    } else {
-                        let generalErrorMessage = result.error || 'Failed to save amenity due to validation errors.';
-                        showMessage(generalErrorMessage, 'error');
-
-                        if (result.errors) {
-                            const errors = JSON.parse(result.errors);
-                            for (const field in errors) {
-                                const errorDiv = document.getElementById(`amenity${field.charAt(0).toUpperCase() + field.slice(1)}Errors`);
-                                if (errorDiv) {
-                                    errorDiv.textContent = errors[field][0].message;
-                                } else {
-                                    showMessage(errors[field][0].message, 'error');
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error submitting amenity form:', error);
-                    showMessage('Network error or server issue saving amenity.', 'error');
-                }
-            });
-        }
-
-        // Delete Assignment Logic
-        document.querySelectorAll('.delete-assignment-button').forEach(button => {
-            button.addEventListener('click', async () => {
-                const assignmentId = button.dataset.assignmentId;
-                showConfirmationModal('Are you sure you want to delete this guest assignment?', assignmentId, 'delete_assignment');
-            });
-        });
-
-        // Delete Amenity Logic
-        document.querySelectorAll('.delete-amenity-button').forEach(button => {
-            button.addEventListener('click', async () => {
-                const amenityId = button.dataset.amenityId;
-                showConfirmationModal('Are you sure you want to delete this amenity? This cannot be undone.', amenityId, 'delete_amenity');
-            });
-        });
-
     </script>
 </body>
 </html>
