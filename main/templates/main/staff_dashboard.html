@@ -11,116 +11,139 @@
     <!-- D3.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        /* Define Color Palettes for Light and Dark Mode */
+        /* New Color Palette for Light and Dark Mode */
         :root {
             /* Light Mode Colors */
-            --bg: #F7F8FA; /* Very light gray background */
-            --card-bg: #FFFFFF; /* White card background */
-            --text: #333333; /* Dark gray text */
-            --secondary-text: #666666; /* Medium gray secondary text */
-            --border: #E0E0E0; /* Light gray border */
-            --primary: #4A90E2; /* Blue primary color */
-            --primary-dark: #357ABD; /* Darker blue for hover */
-            --accent: #FFC107; /* Amber accent */
-            --success: #28A745; /* Green for success */
-            --error: #DC3545; /* Red for error */
-            --warning: #FFC107; /* Yellow for warning */
-            --info: #17A2B8; /* Cyan for info */
-            --shadow-light: rgba(0, 0, 0, 0.05); /* Light shadow */
-            --input-bg: #F0F2F5; /* Light gray for input backgrounds */
-            --input-border: #D1D5DA; /* Slightly darker gray for input borders */
-            --hover-bg: #E9ECEF; /* Light gray for hover states */
-            --active-bg: #DEE2E6; /* Even lighter gray for active states */
+            --primary-blue: #4299E1; /* A vibrant, professional blue */
+            --primary-dark-blue: #3182CE; /* Darker blue for hover/active */
+            --accent-green: #48BB78; /* A fresh green for success/accent */
+            --accent-orange: #F6AD55; /* A warm orange for warnings/accents */
+            --bg-light: #F8F9FA; /* Very light background */
+            --card-bg-light: #FFFFFF; /* Pure white for cards */
+            --text-dark: #2D3748; /* Dark charcoal text */
+            --text-medium: #4A5568; /* Medium gray text */
+            --text-light: #718096; /* Light gray for secondary text/placeholders */
+            --border-light: #E2E8F0; /* Light border color */
+            --input-bg-light: #EDF2F7; /* Light input background */
+            --shadow-light: rgba(0, 0, 0, 0.08); /* Soft shadow */
 
-            /* Chart Colors */
-            --chart-axis-text: #666666;
-            --chart-color-booked: #4A90E2; /* Primary blue */
-            --chart-color-cancelled: #DC3545; /* Error red */
-            --chart-platform1: #4A90E2;
-            --chart-platform2: #28A745;
-            --chart-platform3: #FFC107;
-            --chart-platform4: #17A2B8;
-            --chart-platform5: #6F42C5; /* Purple */
-            --chart-platform6: #FD7E14; /* Orange */
+            /* Status Badges */
+            --badge-pending-bg: #FEF3C7; /* Light yellow */
+            --badge-pending-text: #B45309; /* Dark orange */
+            --badge-in-progress-bg: #DBEAFE; /* Light blue */
+            --badge-in-progress-text: #1E40AF; /* Dark blue */
+            --badge-completed-bg: #D1FAE5; /* Light green */
+            --badge-completed-text: #065F46; /* Dark green */
+            --badge-cancelled-bg: #FEE2E2; /* Light red */
+            --badge-cancelled-text: #991B1B; /* Dark red */
+
+            /* Specific Request Types (adjust as needed) */
+            --badge-amenity_request-bg: #EEDDFF; /* Light purple */
+            --badge-amenity_request-text: #6A1B9A; /* Dark purple */
+            --badge-maintenance-bg: #FFDCDC; /* Light red */
+            --badge-maintenance-text: #C62828; /* Dark Red */
+            --badge-housekeeping-bg: #D1FAE5; /* Light green */
+            --badge-housekeeping-text: #2E7D32; /* Dark Green */
+            --badge-room_service-bg: #FFF9C4; /* Light yellow */
+            --badge-room_service-text: #FBC02D; /* Dark Yellow */
+            --badge-concierge-bg: #DBEAFE; /* Light blue */
+            --badge-concierge-text: #1565C0; /* Dark Blue */
+            --badge-general_inquiry-bg: #E0E0E0; /* Grey */
+            --badge-general_inquiry-text: #424242; /* Dark Grey */
+            --badge-casual_chat-bg: #CFD8DC; /* Light Grey */
+            --badge-casual_chat-text: #546E7A; /* Dark Grey */
         }
 
         /* Dark Mode Colors */
         html[data-theme='dark'] {
-            --bg: #1A202C; /* Dark blue-gray background */
-            --card-bg: #2D3748; /* Darker blue-gray card background */
-            --text: #E2E8F0; /* Light gray text */
-            --secondary-text: #A0AEC0; /* Medium light gray secondary text */
-            --border: #4A5568; /* Darker gray border */
-            --primary: #63B3ED; /* Lighter blue primary color */
-            --primary-dark: #4299E1; /* Darker blue for hover */
-            --accent: #F6AD55; /* Orange accent */
-            --success: #48BB78; /* Green for success */
-            --error: #FC8181; /* Red for error */
-            --warning: #F6AD55; /* Orange for warning */
-            --info: #63B3ED; /* Light blue for info */
-            --shadow-light: rgba(0, 0, 0, 0.3); /* Darker shadow */
-            --input-bg: #4A5568; /* Dark gray for input backgrounds */
-            --input-border: #6B7280; /* Slightly lighter gray for input borders */
-            --hover-bg: #4A5568; /* Dark gray for hover states */
-            --active-bg: #6B7280; /* Even darker gray for active states */
+            --primary-blue: #63B3ED;
+            --primary-dark-blue: #4299E1;
+            --accent-green: #68D391;
+            --accent-orange: #F6AD55;
+            --bg-light: #1A202C; /* Dark background */
+            --card-bg-light: #2D3748; /* Darker cards */
+            --text-dark: #E2E8F0; /* Light text */
+            --text-medium: #A0AEC0;
+            --text-light: #718096;
+            --border-light: #4A5568;
+            --input-bg-light: #4A5568;
+            --shadow-light: rgba(0, 0, 0, 0.4);
 
-            /* Chart Colors for Dark Mode */
-            --chart-axis-text: #A0AEC0;
-            --chart-color-booked: #63B3ED;
-            --chart-color-cancelled: #FC8181;
-            --chart-platform1: #63B3ED;
-            --chart-platform2: #48BB78;
-            --chart-platform3: #F6AD55;
-            --chart-platform4: #63B3ED;
-            --chart-platform5: #9F7AEA; /* Purple */
-            --chart-platform6: #FBD38D; /* Light orange */
+            /* Status Badges for Dark Mode */
+            --badge-pending-bg: #744210;
+            --badge-pending-text: #F6AD55;
+            --badge-in-progress-bg: #2B6CB0;
+            --badge-in-progress-text: #90CDF4;
+            --badge-completed-bg: #2F855A;
+            --badge-completed-text: #9AE6B4;
+            --badge-cancelled-bg: #9B2C2C;
+            --badge-cancelled-text: #FC8181;
+
+            /* Specific Request Types (Dark Mode) */
+            --badge-amenity_request-bg: #553C9A;
+            --badge-amenity_request-text: #D6BCFA;
+            --badge-maintenance-bg: #C53030;
+            --badge-maintenance-text: #FC8181;
+            --badge-housekeeping-bg: #38A169;
+            --badge-housekeeping-text: #9AE6B4;
+            --badge-room_service-bg: #D69E2E;
+            --badge-room_service-text: #FBD38D;
+            --badge-concierge-bg: #3182CE;
+            --badge-concierge-text: #90CDF4;
+            --badge-general_inquiry-bg: #718096;
+            --badge-general_inquiry-text: #CBD5E0;
+            --badge-casual_chat-bg: #4A5568;
+            --badge-casual_chat-text: #CBD5E0;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            background-color: var(--bg-light);
+            color: var(--text-dark);
             margin: 0;
             padding: 0;
             line-height: 1.6;
-            display: flex; /* Use flexbox for layout */
-            min-height: 100vh; /* Full viewport height */
+            display: flex;
+            min-height: 100vh;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .sidebar {
             width: 250px;
-            background-color: var(--card-bg); /* Use card-bg for sidebar for consistency */
+            background-color: var(--card-bg-light);
             padding: 20px;
-            box-shadow: 2px 0 5px var(--shadow-light);
+            box-shadow: 2px 0 10px var(--shadow-light);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            flex-shrink: 0; /* Prevent sidebar from shrinking */
-            transition: width 0.3s ease;
-            position: fixed; /* Make sidebar fixed */
-            height: 100vh; /* Full height */
+            flex-shrink: 0;
+            transition: width 0.3s ease, padding 0.3s ease;
+            position: fixed; /* Fixed sidebar */
+            height: 100vh;
             top: 0;
             left: 0;
-            overflow-y: auto; /* Enable scrolling for sidebar content if it overflows */
-            z-index: 999; /* Ensure sidebar is above main content but below modals */
+            overflow-y: auto;
+            z-index: 100; /* Ensure it's above main content */
         }
 
         .sidebar.collapsed {
-            width: 80px; /* Collapsed width */
+            width: 80px;
+            padding: 20px 0; /* Adjust padding when collapsed */
         }
 
         .sidebar h2 {
-            color: var(--primary);
+            color: var(--primary-blue);
             text-align: center;
             margin-bottom: 30px;
             font-weight: 700;
-            white-space: nowrap; /* Prevent text wrapping */
-            overflow: hidden; /* Hide overflow when collapsed */
+            white-space: nowrap;
+            overflow: hidden;
+            padding: 0 10px; /* Add padding to prevent text touching edges */
         }
 
         .sidebar.collapsed h2 {
-            font-size: 1.2em; /* Smaller font when collapsed */
+            font-size: 1.2em;
+            text-align: center; /* Ensure center alignment even when text is hidden */
         }
 
         .sidebar nav ul {
@@ -137,10 +160,10 @@
             display: flex;
             align-items: center;
             padding: 12px 15px;
-            color: var(--secondary-text); /* Use secondary-text for links */
+            color: var(--text-medium);
             text-decoration: none;
             border-radius: 8px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
         }
 
         .sidebar nav ul li a i {
@@ -150,30 +173,39 @@
         }
 
         .sidebar.collapsed nav ul li a i {
-            margin-right: 0; /* No margin when collapsed */
+            margin-right: 0;
+            justify-content: center; /* Center icon when text is hidden */
+            width: 100%; /* Take full width for centering */
         }
 
         .sidebar nav ul li a span {
             opacity: 1;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s ease, width 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
+            flex-grow: 1; /* Allow text to take space */
         }
 
         .sidebar.collapsed nav ul li a span {
-            opacity: 0; /* Hide text when collapsed */
-            width: 0; /* Collapse text width */
+            opacity: 0;
+            width: 0;
+            padding: 0; /* Remove padding when hidden */
         }
 
         .sidebar nav ul li a:hover {
-            background-color: var(--hover-bg); /* Use hover-bg */
-            color: var(--text); /* Darker text on hover */
+            background-color: var(--input-bg-light);
+            color: var(--text-dark);
+            transform: translateY(-2px); /* Subtle lift effect */
         }
 
         .sidebar nav ul li a.active {
-            background-color: var(--active-bg); /* Use active-bg */
-            color: var(--primary); /* Primary color for active link */
+            background-color: var(--primary-blue);
+            color: white;
             font-weight: 600;
+            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+        }
+        .sidebar nav ul li a.active i {
+            color: white; /* Ensure icon color matches active state */
         }
 
         .logout-btn {
@@ -181,8 +213,8 @@
             align-items: center;
             justify-content: center;
             padding: 12px 15px;
-            background-color: var(--input-bg); /* Use input-bg for logout button */
-            color: var(--secondary-text);
+            background-color: var(--input-bg-light);
+            color: var(--text-medium);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
@@ -190,23 +222,49 @@
         }
 
         .logout-btn:hover {
-            background-color: var(--hover-bg);
-            color: var(--text);
+            background-color: var(--border-light);
+            color: var(--text-dark);
+        }
+
+        /* Sidebar Toggle Button specific styling */
+        .sidebar-toggle-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--input-bg-light);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px var(--shadow-light);
+            cursor: pointer;
+            color: var(--text-medium);
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            z-index: 101; /* Ensure it's above sidebar content */
+        }
+
+        .sidebar-toggle-button:hover {
+            background-color: var(--primary-blue);
+            color: white;
+            transform: scale(1.05);
         }
 
         .main-content {
             flex-grow: 1;
             padding: 20px;
             margin-left: 250px; /* Initial margin to offset fixed sidebar */
-            transition: margin-left 0.3s ease; /* Adjust margin for sidebar collapse */
+            transition: margin-left 0.3s ease;
         }
 
         .main-content.sidebar-collapsed {
-            margin-left: 80px; /* Adjust based on sidebar collapsed width */
+            margin-left: 80px;
         }
 
         .header-main {
-            background-color: var(--card-bg);
+            background-color: var(--card-bg-light);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px var(--shadow-light);
@@ -214,68 +272,69 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            flex-wrap: wrap;
         }
 
         .header-main h1 {
             margin: 0;
-            color: var(--primary);
-            flex-grow: 1; /* Allow title to take space */
+            color: var(--primary-blue);
+            flex-grow: 1;
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-left: auto; /* Push controls to the right */
+            margin-left: auto;
         }
 
         .header-controls span {
             font-weight: 500;
-            color: var(--secondary-text);
+            color: var(--text-medium);
         }
 
         .icon-button {
             background: none;
             border: none;
-            color: var(--secondary-text);
+            color: var(--text-medium);
             font-size: 1.2em;
             cursor: pointer;
-            transition: color 0.3s ease;
+            transition: color 0.3s ease, transform 0.2s ease;
             position: relative;
-            padding: 5px; /* Add padding for easier clicking */
+            padding: 5px;
         }
 
         .icon-button:hover {
-            color: var(--primary);
+            color: var(--primary-blue);
+            transform: translateY(-2px);
         }
 
         .notification-badge {
             position: absolute;
             top: 0px;
             right: 0px;
-            background-color: var(--error);
+            background-color: var(--badge-cancelled-text); /* Use a strong error color */
             color: white;
             border-radius: 50%;
             padding: 3px 7px;
             font-size: 0.7em;
             font-weight: 700;
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         .card {
-            background-color: var(--card-bg);
+            background-color: var(--card-bg-light);
             padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px var(--shadow-light);
+            box-shadow: 0 2px 10px var(--shadow-light);
             margin-bottom: 20px;
         }
 
         .card h2 {
-            color: var(--primary);
+            color: var(--primary-blue);
             margin-top: 0;
             margin-bottom: 20px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-light);
             padding-bottom: 10px;
         }
 
@@ -287,26 +346,31 @@
         }
 
         .stat-item {
-            background-color: var(--input-bg); /* Use input-bg for stat items */
+            background-color: var(--input-bg-light);
             padding: 20px;
             border-radius: 8px;
             text-align: center;
-            box-shadow: 0 1px 3px var(--shadow-light);
-            display: flex; /* Flexbox for icon and text alignment */
+            box-shadow: 0 1px 5px var(--shadow-light);
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-3px); /* Hover effect */
         }
 
         .stat-item .icon {
-            font-size: 2.5em; /* Larger icon size */
-            color: var(--primary); /* Primary color for icons */
+            font-size: 2.5em;
+            color: var(--primary-blue);
             margin-bottom: 10px;
         }
 
         .stat-item h3 {
             margin-top: 0;
-            color: var(--secondary-text);
+            color: var(--text-medium);
             font-size: 1em;
             font-weight: 500;
         }
@@ -314,7 +378,7 @@
         .stat-item p {
             font-size: 2em;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--text-dark); /* Use dark text for numbers */
             margin: 10px 0 0;
         }
 
@@ -325,7 +389,7 @@
         }
 
         .chart-card {
-            min-height: 300px; /* Ensure charts have height */
+            min-height: 300px;
         }
 
         .chart-card svg {
@@ -337,18 +401,18 @@
         .axis path,
         .axis line {
             fill: none;
-            stroke: var(--border);
+            stroke: var(--border-light);
             shape-rendering: crispEdges;
         }
 
         .grid path {
-            stroke: var(--border);
+            stroke: var(--border-light);
             stroke-opacity: 0.7;
             shape-rendering: crispEdges;
         }
 
         .grid line {
-            stroke: var(--border);
+            stroke: var(--border-light);
             stroke-opacity: 0.3;
             shape-rendering: crispEdges;
         }
@@ -357,24 +421,30 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            border-radius: 8px; /* Rounded corners for table */
+            overflow: hidden; /* Ensures rounded corners apply */
         }
 
         .data-table th, .data-table td {
             padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-light);
             text-align: left;
         }
 
         .data-table th {
-            background-color: var(--input-bg);
-            color: var(--secondary-text);
+            background-color: var(--input-bg-light);
+            color: var(--text-medium);
             font-weight: 600;
             text-transform: uppercase;
             font-size: 0.9em;
         }
 
+        .data-table tbody tr:last-child td {
+            border-bottom: none; /* No border on last row */
+        }
+
         .data-table tbody tr:hover {
-            background-color: var(--hover-bg);
+            background-color: var(--input-bg-light);
         }
 
         .btn-group {
@@ -390,89 +460,94 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            white-space: nowrap; /* Prevent button text from wrapping */
+            white-space: nowrap;
+        }
+        .btn:hover {
+            transform: translateY(-2px); /* Subtle lift effect */
         }
         .btn-primary {
-            background-color: var(--primary);
+            background-color: var(--primary-blue);
             color: #fff;
-            box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
         }
         .btn-primary:hover {
-            background-color: var(--primary-dark);
-            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.4);
+            background-color: var(--primary-dark-blue);
+            box-shadow: 0 4px 8px rgba(66, 153, 225, 0.4);
         }
-        .btn-info { /* For Assign button */
-            background-color: var(--info);
+        .btn-info {
+            background-color: var(--primary-blue); /* Using primary blue for info as well */
             color: #fff;
         }
         .btn-info:hover {
-            background-color: #138496; /* Darker info */
+            background-color: var(--primary-dark-blue);
         }
         .btn-success {
-            background-color: var(--success);
+            background-color: var(--accent-green);
             color: #fff;
         }
         .btn-success:hover {
-            background-color: #218838; /* Darker success */
+            background-color: #38A169; /* Darker green */
         }
         .btn-danger {
-            background-color: var(--error);
+            background-color: var(--badge-cancelled-text); /* Using the dark red for danger */
             color: #fff;
         }
         .btn-danger:hover {
-            background-color: #C82333; /* Darker error */
+            background-color: #C53030; /* Darker red */
         }
         .btn-secondary {
-            background-color: var(--input-bg);
-            color: var(--text);
+            background-color: var(--input-bg-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border-light);
         }
         .btn-secondary:hover {
-            background-color: var(--hover-bg);
+            background-color: var(--border-light);
         }
         .btn-sm {
-            padding: 5px 10px;
+            padding: 8px 12px;
             font-size: 0.85em;
         }
 
         .badge {
             display: inline-block;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.85em;
+            padding: 6px 12px;
+            border-radius: 20px; /* More rounded pill shape */
+            font-size: 0.8em;
             font-weight: 600;
             text-transform: capitalize;
         }
-        .badge-pending { background-color: #FFECB3; color: #FF8F00; } /* Warning yellow */
-        .badge-in_progress { background-color: #BBDEFB; color: #1976D2; } /* Info blue */
-        .badge-completed { background-color: #C8E6C9; color: #388E3C; } /* Success green */
-        .badge-cancelled { background-color: #FFCDD2; color: #D32F2F; } /* Error red */
-        .badge-amenity_request { background-color: #E1BEE7; color: #6A1B9A; } /* Purple */
-        .badge-maintenance { background-color: #FFCDD2; color: #C62828; } /* Dark Red */
-        .badge-housekeeping { background-color: #C8E6C9; color: #2E7D32; } /* Dark Green */
-        .badge-room_service { background-color: #FFF9C4; color: #FBC02D; } /* Dark Yellow */
-        .badge-concierge { background-color: #BBDEFB; color: #1565C0; } /* Dark Blue */
-        .badge-general_inquiry { background-color: #E0E0E0; color: #424242; } /* Grey */
-        .badge-casual_chat { background-color: #CFD8DC; color: #546E7A; } /* Light Grey */
+        .badge-pending { background-color: var(--badge-pending-bg); color: var(--badge-pending-text); }
+        .badge-in_progress { background-color: var(--badge-in-progress-bg); color: var(--badge-in-progress-text); }
+        .badge-completed { background-color: var(--badge-completed-bg); color: var(--badge-completed-text); }
+        .badge-cancelled { background-color: var(--badge-cancelled-bg); color: var(--badge-cancelled-text); }
+        .badge-amenity_request { background-color: var(--badge-amenity_request-bg); color: var(--badge-amenity_request-text); }
+        .badge-maintenance { background-color: var(--badge-maintenance-bg); color: var(--badge-maintenance-text); }
+        .badge-housekeeping { background-color: var(--badge-housekeeping-bg); color: var(--badge-housekeeping-text); }
+        .badge-room_service { background-color: var(--badge-room_service-bg); color: var(--badge-room_service-text); }
+        .badge-concierge { background-color: var(--badge-concierge-bg); color: var(--badge-concierge-text); }
+        .badge-general_inquiry { background-color: var(--badge-general_inquiry-bg); color: var(--badge-general_inquiry-text); }
+        .badge-casual_chat { background-color: var(--badge-casual_chat-bg); color: var(--badge-casual_chat-text); }
 
 
         /* Tab Navigation */
         .tab-nav {
             display: flex;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-light);
             margin-bottom: 20px;
-            overflow-x: auto; /* Allow horizontal scrolling for many tabs */
+            overflow-x: auto;
+            gap: 15px; /* Spacing between tabs */
         }
 
         .tab-nav-item {
             padding: 10px 15px;
             cursor: pointer;
-            color: var(--secondary-text);
+            color: var(--text-medium);
             text-decoration: none;
             white-space: nowrap;
             border-bottom: 3px solid transparent;
@@ -480,12 +555,12 @@
         }
 
         .tab-nav-item:hover {
-            color: var(--primary);
+            color: var(--primary-blue);
         }
 
         .tab-nav-item.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
             font-weight: 600;
         }
 
@@ -494,40 +569,40 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
-            flex-wrap: wrap; /* Allow wrapping */
+            flex-wrap: wrap;
         }
 
         .sub-tab-nav-item {
             padding: 8px 12px;
-            background-color: var(--input-bg);
+            background-color: var(--input-bg-light);
             border-radius: 5px;
-            color: var(--secondary-text);
+            color: var(--text-medium);
             text-decoration: none;
             white-space: nowrap;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .sub-tab-nav-item:hover {
-            background-color: var(--hover-bg);
+            background-color: var(--border-light);
         }
 
         .sub-tab-nav-item.active {
-            background-color: var(--primary);
+            background-color: var(--primary-blue);
             color: white;
             font-weight: 500;
         }
 
         /* Modal Styles */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
             justify-content: center;
             align-items: center;
         }
@@ -537,13 +612,13 @@
         }
 
         .modal-content {
-            background-color: var(--card-bg);
+            background-color: var(--card-bg-light);
             margin: auto;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 5px 15px var(--shadow-light);
+            box-shadow: 0 5px 20px var(--shadow-light);
             width: 90%;
-            max-width: 600px; /* Increased max-width for better content display */
+            max-width: 600px;
             position: relative;
             transform: translateY(-20px);
             opacity: 0;
@@ -558,7 +633,7 @@
         }
 
         .modal-close-button {
-            color: var(--secondary-text);
+            color: var(--text-light);
             position: absolute;
             top: 15px;
             right: 20px;
@@ -570,24 +645,24 @@
 
         .modal-close-button:hover,
         .modal-close-button:focus {
-            color: var(--text);
+            color: var(--text-dark);
             text-decoration: none;
             cursor: pointer;
         }
 
         .modal-header {
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--border-light);
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
 
         .modal-header h2 {
             margin: 0;
-            color: var(--primary);
+            color: var(--primary-blue);
         }
 
         .modal-footer {
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--border-light);
             padding-top: 15px;
             margin-top: 20px;
             display: flex;
@@ -602,24 +677,24 @@
         .form-group label {
             display: block;
             margin-bottom: 5px;
-            color: var(--secondary-text);
+            color: var(--text-medium);
             font-weight: 500;
         }
 
         .form-control {
             width: 100%;
             padding: 10px;
-            border: 1px solid var(--input-border);
+            border: 1px solid var(--border-light);
             border-radius: 6px;
-            background-color: var(--input-bg);
-            color: var(--text);
+            background-color: var(--input-bg-light);
+            color: var(--text-dark);
             box-sizing: border-box;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .form-control:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
             outline: none;
         }
 
@@ -628,7 +703,7 @@
         }
 
         .error-message {
-            color: var(--error);
+            color: var(--badge-cancelled-text);
             font-size: 0.85em;
             margin-top: 5px;
             display: block;
@@ -647,7 +722,7 @@
             opacity: 0;
             transform: translateY(-20px);
             transition: opacity 0.3s ease, transform 0.3s ease;
-            z-index: 1001; /* Above modals */
+            z-index: 1001;
         }
 
         .message-box.show {
@@ -655,10 +730,10 @@
             transform: translateY(0);
         }
 
-        .message-box.success { background-color: var(--success); }
-        .message-box.error { background-color: var(--error); }
-        .message-box.info { background-color: var(--info); }
-        .message-box.warning { background-color: var(--warning); }
+        .message-box.success { background-color: var(--accent-green); }
+        .message-box.error { background-color: var(--badge-cancelled-text); }
+        .message-box.info { background-color: var(--primary-blue); }
+        .message-box.warning { background-color: var(--accent-orange); }
 
         /* Confirmation Modal */
         #confirmationModal .modal-content {
@@ -670,39 +745,44 @@
         }
         #confirmationModal p {
             margin-bottom: 20px;
-            color: var(--text);
+            color: var(--text-dark);
         }
 
         /* Chat History in Request Details Modal */
         .chat-history-container {
             max-height: 200px;
             overflow-y: auto;
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-light);
             border-radius: 5px;
             padding: 10px;
             margin-top: 10px;
-            background-color: var(--input-bg);
+            background-color: var(--input-bg-light);
         }
         .chat-message {
             margin-bottom: 8px;
             padding: 5px;
             border-radius: 5px;
+            word-wrap: break-word; /* Ensure long words wrap */
         }
         .chat-message.user {
-            background-color: #e0f2f7; /* Light blue for user */
+            background-color: var(--primary-blue); /* User messages in primary blue */
+            color: white;
             text-align: right;
+            margin-left: 20%; /* Align right */
         }
         .chat-message.conci {
-            background-color: #f0f0f0; /* Light gray for conci */
+            background-color: var(--input-bg-light); /* Conci messages in light background */
+            color: var(--text-dark);
             text-align: left;
+            margin-right: 20%; /* Align left */
         }
         html[data-theme='dark'] .chat-message.user {
-            background-color: #3182CE; /* Darker blue for user in dark mode */
+            background-color: var(--primary-dark-blue);
             color: white;
         }
         html[data-theme='dark'] .chat-message.conci {
-            background-color: #4A5568; /* Darker gray for conci in dark mode */
-            color: #E2E8F0;
+            background-color: var(--input-bg-light);
+            color: var(--text-dark);
         }
         .chat-message strong {
             font-weight: 600;
@@ -720,10 +800,12 @@
                 box-shadow: 0 2px 5px var(--shadow-light);
                 position: relative; /* Make sidebar relative on mobile */
                 overflow-y: visible; /* Allow content to push height */
+                padding-bottom: 60px; /* Space for toggle button */
             }
             .sidebar.collapsed {
                 width: 100%;
                 height: auto;
+                padding-bottom: 60px;
             }
             .sidebar nav ul {
                 display: flex;
@@ -742,6 +824,11 @@
             .sidebar.collapsed nav ul li a span {
                 opacity: 1; /* Always show text on mobile */
                 width: auto;
+            }
+            .sidebar-toggle-button {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
             }
             .main-content {
                 padding: 15px;
@@ -785,7 +872,7 @@
             </nav>
         </div>
         <!-- Sidebar Toggle Button - Moved inside sidebar -->
-        <button id="sidebarToggle" class="icon-button" style="position: absolute; bottom: 20px; right: 20px; background: var(--input-bg); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px var(--shadow-light);">
+        <button id="sidebarToggle" class="sidebar-toggle-button">
             <i class="fas fa-chevron-left"></i>
         </button>
         <a href="{% url 'logout' %}" class="logout-btn">
@@ -1043,7 +1130,7 @@
                                     <td>${{ amenity.price|floatformat:2 }}</td>
                                     <td>
                                         {% if amenity.is_available %}
-                                            <span class="badge badge-success">Yes</span>
+                                            <span class="badge badge-completed">Yes</span>
                                         {% else %}
                                             <span class="badge badge-cancelled">No</span>
                                         {% endif %}
@@ -1145,7 +1232,7 @@
                 </div>
                 
                 <!-- Amenity Details Section (Conditional Display) -->
-                <div id="amenityDetailsSection" style="display: none; border-top: 1px solid var(--border); padding-top: 15px; margin-top: 15px;">
+                <div id="amenityDetailsSection" style="display: none; border-top: 1px solid var(--border-light); padding-top: 15px; margin-top: 15px;">
                     <h3>Amenity Details</h3>
                     <div class="form-group">
                         <label>Amenity Name:</label>
@@ -1500,12 +1587,12 @@
                         .attr("transform", `translate(0,${height})`)
                         .call(d3.axisBottom(x).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--chart-axis-text)");
+                        .style("fill", "var(--text-medium)"); /* Use new text color */
 
                     g.append("g")
                         .call(d3.axisLeft(y).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--chart-axis-text)");
+                        .style("fill", "var(--text-medium)"); /* Use new text color */
 
                     g.append("g")
                         .attr("class", "grid")
@@ -1532,7 +1619,7 @@
                         .attr("y", d => y(d.booked))
                         .attr("width", x.bandwidth() / 2)
                         .attr("height", d => height - y(d.booked))
-                        .attr("fill", "var(--chart-color-booked)");
+                        .attr("fill", "var(--primary-blue)"); /* Use new color */
 
                     g.selectAll(".bar-cancelled")
                         .data(reservationsData)
@@ -1542,7 +1629,7 @@
                         .attr("y", d => y(d.cancelled))
                         .attr("width", x.bandwidth() / 2)
                         .attr("height", d => height - y(d.cancelled))
-                        .attr("fill", "var(--chart-color-cancelled)");
+                        .attr("fill", "var(--badge-cancelled-text)"); /* Use new color */
                 }
 
                 function drawBookingPlatformChart() {
@@ -1561,9 +1648,9 @@
 
                     const color = d3.scaleOrdinal()
                         .range([
-                            "var(--chart-platform1)", "var(--chart-platform2)",
-                            "var(--chart-platform3)", "var(--chart-platform4)",
-                            "var(--chart-platform5)", "var(--chart-platform6)"
+                            "var(--primary-blue)", "var(--accent-green)",
+                            "var(--accent-orange)", "#63B3ED", /* Lighter blue */
+                            "#805AD5", /* Purple */ "#DD6B20" /* Dark orange */
                         ]);
 
                     const pie = d3.pie()
@@ -1590,7 +1677,7 @@
                         .attr("transform", d => `translate(${label.centroid(d)})`)
                         .attr("text-anchor", "middle")
                         .text(d => `${d.data.platform} (${d.data.value}%)`)
-                        .style("fill", "var(--text)")
+                        .style("fill", "var(--text-dark)") /* Use new text color */
                         .style("font-size", "0.8em");
                 }
 
@@ -1652,7 +1739,6 @@
             const idRequestType = document.getElementById('id_request_type'); 
             const saveRequestChangesButton = document.getElementById('saveRequestChangesButton'); 
 
-            // Hidden fields for request details form
             const modalRoomNumberHidden = document.getElementById('modalRoomNumberHidden');
             const modalRawTextHidden = document.getElementById('modalRawTextHidden');
             const modalAmenityQuantityHidden = document.getElementById('modalAmenityQuantityHidden');
@@ -1667,7 +1753,6 @@
                         const result = await response.json();
 
                         if (result.success) {
-                            // Populate static display fields
                             if (document.getElementById('modalRequestIdDisplay')) document.getElementById('modalRequestIdDisplay').textContent = requestId; 
                             if (document.getElementById('detailRoomNumber')) document.getElementById('detailRoomNumber').textContent = result.room_number;
                             if (document.getElementById('detailGuestNames')) document.getElementById('detailGuestNames').textContent = result.guest_names;
@@ -1685,7 +1770,6 @@
                                 }
                             }
                             
-                            // Populate form fields for editing
                             if (modalRequestId) modalRequestId.value = requestId; 
                             if (idStaffNotes) idStaffNotes.value = result.staff_notes || ''; 
                             if (idStatus) idStatus.value = result.raw_status_value; 
@@ -1695,10 +1779,8 @@
                                 idAssignedStaff.value = result.raw_assigned_staff_id || ''; 
                             }
 
-                            // Populate hidden fields for backend validation
                             if (modalRoomNumberHidden) modalRoomNumberHidden.value = result.room_number || '';
                             if (modalRawTextHidden) modalRawTextHidden.value = result.raw_text || '';
-                            // amenity_quantity should be 0 or null if not an amenity request
                             if (modalAmenityQuantityHidden) modalAmenityQuantityHidden.value = result.amenity_quantity || 0;
 
 
@@ -1776,20 +1858,16 @@
                     const requestId = modalRequestId ? modalRequestId.value : '';
                     const url = `/api/requests/${requestId}/update/`; 
 
-                    // Create a new FormData object to ensure all fields are included
                     const formData = new FormData();
                     formData.append('request_id', requestId);
                     
-                    // Append all necessary fields from the modal's current state (including hidden ones)
-                    // These correspond to the fields required by GuestRequestForm on backend
                     formData.append('room_number', modalRoomNumberHidden ? modalRoomNumberHidden.value : '');
                     formData.append('raw_text', modalRawTextHidden ? modalRawTextHidden.value : '');
-                    formData.append('amenity_quantity', modalAmenityQuantityHidden ? modalAmenityQuantityHidden.value : 0); // Default to 0 if not present
+                    formData.append('amenity_quantity', modalAmenityQuantityHidden ? modalAmenityQuantityHidden.value : 0); 
 
-                    // Append fields that can be directly edited/selected in the modal
                     formData.append('staff_notes', idStaffNotes ? idStaffNotes.value : '');
                     formData.append('assigned_staff', idAssignedStaff ? idAssignedStaff.value : '');
-                    formData.append('status', idStatus ? idStatus.value : ''); // Status is disabled, but its value is still needed
+                    formData.append('status', idStatus ? idStatus.value : ''); 
                     formData.append('request_type', idRequestType ? idRequestType.value : '');
 
                     const modalAmenityBillAddedCheckbox = document.getElementById('modalAmenityBillAdded');
@@ -1843,7 +1921,6 @@
             const cancelAssignButton = document.getElementById('cancelAssignButton');
             const assignStaffForm = document.getElementById('assignStaffForm');
 
-            // Hidden fields for assign staff form
             const assignRoomNumber = document.getElementById('assignRoomNumber');
             const assignRawText = document.getElementById('assignRawText');
             const assignRequestType = document.getElementById('assignRequestType');
@@ -1854,20 +1931,18 @@
 
 
             document.querySelectorAll('.assign-request-button').forEach(button => {
-                button.addEventListener('click', async () => { // Made async to fetch details
+                button.addEventListener('click', async () => { 
                     console.log("Assign Request button clicked."); 
                     const requestId = button.dataset.requestId;
 
                     try {
-                        // Fetch current request details to get all required fields for the form
                         const currentRequestResponse = await fetch(`/api/requests/${requestId}/details/`);
                         const currentRequestData = await currentRequestResponse.json();
 
                         if (currentRequestData.success) {
                             if (assignRequestIdInput) assignRequestIdInput.value = requestId;
-                            if (assignStaffSelect) assignStaffSelect.value = currentRequestData.raw_assigned_staff_id || ''; // Pre-select if already assigned
+                            if (assignStaffSelect) assignStaffSelect.value = currentRequestData.raw_assigned_staff_id || ''; 
 
-                            // Populate hidden fields with current data
                             if (assignRoomNumber) assignRoomNumber.value = currentRequestData.room_number || '';
                             if (assignRawText) assignRawText.value = currentRequestData.raw_text || '';
                             if (assignRequestType) assignRequestType.value = currentRequestData.raw_request_type_value || '';
@@ -1911,7 +1986,6 @@
                     const requestId = assignRequestIdInput ? assignRequestIdInput.value : '';
                     const url = `/api/requests/${requestId}/update/`; 
 
-                    // FormData now includes all required fields from hidden inputs
                     const formData = new FormData(assignStaffForm);
 
                     try {
