@@ -59,37 +59,200 @@
             margin: 0;
             padding: 0;
             line-height: 1.6;
+            display: flex; /* Use flexbox for layout */
+            min-height: 100vh; /* Full viewport height */
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
+        .sidebar {
+            width: 250px;
+            background-color: var(--card-bg); /* Use card-bg for sidebar for consistency */
+            padding: 20px;
+            box-shadow: 2px 0 5px var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+            transition: width 0.3s ease;
+            position: fixed; /* Make sidebar fixed */
+            height: 100vh; /* Full height */
+            top: 0;
+            left: 0;
+            overflow-y: auto; /* Enable scrolling for sidebar content if it overflows */
+            z-index: 999; /* Ensure sidebar is above main content but below modals */
         }
 
-        .header {
+        .sidebar.collapsed {
+            width: 80px; /* Collapsed width */
+        }
+
+        .sidebar h2 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            white-space: nowrap; /* Prevent text wrapping */
+            overflow: hidden; /* Hide overflow when collapsed */
+        }
+
+        .sidebar.collapsed h2 {
+            font-size: 1.2em; /* Smaller font when collapsed */
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: var(--secondary-text); /* Use secondary-text for links */
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .sidebar nav ul li a i {
+            margin-right: 10px;
+            font-size: 1.1em;
+            transition: margin-right 0.3s ease;
+        }
+
+        .sidebar.collapsed nav ul li a i {
+            margin-right: 0; /* No margin when collapsed */
+        }
+
+        .sidebar nav ul li a span {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed nav ul li a span {
+            opacity: 0; /* Hide text when collapsed */
+            width: 0; /* Collapse text width */
+        }
+
+        .sidebar nav ul li a:hover {
+            background-color: var(--hover-bg); /* Use hover-bg */
+            color: var(--text); /* Darker text on hover */
+        }
+
+        .sidebar nav ul li a.active {
+            background-color: var(--active-bg); /* Use active-bg */
+            color: var(--primary); /* Primary color for active link */
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 15px;
+            background-color: var(--input-bg); /* Use input-bg for logout button */
+            color: var(--secondary-text);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--hover-bg);
+            color: var(--text);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-left: 250px; /* Initial margin to offset fixed sidebar */
+            transition: margin-left 0.3s ease; /* Adjust margin for sidebar collapse */
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 80px; /* Adjust based on sidebar collapsed width */
+        }
+
+        .header-main {
             background-color: var(--card-bg);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px var(--shadow-light);
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
         }
 
-        .header h1 {
+        .header-main h1 {
             margin: 0;
             color: var(--primary);
+            flex-grow: 1; /* Allow title to take space */
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto; /* Push controls to the right */
+        }
+
+        .header-controls span {
+            font-weight: 500;
+            color: var(--secondary-text);
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            position: relative;
+            padding: 5px; /* Add padding for easier clicking */
+        }
+
+        .icon-button:hover {
+            color: var(--primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background-color: var(--error);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 0.7em;
+            font-weight: 700;
+            display: none; /* Hidden by default */
         }
 
         .card {
             background-color: var(--card-bg);
-            padding: 20px;
+            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px var(--shadow-light);
+            box-shadow: 0 2px 5px var(--shadow-light);
             margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
         }
 
         .data-table {
@@ -116,6 +279,13 @@
             background-color: var(--hover-bg);
         }
 
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
         .btn {
             padding: 10px 15px;
             border: none;
@@ -128,6 +298,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            white-space: nowrap; /* Prevent button text from wrapping */
         }
         .btn-primary {
             background-color: var(--primary);
@@ -145,6 +316,25 @@
         .btn-success:hover {
             background-color: darken(var(--success), 10%);
         }
+        .btn-danger {
+            background-color: var(--error);
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background-color: darken(var(--error), 10%);
+        }
+        .btn-secondary {
+            background-color: var(--input-bg);
+            color: var(--text);
+        }
+        .btn-secondary:hover {
+            background-color: var(--hover-bg);
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
         .badge {
             display: inline-block;
             padding: 5px 10px;
@@ -153,11 +343,12 @@
             font-weight: 600;
             text-transform: capitalize;
         }
-        .badge-pending { background-color: #FFECB3; color: #FF8F00; }
-        .badge-in_progress { background-color: #BBDEFB; color: #1976D2; }
-        .badge-completed { background-color: #C8E6C9; color: #388E3C; }
-        .badge-cancelled { background-color: #FFCDD2; color: #D32F2F; }
+        .badge-pending { background-color: #FFECB3; color: #FF8F00; } /* Warning yellow */
+        .badge-in_progress { background-color: #BBDEFB; color: #1976D2; } /* Info blue */
+        .badge-completed { background-color: #C8E6C9; color: #388E3C; } /* Success green */
+        .badge-cancelled { background-color: #FFCDD2; color: #D32F2F; } /* Error red */
 
+        /* Message Box */
         .message-box {
             position: fixed;
             top: 20px;
@@ -172,111 +363,235 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
             z-index: 1001; /* Above modals */
         }
+
         .message-box.show {
             opacity: 1;
             transform: translateY(0);
         }
+
         .message-box.success { background-color: var(--success); }
         .message-box.error { background-color: var(--error); }
+        .message-box.info { background-color: var(--info); }
+        .message-box.warning { background-color: var(--warning); }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                box-shadow: 0 2px 5px var(--shadow-light);
+                position: relative; /* Make sidebar relative on mobile */
+                overflow-y: visible; /* Allow content to push height */
+            }
+            .sidebar.collapsed {
+                width: 100%;
+                height: auto;
+            }
+            .sidebar nav ul {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .sidebar nav ul li {
+                margin: 5px;
+            }
+            .sidebar nav ul li a {
+                padding: 8px 12px;
+            }
+            .sidebar nav ul li a i {
+                margin-right: 5px;
+            }
+            .sidebar.collapsed nav ul li a span {
+                opacity: 1; /* Always show text on mobile */
+                width: auto;
+            }
+            .main-content {
+                padding: 15px;
+                margin-left: 0; /* No margin adjustment on mobile */
+            }
+            .header-main {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .header-controls {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>
+    {% csrf_token %} <!-- CSRF token for Django forms -->
     <div class="message-box" id="messageBox"></div>
 
-    <div class="container">
-        <header class="header">
-            <h1>Employee Dashboard</h1>
-            <div>
-                <span>Welcome, {{ logged_in_staff_member.user.username }} ({{ logged_in_staff_member.get_category_display }})</span>
-                <a href="{% url 'logout' %}" class="btn btn-secondary btn-sm" style="margin-left: 15px;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+    <div class="sidebar" id="sidebar">
+        <div>
+            <h2>ConciAI</h2>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'main:employee_dashboard' %}" class="{% if current_main_tab == 'employee_dashboard' %}active{% endif %}"><i class="fas fa-tasks"></i> <span>My Tasks</span></a></li>
+                    <!-- Add more navigation items as needed for employee -->
+                </ul>
+            </nav>
+        </div>
+        <!-- Sidebar Toggle Button - Moved inside sidebar -->
+        <button id="sidebarToggle" class="icon-button" style="position: absolute; bottom: 20px; right: 20px; background: var(--input-bg); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px var(--shadow-light);">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <a href="{% url 'logout' %}" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <header class="header-main">
+            <h1>{{ page_title }}</h1>
+            <div class="header-controls">
+                <span style="font-weight: 500;">Welcome, {{ logged_in_staff_member.user.username }}</span>
             </div>
         </header>
 
         <div class="card">
-            <h2>Your Assigned Tasks</h2>
-            {% if assigned_tasks %}
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
+            <h2>Assigned Tasks</h2>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Room</th>
+                            <th>Guest</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Received At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in assigned_tasks %}
                             <tr>
-                                <th>Request ID</th>
-                                <th>Room</th>
-                                <th>Request Type</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Received At</th>
-                                <th>Actions</th>
+                                <td>{{ request.id }}</td>
+                                <td>{{ request.room_number }}</td>
+                                <td>{{ request.guest_room_assignment.guest_names|default:"N/A" }}</td>
+                                <td>{{ request.raw_text|truncatechars:70 }}</td>
+                                <td><span class="badge badge-{{ request.status }}">{{ request.get_status_display }}</span></td>
+                                <td>{{ request.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if request.status != 'completed' %}
+                                        <button class="btn btn-success btn-sm complete-task-button" data-request-id="{{ request.id }}">Mark as Complete</button>
+                                    {% else %}
+                                        <span class="badge badge-completed">Completed</span>
+                                    {% endif %}
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {% for task in assigned_tasks %}
-                                <tr>
-                                    <td>{{ task.id }}</td>
-                                    <td>{{ task.room_number }}</td>
-                                    <td>{{ task.get_request_type_display }}</td>
-                                    <td>{{ task.raw_text|truncatechars:100 }}</td>
-                                    <td><span class="badge badge-{{ task.status }}">{{ task.get_status_display }}</span></td>
-                                    <td>{{ task.timestamp|date:"M d, Y H:i" }}</td>
-                                    <td>
-                                        {% if task.status != 'completed' %}
-                                            <button class="btn btn-success btn-sm complete-task-button" data-request-id="{{ task.id }}">Mark Complete</button>
-                                        {% else %}
-                                            <span class="badge badge-completed">Completed</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text-center">No assigned tasks found.</p>
-            {% endif %}
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No assigned tasks found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <script>
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const messageBox = document.getElementById('messageBox');
+    <script defer>
+        console.log("Employee Dashboard Script loading..."); // Debugging: Check if script starts
 
-        function showMessage(message, type = 'info') {
-            messageBox.textContent = message;
-            messageBox.className = `message-box show ${type}`;
-            setTimeout(() => {
-                messageBox.classList.remove('show');
-            }, 5000);
+        // Global utility function to show messages
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            if (messageBox) {
+                messageBox.textContent = message;
+                messageBox.className = ''; // Clear existing classes
+                messageBox.classList.add('show', type);
+                setTimeout(() => {
+                    messageBox.classList.remove('show');
+                }, 3000);
+            }
         }
 
-        document.querySelectorAll('.complete-task-button').forEach(button => {
-            button.addEventListener('click', async (e) => {
-                const requestId = e.target.dataset.requestId;
-                const url = `/api/employee/requests/${requestId}/complete/`;
+        // CSRF Token for AJAX requests
+        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
+        console.log("CSRF Token:", csrfToken ? "Found" : "Not Found");
 
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrfToken,
-                            'Content-Type': 'application/json' // Important for Django's JsonResponse
-                        },
-                        body: JSON.stringify({}) // Send empty JSON body
-                    });
-                    const result = await response.json();
+        // Theme Toggle Logic (copied from staff_dashboard for consistency, though not directly used on employee dashboard currently)
+        const htmlElement = document.documentElement;
+        // The employee dashboard doesn't have a theme toggle button in the provided HTML,
+        // so we'll just set the initial theme based on localStorage.
+        function setInitialTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            htmlElement.setAttribute('data-theme', savedTheme);
+            console.log("Initial theme set to:", savedTheme);
+        }
 
-                    if (result.success) {
-                        showMessage(result.message, 'success');
-                        location.reload(); // Reload to reflect status change
-                    } else {
-                        showMessage(result.error || 'Failed to complete task.', 'error');
+        // Centralized Initialization Function for Employee Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOMContentLoaded fired for Employee Dashboard. Initializing elements...");
+            setInitialTheme(); // Set theme immediately when DOM is ready
+
+            // Sidebar Toggle Logic
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarToggleIcon = sidebarToggle ? sidebarToggle.querySelector('i') : null;
+
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    if (sidebar) sidebar.classList.toggle('collapsed');
+                    if (mainContent) mainContent.classList.toggle('sidebar-collapsed');
+                    if (sidebar && sidebarToggleIcon) {
+                        if (sidebar.classList.contains('collapsed')) {
+                            sidebarToggleIcon.classList.remove('fa-chevron-left');
+                            sidebarToggleIcon.classList.add('fa-chevron-right');
+                        } else {
+                            sidebarToggleIcon.classList.remove('fa-chevron-right');
+                            sidebarToggleIcon.classList.add('fa-chevron-left');
+                        }
                     }
-                } catch (error) {
-                    console.error('Error completing task:', error);
-                    showMessage('Network error or server issue completing task.', 'error');
-                }
+                    console.log("Sidebar toggled.");
+                });
+            } else {
+                console.warn("sidebarToggle not found on employee_dashboard.");
+            }
+
+            // Mark as Complete Button Logic
+            document.querySelectorAll('.complete-task-button').forEach(button => {
+                console.log("Attaching listener to complete-task-button:", button); // Debugging
+                button.addEventListener('click', async (e) => {
+                    console.log("Mark as Complete button clicked."); // Debugging
+                    const requestId = e.target.dataset.requestId;
+                    const url = `/api/employee/requests/${requestId}/complete/`;
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken,
+                                'Content-Type': 'application/json' // Important for Django's JsonResponse
+                            },
+                            body: JSON.stringify({}) // Send empty JSON body
+                        });
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showMessage(result.message, 'success');
+                            location.reload(); // Reload to reflect status change
+                        } else {
+                            showMessage(result.error || 'Failed to complete task.', 'error');
+                            console.error('API Error:', result.error); // Log API error
+                        }
+                    } catch (error) {
+                        console.error('Error completing task:', error);
+                        showMessage('Network error or server issue completing task.', 'error');
+                    }
+                });
             });
-        });
+            console.log("Employee Dashboard initialization complete.");
+        }); // End DOMContentLoaded
     </script>
 </body>
 </html>
