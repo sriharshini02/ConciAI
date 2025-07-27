@@ -11,89 +11,89 @@
     <!-- D3.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        /* New Color Palette for Light and Dark Mode */
+        /* Refined Color Palette for Light and Dark Mode */
         :root {
-            /* Light Mode Colors */
-            --primary-blue: #4299E1; /* A vibrant, professional blue */
-            --primary-dark-blue: #3182CE; /* Darker blue for hover/active */
-            --accent-green: #48BB78; /* A fresh green for success/accent */
-            --accent-orange: #F6AD55; /* A warm orange for warnings/accents */
-            --bg-light: #F8F9FA; /* Very light background */
+            /* Light Mode Colors (Softer Tones) */
+            --primary-blue: #3B82F6; /* Slightly softer blue */
+            --primary-dark-blue: #2563EB; /* Darker blue for hover/active */
+            --accent-green: #22C55E; /* A pleasant green */
+            --accent-orange: #F97316; /* A warm, less bright orange */
+            --bg-light: #F9FAFB; /* Very light, almost off-white background */
             --card-bg-light: #FFFFFF; /* Pure white for cards */
-            --text-dark: #2D3748; /* Dark charcoal text */
-            --text-medium: #4A5568; /* Medium gray text */
-            --text-light: #718096; /* Light gray for secondary text/placeholders */
-            --border-light: #E2E8F0; /* Light border color */
-            --input-bg-light: #EDF2F7; /* Light input background */
-            --shadow-light: rgba(0, 0, 0, 0.08); /* Soft shadow */
+            --text-dark: #1F2937; /* Dark charcoal text */
+            --text-medium: #4B5563; /* Medium gray text */
+            --text-light: #6B7280; /* Light gray for secondary text/placeholders */
+            --border-light: #E5E7EB; /* Subtle border color */
+            --input-bg-light: #F3F4F6; /* Light input background */
+            --shadow-light: rgba(0, 0, 0, 0.05); /* Soft shadow */
 
             /* Status Badges */
-            --badge-pending-bg: #FEF3C7; /* Light yellow */
-            --badge-pending-text: #B45309; /* Dark orange */
-            --badge-in-progress-bg: #DBEAFE; /* Light blue */
-            --badge-in-progress-text: #1E40AF; /* Dark blue */
-            --badge-completed-bg: #D1FAE5; /* Light green */
-            --badge-completed-text: #065F46; /* Dark green */
-            --badge-cancelled-bg: #FEE2E2; /* Light red */
-            --badge-cancelled-text: #991B1B; /* Dark red */
+            --badge-pending-bg: #FEFCE8; /* Very light yellow */
+            --badge-pending-text: #CA8A04; /* Darker yellow/orange */
+            --badge-in-progress-bg: #EFF6FF; /* Very light blue */
+            --badge-in-progress-text: #1D4ED8; /* Darker blue */
+            --badge-completed-bg: #F0FDF4; /* Very light green */
+            --badge-completed-text: #15803D; /* Darker green */
+            --badge-cancelled-bg: #FEF2F2; /* Very light red */
+            --badge-cancelled-text: #DC2626; /* Darker red */
 
             /* Specific Request Types (adjust as needed) */
-            --badge-amenity_request-bg: #EEDDFF; /* Light purple */
-            --badge-amenity_request-text: #6A1B9A; /* Dark purple */
-            --badge-maintenance-bg: #FFDCDC; /* Light red */
-            --badge-maintenance-text: #C62828; /* Dark Red */
-            --badge-housekeeping-bg: #D1FAE5; /* Light green */
-            --badge-housekeeping-text: #2E7D32; /* Dark Green */
-            --badge-room_service-bg: #FFF9C4; /* Light yellow */
-            --badge-room_service-text: #FBC02D; /* Dark Yellow */
-            --badge-concierge-bg: #DBEAFE; /* Light blue */
-            --badge-concierge-text: #1565C0; /* Dark Blue */
-            --badge-general_inquiry-bg: #E0E0E0; /* Grey */
-            --badge-general_inquiry-text: #424242; /* Dark Grey */
-            --badge-casual_chat-bg: #CFD8DC; /* Light Grey */
-            --badge-casual_chat-text: #546E7A; /* Dark Grey */
+            --badge-amenity_request-bg: #F5F3FF; /* Very light purple */
+            --badge-amenity_request-text: #6D28D9; /* Dark purple */
+            --badge-maintenance-bg: #FFF1F2; /* Light red */
+            --badge-maintenance-text: #BE123C; /* Dark Red */
+            --badge-housekeeping-bg: #ECFDF5; /* Light green */
+            --badge-housekeeping-text: #047857; /* Dark Green */
+            --badge-room_service-bg: #FFFBEB; /* Light yellow */
+            --badge-room_service-text: #D97706; /* Dark Yellow */
+            --badge-concierge-bg: #E0F2FE; /* Light blue */
+            --badge-concierge-text: #0369A1; /* Dark Blue */
+            --badge-general_inquiry-bg: #F3F4F6; /* Grey */
+            --badge-general_inquiry-text: #374151; /* Dark Grey */
+            --badge-casual_chat-bg: #E5E7EB; /* Light Grey */
+            --badge-casual_chat-text: #4B5563; /* Dark Grey */
         }
 
-        /* Dark Mode Colors */
+        /* Dark Mode Colors (Softer Tones) */
         html[data-theme='dark'] {
-            --primary-blue: #63B3ED;
-            --primary-dark-blue: #4299E1;
-            --accent-green: #68D391;
-            --accent-orange: #F6AD55;
-            --bg-light: #1A202C; /* Dark background */
-            --card-bg-light: #2D3748; /* Darker cards */
-            --text-dark: #E2E8F0; /* Light text */
-            --text-medium: #A0AEC0;
-            --text-light: #718096;
-            --border-light: #4A5568;
-            --input-bg-light: #4A5568;
-            --shadow-light: rgba(0, 0, 0, 0.4);
+            --primary-blue: #60A5FA; /* Lighter blue for dark mode */
+            --primary-dark-blue: #3B82F6;
+            --accent-green: #4ADE80;
+            --accent-orange: #FB923C;
+            --bg-light: #111827; /* Darker background */
+            --card-bg-light: #1F2937; /* Darker cards */
+            --text-dark: #F9FAFB; /* Lighter text */
+            --text-medium: #D1D5DB;
+            --text-light: #9CA3AF;
+            --border-light: #374151;
+            --input-bg-light: #374151;
+            --shadow-light: rgba(0, 0, 0, 0.6);
 
             /* Status Badges for Dark Mode */
-            --badge-pending-bg: #744210;
-            --badge-pending-text: #F6AD55;
-            --badge-in-progress-bg: #2B6CB0;
-            --badge-in-progress-text: #90CDF4;
-            --badge-completed-bg: #2F855A;
-            --badge-completed-text: #9AE6B4;
-            --badge-cancelled-bg: #9B2C2C;
-            --badge-cancelled-text: #FC8181;
+            --badge-pending-bg: #422006;
+            --badge-pending-text: #FBBF24;
+            --badge-in-progress-bg: #1E3A8A;
+            --badge-in-progress-text: #93C5FD;
+            --badge-completed-bg: #065F46;
+            --badge-completed-text: #6EE7B7;
+            --badge-cancelled-bg: #7F1D1D;
+            --badge-cancelled-text: #F87171;
 
             /* Specific Request Types (Dark Mode) */
-            --badge-amenity_request-bg: #553C9A;
-            --badge-amenity_request-text: #D6BCFA;
-            --badge-maintenance-bg: #C53030;
-            --badge-maintenance-text: #FC8181;
-            --badge-housekeeping-bg: #38A169;
-            --badge-housekeeping-text: #9AE6B4;
-            --badge-room_service-bg: #D69E2E;
-            --badge-room_service-text: #FBD38D;
-            --badge-concierge-bg: #3182CE;
-            --badge-concierge-text: #90CDF4;
-            --badge-general_inquiry-bg: #718096;
-            --badge-general_inquiry-text: #CBD5E0;
-            --badge-casual_chat-bg: #4A5568;
-            --badge-casual_chat-text: #CBD5E0;
+            --badge-amenity_request-bg: #4C1D95;
+            --badge-amenity_request-text: #C4B5FD;
+            --badge-maintenance-bg: #991B1B;
+            --badge-maintenance-text: #FCA5A5;
+            --badge-housekeeping-bg: #047857;
+            --badge-housekeeping-text: #A7F3D0;
+            --badge-room_service-bg: #92400E;
+            --badge-room_service-text: #FDBA74;
+            --badge-concierge-bg: #2563EB;
+            --badge-concierge-text: #93C5FD;
+            --badge-general_inquiry-bg: #4B5563;
+            --badge-general_inquiry-text: #D1D5DB;
+            --badge-casual_chat-bg: #374151;
+            --badge-casual_chat-text: #9CA3AF;
         }
 
         body {
@@ -118,17 +118,17 @@
             justify-content: space-between;
             flex-shrink: 0;
             transition: width 0.3s ease, padding 0.3s ease;
-            position: fixed; /* Fixed sidebar */
+            position: fixed;
             height: 100vh;
             top: 0;
             left: 0;
             overflow-y: auto;
-            z-index: 100; /* Ensure it's above main content */
+            z-index: 100;
         }
 
         .sidebar.collapsed {
             width: 80px;
-            padding: 20px 0; /* Adjust padding when collapsed */
+            padding: 20px 0;
         }
 
         .sidebar h2 {
@@ -138,12 +138,16 @@
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
-            padding: 0 10px; /* Add padding to prevent text touching edges */
+            padding: 0 10px;
         }
 
         .sidebar.collapsed h2 {
             font-size: 1.2em;
-            text-align: center; /* Ensure center alignment even when text is hidden */
+            text-align: center;
+        }
+
+        .sidebar nav {
+            flex-grow: 1; /* Allow navigation to take available space */
         }
 
         .sidebar nav ul {
@@ -174,8 +178,8 @@
 
         .sidebar.collapsed nav ul li a i {
             margin-right: 0;
-            justify-content: center; /* Center icon when text is hidden */
-            width: 100%; /* Take full width for centering */
+            justify-content: center;
+            width: 100%;
         }
 
         .sidebar nav ul li a span {
@@ -183,29 +187,29 @@
             transition: opacity 0.3s ease, width 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
-            flex-grow: 1; /* Allow text to take space */
+            flex-grow: 1;
         }
 
         .sidebar.collapsed nav ul li a span {
             opacity: 0;
             width: 0;
-            padding: 0; /* Remove padding when hidden */
+            padding: 0;
         }
 
         .sidebar nav ul li a:hover {
             background-color: var(--input-bg-light);
             color: var(--text-dark);
-            transform: translateY(-2px); /* Subtle lift effect */
+            transform: translateY(-2px);
         }
 
         .sidebar nav ul li a.active {
             background-color: var(--primary-blue);
             color: white;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); /* Adjust shadow for new primary blue */
         }
         .sidebar nav ul li a.active i {
-            color: white; /* Ensure icon color matches active state */
+            color: white;
         }
 
         .logout-btn {
@@ -219,6 +223,20 @@
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
             margin-top: 20px;
+            width: calc(100% - 20px); /* Adjust width for padding */
+            align-self: center; /* Center the button */
+        }
+
+        .sidebar.collapsed .logout-btn {
+            width: 40px; /* Adjust width for collapsed state */
+            padding: 12px 0; /* Adjust padding */
+            margin: 20px auto 0; /* Center horizontally */
+        }
+        .sidebar.collapsed .logout-btn span {
+            display: none; /* Hide text */
+        }
+        .sidebar.collapsed .logout-btn i {
+            margin: 0; /* No margin */
         }
 
         .logout-btn:hover {
@@ -229,8 +247,9 @@
         /* Sidebar Toggle Button specific styling */
         .sidebar-toggle-button {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
+            bottom: 70px; /* Adjusted position to be above logout button */
+            left: 50%;
+            transform: translateX(-50%);
             background: var(--input-bg-light);
             border: none;
             border-radius: 50%;
@@ -243,13 +262,17 @@
             cursor: pointer;
             color: var(--text-medium);
             transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
-            z-index: 101; /* Ensure it's above sidebar content */
+            z-index: 101;
         }
 
         .sidebar-toggle-button:hover {
             background-color: var(--primary-blue);
             color: white;
-            transform: scale(1.05);
+            transform: translateX(-50%) scale(1.05);
+        }
+        .sidebar.collapsed .sidebar-toggle-button {
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .main-content {
@@ -313,7 +336,7 @@
             position: absolute;
             top: 0px;
             right: 0px;
-            background-color: var(--badge-cancelled-text); /* Use a strong error color */
+            background-color: var(--badge-cancelled-text);
             color: white;
             border-radius: 50%;
             padding: 3px 7px;
@@ -359,7 +382,7 @@
         }
 
         .stat-item:hover {
-            transform: translateY(-3px); /* Hover effect */
+            transform: translateY(-3px);
         }
 
         .stat-item .icon {
@@ -378,7 +401,7 @@
         .stat-item p {
             font-size: 2em;
             font-weight: 700;
-            color: var(--text-dark); /* Use dark text for numbers */
+            color: var(--text-dark);
             margin: 10px 0 0;
         }
 
@@ -421,8 +444,8 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            border-radius: 8px; /* Rounded corners for table */
-            overflow: hidden; /* Ensures rounded corners apply */
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .data-table th, .data-table td {
@@ -440,7 +463,7 @@
         }
 
         .data-table tbody tr:last-child td {
-            border-bottom: none; /* No border on last row */
+            border-bottom: none;
         }
 
         .data-table tbody tr:hover {
@@ -469,19 +492,19 @@
             white-space: nowrap;
         }
         .btn:hover {
-            transform: translateY(-2px); /* Subtle lift effect */
+            transform: translateY(-2px);
         }
         .btn-primary {
             background-color: var(--primary-blue);
             color: #fff;
-            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
         .btn-primary:hover {
             background-color: var(--primary-dark-blue);
-            box-shadow: 0 4px 8px rgba(66, 153, 225, 0.4);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
         }
         .btn-info {
-            background-color: var(--primary-blue); /* Using primary blue for info as well */
+            background-color: var(--primary-blue);
             color: #fff;
         }
         .btn-info:hover {
@@ -492,14 +515,14 @@
             color: #fff;
         }
         .btn-success:hover {
-            background-color: #38A169; /* Darker green */
+            background-color: #16A34A; /* Darker green */
         }
         .btn-danger {
-            background-color: var(--badge-cancelled-text); /* Using the dark red for danger */
+            background-color: var(--badge-cancelled-text);
             color: #fff;
         }
         .btn-danger:hover {
-            background-color: #C53030; /* Darker red */
+            background-color: #B91C1C; /* Darker red */
         }
         .btn-secondary {
             background-color: var(--input-bg-light);
@@ -517,7 +540,7 @@
         .badge {
             display: inline-block;
             padding: 6px 12px;
-            border-radius: 20px; /* More rounded pill shape */
+            border-radius: 20px;
             font-size: 0.8em;
             font-weight: 600;
             text-transform: capitalize;
@@ -541,7 +564,7 @@
             border-bottom: 1px solid var(--border-light);
             margin-bottom: 20px;
             overflow-x: auto;
-            gap: 15px; /* Spacing between tabs */
+            gap: 15px;
         }
 
         .tab-nav-item {
@@ -694,7 +717,7 @@
 
         .form-control:focus {
             border-color: var(--primary-blue);
-            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
             outline: none;
         }
 
@@ -762,19 +785,19 @@
             margin-bottom: 8px;
             padding: 5px;
             border-radius: 5px;
-            word-wrap: break-word; /* Ensure long words wrap */
+            word-wrap: break-word;
         }
         .chat-message.user {
-            background-color: var(--primary-blue); /* User messages in primary blue */
+            background-color: var(--primary-blue);
             color: white;
             text-align: right;
-            margin-left: 20%; /* Align right */
+            margin-left: 20%;
         }
         .chat-message.conci {
-            background-color: var(--input-bg-light); /* Conci messages in light background */
+            background-color: var(--input-bg-light);
             color: var(--text-dark);
             text-align: left;
-            margin-right: 20%; /* Align left */
+            margin-right: 20%;
         }
         html[data-theme='dark'] .chat-message.user {
             background-color: var(--primary-dark-blue);
@@ -798,9 +821,9 @@
                 width: 100%;
                 height: auto;
                 box-shadow: 0 2px 5px var(--shadow-light);
-                position: relative; /* Make sidebar relative on mobile */
-                overflow-y: visible; /* Allow content to push height */
-                padding-bottom: 60px; /* Space for toggle button */
+                position: relative;
+                overflow-y: visible;
+                padding-bottom: 60px;
             }
             .sidebar.collapsed {
                 width: 100%;
@@ -822,17 +845,19 @@
                 margin-right: 5px;
             }
             .sidebar.collapsed nav ul li a span {
-                opacity: 1; /* Always show text on mobile */
+                opacity: 1;
                 width: auto;
             }
             .sidebar-toggle-button {
                 position: absolute;
                 bottom: 10px;
                 right: 10px;
+                left: auto; /* Override left: 50% */
+                transform: none; /* Override transform: translateX(-50%) */
             }
             .main-content {
                 padding: 15px;
-                margin-left: 0; /* No margin adjustment on mobile */
+                margin-left: 0;
             }
             .header-main {
                 flex-direction: column;
@@ -871,7 +896,7 @@
                 </ul>
             </nav>
         </div>
-        <!-- Sidebar Toggle Button - Moved inside sidebar -->
+        <!-- Sidebar Toggle Button - Moved inside sidebar and adjusted position -->
         <button id="sidebarToggle" class="sidebar-toggle-button">
             <i class="fas fa-chevron-left"></i>
         </button>
@@ -1587,12 +1612,12 @@
                         .attr("transform", `translate(0,${height})`)
                         .call(d3.axisBottom(x).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--text-medium)"); /* Use new text color */
+                        .style("fill", "var(--text-medium)");
 
                     g.append("g")
                         .call(d3.axisLeft(y).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--text-medium)"); /* Use new text color */
+                        .style("fill", "var(--text-medium)");
 
                     g.append("g")
                         .attr("class", "grid")
@@ -1619,7 +1644,7 @@
                         .attr("y", d => y(d.booked))
                         .attr("width", x.bandwidth() / 2)
                         .attr("height", d => height - y(d.booked))
-                        .attr("fill", "var(--primary-blue)"); /* Use new color */
+                        .attr("fill", "var(--primary-blue)");
 
                     g.selectAll(".bar-cancelled")
                         .data(reservationsData)
@@ -1629,7 +1654,7 @@
                         .attr("y", d => y(d.cancelled))
                         .attr("width", x.bandwidth() / 2)
                         .attr("height", d => height - y(d.cancelled))
-                        .attr("fill", "var(--badge-cancelled-text)"); /* Use new color */
+                        .attr("fill", "var(--badge-cancelled-text)");
                 }
 
                 function drawBookingPlatformChart() {
@@ -1649,8 +1674,8 @@
                     const color = d3.scaleOrdinal()
                         .range([
                             "var(--primary-blue)", "var(--accent-green)",
-                            "var(--accent-orange)", "#63B3ED", /* Lighter blue */
-                            "#805AD5", /* Purple */ "#DD6B20" /* Dark orange */
+                            "var(--accent-orange)", "var(--primary-dark-blue)", 
+                            "var(--badge-amenity_request-text)", "var(--badge-maintenance-text)" 
                         ]);
 
                     const pie = d3.pie()
@@ -1677,7 +1702,7 @@
                         .attr("transform", d => `translate(${label.centroid(d)})`)
                         .attr("text-anchor", "middle")
                         .text(d => `${d.data.platform} (${d.data.value}%)`)
-                        .style("fill", "var(--text-dark)") /* Use new text color */
+                        .style("fill", "var(--text-dark)")
                         .style("font-size", "0.8em");
                 }
 

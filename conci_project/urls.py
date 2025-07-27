@@ -16,7 +16,7 @@ urlpatterns = [
 
     # Django's built-in login/logout views (as you defined them)
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='registration/logout.html'), name='logout'),
     
     # IMPORTANT: Include your main app's URLs here!
     # This will make all paths defined in main/urls.py accessible.
