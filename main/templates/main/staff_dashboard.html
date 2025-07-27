@@ -11,18 +11,18 @@
     <!-- D3.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        /* Restored Color Palette from user's provided snippet, with Dark Mode additions */
+        /* Refined Color Palette from user's provided snippet, with Dark Mode additions */
         :root {
             /* Light Mode Colors */
-            --light-gray-bg: #F0F2F5; /* Main background, slightly darker than sidebar */
-            --off-white: #FFFFFF;      /* Sidebar, Card, Modal background */
-            --dark-text: #2C3E50;      /* Dark charcoal for main text, headers, primary buttons */
+            --light-gray-bg: #F0F2F5;      /* Main background, slightly darker than sidebar */
+            --off-white: #FFFFFF;          /* Sidebar, Card, Modal background */
+            --dark-text: #2C3E50;          /* Dark charcoal for main text, headers, primary buttons */
             --medium-gray-border: #D1D9E6; /* Light border for cards, inputs */
-            --light-blue-accent: #4A90E2; /* For links, active states */
-            --success-color: #28a745; /* Standard green for success */
-            --error-color: #dc3545;    /* Standard red for error */
-            --warning-color: #ffc107; /* Standard yellow for warning */
-            --info-color: #17a2b8;    /* Standard blue for info */
+            --light-blue-accent: #4A90E2;  /* For links, active states */
+            --success-color: #28a745;      /* Standard green for success */
+            --error-color: #dc3545;        /* Standard red for error */
+            --warning-color: #ffc107;      /* Standard yellow for warning */
+            --info-color: #17a2b8;         /* Standard blue for info */
 
             /* Mapping to UI elements */
             --sidebar-bg: var(--off-white);
@@ -78,13 +78,13 @@
             --badge-casual_chat-text: #546E7A; /* Blue-grey */
         }
 
-        /* Dark Mode Colors (Less Bright) */
+        /* Dark Mode Colors (Less Bright, Adjusted for Visibility) */
         html[data-theme='dark'] {
-            --light-gray-bg: #1A202C; /* Dark background */
-            --off-white: #2D3748;      /* Darker sidebar, card, modal background */
-            --dark-text: #E2E8F0;      /* Light text */
+            --light-gray-bg: #1A202C;      /* Dark background */
+            --off-white: #2D3748;          /* Darker sidebar, card, modal background */
+            --dark-text: #E2E8F0;          /* Light text */
             --medium-gray-border: #4A5568; /* Darker border */
-            --light-blue-accent: #63B3ED; /* Lighter blue for dark mode */
+            --light-blue-accent: #63B3ED;  /* Lighter blue for dark mode */
             --success-color: #48BB78;
             --error-color: #FC8181;
             --warning-color: #F6AD55;
@@ -142,6 +142,12 @@
             --badge-general_inquiry-text: #CBD5E0;
             --badge-casual_chat-bg: #4A5568;
             --badge-casual_chat-text: #CBD5E0;
+
+            /* Dark Mode Icon Visibility Fix */
+            .header .user-info .notification-bell,
+            .header .user-info #themeToggleButton {
+                color: var(--dark-text); /* Ensure icons are visible against dark background */
+            }
         }
 
         body {
@@ -351,11 +357,16 @@
             gap: 15px;
         }
 
-        .header .user-info .notification-bell {
+        .header .user-info .notification-bell,
+        .header .user-info #themeToggleButton {
             position: relative;
             cursor: pointer;
-            color: var(--dark-text);
-            font-size: 1.5em;
+            color: var(--dark-text); /* Default for light mode */
+            font-size: 1.5em; /* Adjusted for better visibility */
+            background: none; /* Ensure no background */
+            border: none; /* Ensure no border */
+            padding: 0; /* Remove default button padding */
+            line-height: 1; /* Align icon vertically */
         }
 
         .header .user-info .notification-bell .badge {
@@ -377,7 +388,7 @@
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjusted minmax for smaller cards */
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -474,27 +485,32 @@
             display: flex;
             margin-bottom: 20px;
             border-bottom: 2px solid var(--dark-text);
+            gap: 10px; /* Increased gap between tabs */
         }
 
-        .request-tabs button {
-            background-color: transparent;
-            border: none;
+        .request-tabs a { /* Changed from button to a for routing */
+            background-color: var(--button-secondary-bg); /* Give them a button-like background */
+            border: 1px solid var(--medium-gray-border); /* Add a border */
             padding: 10px 20px;
             cursor: pointer;
             font-size: 1em;
             font-weight: 500;
             color: var(--dark-text);
-            border-bottom: 2px solid transparent;
+            border-radius: 8px; /* Rounded corners for button look */
+            text-decoration: none; /* Remove underline */
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
-        .request-tabs button:hover {
+        .request-tabs a:hover {
+            background-color: var(--table-row-hover-bg); /* Darker hover for button effect */
             color: var(--link-color);
         }
 
-        .request-tabs button.active {
-            color: var(--dark-text);
-            border-bottom-color: var(--dark-text);
+        .request-tabs a.active {
+            background-color: var(--light-blue-accent); /* Active state background */
+            color: var(--off-white); /* Active state text */
+            border-color: var(--light-blue-accent); /* Active state border */
             font-weight: 600;
         }
 
@@ -1733,12 +1749,12 @@
                         .attr("transform", `translate(0,${height})`)
                         .call(d3.axisBottom(x).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--sidebar-text)"); /* Use sidebar-text for axis */
+                        .style("fill", "var(--sidebar-text)");
 
                     g.append("g")
                         .call(d3.axisLeft(y).tickSizeOuter(0))
                         .selectAll("text")
-                        .style("fill", "var(--sidebar-text)"); /* Use sidebar-text for axis */
+                        .style("fill", "var(--sidebar-text)");
 
                     g.append("g")
                         .attr("class", "grid")
