@@ -319,11 +319,41 @@
         </div>
     </div>
 
-    <script>
+    <script defer>
         console.log("Guest interface script loading...");
 
+        // --- Critical Variable Initialization and Validation ---
         const roomNumber = "{{ room_number }}";
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        if (!roomNumber || roomNumber === 'None' || roomNumber === '') {
+            console.error("CRITICAL ERROR: Room number is missing or invalid. Cannot proceed with API calls.");
+            showSystemMessage("Configuration Error: Room number is missing. Please contact hotel staff.", "error");
+            // Disable interactive elements if room number is critical for functionality
+            document.getElementById('userInput').disabled = true;
+            document.getElementById('sendButton').disabled = true;
+            const micButton = document.getElementById('micButton');
+            if (micButton) micButton.disabled = true;
+            // Prevent further script execution that relies on roomNumber
+            throw new Error("Room number missing."); 
+        }
+        console.log("Room Number:", roomNumber);
+
+        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
+        if (!csrfToken) {
+            console.error("CRITICAL ERROR: CSRF token not found. API calls may be blocked.");
+            showSystemMessage("Security Error: CSRF token missing. Please refresh the page.", "error");
+            // Disable interactive elements if CSRF token is critical for functionality
+            document.getElementById('userInput').disabled = true;
+            document.getElementById('sendButton').disabled = true;
+            const micButton = document.getElementById('micButton');
+            if (micButton) micButton.disabled = true;
+            // Prevent further script execution that relies on csrfToken
+            throw new Error("CSRF token missing.");
+        }
+        console.log("CSRF Token:", csrfToken ? "Found" : "Not Found");
+        // --- End Critical Variable Initialization and Validation ---
+
+
         let latestRequestId = "{{ latest_request_id|default:'' }}"; // Initial request ID from backend
 
         const userInput = document.getElementById('userInput');
@@ -367,7 +397,7 @@
                 console.log("Speech recognition result:", transcript);
                 showSystemMessage("Speech recognized.", "success");
                 // Automatically send message after speech recognition
-                sendMessage();
+                sendMessage(); // Call sendMessage after successful recognition
             };
 
             recognition.onend = () => {
@@ -400,7 +430,8 @@
                 }
             });
         } else {
-            micButton.style.display = 'none'; // Hide mic button if not supported
+            // Hide mic button if Web Speech API is not supported
+            if (micButton) micButton.style.display = 'none'; 
             console.warn("Web Speech API not supported in this browser.");
             showSystemMessage("Voice input not supported by your browser.", "error");
         }
@@ -457,12 +488,17 @@
 
         // Initial render of chat history if available
         {% if chat_history %}
-            const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
-            renderChatHistory(initialChatHistory);
-            // Update the main message box with the latest ConciAI response from initial history
-            const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
-            if (latestConciResponse) {
-                updateResponseMessage(latestConciResponse.parts[0].text);
+            try {
+                const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
+                renderChatHistory(initialChatHistory);
+                // Update the main message box with the latest ConciAI response from initial history
+                const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
+                if (latestConciResponse) {
+                    updateResponseMessage(latestConciResponse.parts[0].text);
+                }
+            } catch (e) {
+                console.error("Error parsing initial chat history:", e);
+                showSystemMessage("Error loading chat history.", "error");
             }
         {% endif %}
 
@@ -503,6 +539,7 @@
             userInput.value = ''; // Clear input
 
             try {
+                console.log("Sending message to API:", message, "Request ID:", latestRequestId);
                 const response = await fetch(`/api/guest/send_message/${roomNumber}/`, {
                     method: 'POST',
                     headers: {
@@ -512,7 +549,13 @@
                     body: JSON.stringify({ message: message, request_id: latestRequestId })
                 });
 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                }
+
                 const result = await response.json();
+                console.log("API response received:", result);
 
                 if (result.success) {
                     latestRequestId = result.request_id; // Update latest request ID
@@ -520,28 +563,34 @@
                     renderChatHistory(result.chat_history); // Re-render full chat history
                     speakText(result.conci_response); // Speak the new response
                 } else {
-                    showSystemMessage(result.error || "Failed to send message.", "error");
-                    // Optionally, remove the user message if sending failed
-                    userMsgDiv.remove();
+                    showSystemMessage(result.error || "Failed to send message. Server reported an issue.", "error");
+                    userMsgDiv.remove(); // Remove user message on failure
                 }
             } catch (error) {
                 console.error('Error sending message:', error);
-                showSystemMessage("Network error. Please try again.", "error");
-                // Optionally, remove the user message if network error
-                userMsgDiv.remove();
+                showSystemMessage("Network error or server issue sending message. Please check console for details.", "error");
+                userMsgDiv.remove(); // Remove user message on network/server error
             }
         }
 
         // Polling for updates
         async function checkForNewUpdates() {
             try {
+                console.log("Checking for new updates. Last Request ID:", latestRequestId);
                 const response = await fetch(`/api/guest/check_updates/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                }
+
                 const result = await response.json();
+                console.log("Polling response received:", result);
 
                 if (result.has_new_updates) {
                     latestRequestId = result.updated_request_id; 
@@ -558,11 +607,19 @@
                 }
             } catch (error) {
                 console.error('Error checking for new updates:', error);
+                // Only show system message if it's not the initial load and there's a real issue
+                // showSystemMessage("Network error checking for updates. See console.", "error"); // Commented out to avoid spamming for polling
             }
         }
 
         // Poll every 5 seconds (adjust as needed)
         setInterval(checkForNewUpdates, 5000);
+
+        // Ensure initial history is rendered and main message is set on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // This part is already handled by the {% if chat_history %} block directly in the HTML.
+            // No need for duplicate logic here unless there's a specific reason.
+        });
     </script>
 </body>
 </html>
