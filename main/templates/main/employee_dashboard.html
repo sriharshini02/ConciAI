@@ -9,419 +9,1023 @@
     <!-- Google Fonts - Inter for a modern, clean look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Shared styles from staff_dashboard.html for consistency */
+        /* Refined Color Palette from user's provided snippet, with Dark Mode additions */
         :root {
             /* Light Mode Colors */
-            --bg: #F7F8FA; /* Very light gray background */
-            --card-bg: #FFFFFF; /* White card background */
-            --text: #333333; /* Dark gray text */
-            --secondary-text: #666666; /* Medium gray secondary text */
-            --border: #E0E0E0; /* Light gray border */
-            --primary: #4A90E2; /* Blue primary color */
-            --primary-dark: #357ABD; /* Darker blue for hover */
-            --accent: #FFC107; /* Amber accent */
-            --success: #28A745; /* Green for success */
-            --error: #DC3545; /* Red for error */
-            --warning: #FFC107; /* Yellow for warning */
-            --info: #17A2B8; /* Cyan for info */
-            --shadow-light: rgba(0, 0, 0, 0.05); /* Light shadow */
-            --input-bg: #F0F2F5; /* Light gray for input backgrounds */
-            --input-border: #D1D5DA; /* Slightly darker gray for input borders */
-            --hover-bg: #E9ECEF; /* Light gray for hover states */
-            --active-bg: #DEE2E6; /* Even lighter gray for active states */
+            --light-gray-bg: #F0F2F5;      /* Main background, slightly darker than sidebar */
+            --off-white: #FFFFFF;          /* Sidebar, Card, Modal background */
+            --dark-text: #2C3E50;          /* Dark charcoal for main text, headers, primary buttons */
+            --medium-gray-border: #D1D9E6; /* Light border for cards, inputs */
+            --light-blue-accent: #4A90E2;  /* For links, active states */
+            --success-color: #28a745;      /* Standard green for success */
+            --error-color: #dc3545;        /* Standard red for error */
+            --warning-color: #ffc107;      /* Standard yellow for warning */
+            --info-color: #17a2b8;         /* Standard blue for info */
+
+            /* Mapping to UI elements */
+            --sidebar-bg: var(--off-white);
+            --sidebar-text: var(--dark-text);
+            --header-bg: var(--off-white);
+            --header-text: var(--dark-text);
+            --main-bg: var(--light-gray-bg);
+            --card-bg: var(--off-white);
+            --card-border: var(--medium-gray-border);
+            --button-primary-bg: var(--light-blue-accent);
+            --button-primary-text: var(--off-white);
+            --button-secondary-bg: var(--medium-gray-border);
+            --button-secondary-text: var(--dark-text);
+            --link-color: var(--light-blue-accent);
+            --table-header-bg: var(--dark-text);
+            --table-header-text: var(--off-white);
+            --table-row-hover-bg: #E0E6F0; /* Slightly darker hover for light rows */
+            --modal-bg: var(--off-white);
+            --modal-border: var(--medium-gray-border);
+            --input-border: var(--medium-gray-border);
+            --input-focus-border: var(--light-blue-accent);
+            --chart-color-booked: var(--light-blue-accent);
+            --chart-color-cancelled: var(--error-color);
+            --chart-color-platform1: #6A8EAE; /* Muted blues/greens for charts */
+            --chart-color-platform2: #8EB1C7;
+            --chart-color-platform3: #AEC8DC;
+            --chart-color-platform4: #C0D0E0;
+            --chart-color-platform5: #D0D8E8;
+            --chart-color-platform6: #E0E6F0;
+
+            /* Badge Specific Colors (based on standard status colors) */
+            --badge-pending-bg: #FFF3CD; /* Light yellow */
+            --badge-pending-text: #856404; /* Dark yellow */
+            --badge-in_progress-bg: #CCE5FF; /* Light blue */
+            --badge-in_progress-text: #004085; /* Dark blue */
+            --badge-completed-bg: #D4EDDA; /* Light green */
+            --badge-completed-text: #155724; /* Dark green */
+            --badge-cancelled-bg: #F8D7DA; /* Light red */
+            --badge-cancelled-text: #721C24; /* Dark red */
+            --badge-amenity_request-bg: #E6E6FA; /* Lavender */
+            --badge-amenity_request-text: #4B0082; /* Indigo */
+            --badge-maintenance-bg: #FFEBEE; /* Light pink */
+            --badge-maintenance-text: #B71C1C; /* Dark red */
+            --badge-housekeeping-bg: #E8F5E9; /* Very light green */
+            --badge-housekeeping-text: #2E7D32; /* Dark green */
+            --badge-room_service-bg: #FFFDE7; /* Creamy yellow */
+            --badge-room_service-text: #F9A825; /* Orange-yellow */
+            --badge-concierge-bg: #E3F2FD; /* Pale blue */
+            --badge-concierge-text: #1976D2; /* Medium blue */
+            --badge-general_inquiry-bg: #F5F5F5; /* Light grey */
+            --badge-general_inquiry-text: #424242; /* Dark grey */
+            --badge-casual_chat-bg: #ECEFF1; /* Lighter grey */
+            --badge-casual_chat-text: #546E7A; /* Blue-grey */
         }
 
-        /* Dark Mode Colors */
+        /* Dark Mode Colors (Less Bright, Adjusted for Visibility) */
         html[data-theme='dark'] {
-            --bg: #1A202C; /* Dark blue-gray background */
-            --card-bg: #2D3748; /* Darker blue-gray card background */
-            --text: #E2E8F0; /* Light gray text */
-            --secondary-text: #A0AEC0; /* Medium light gray secondary text */
-            --border: #4A5568; /* Darker gray border */
-            --primary: #63B3ED; /* Lighter blue primary color */
-            --primary-dark: #4299E1; /* Darker blue for hover */
-            --accent: #F6AD55; /* Orange accent */
-            --success: #48BB78; /* Green for success */
-            --error: #FC8181; /* Red for error */
-            --warning: #F6AD55; /* Orange for warning */
-            --info: #63B3ED; /* Light blue for info */
-            --shadow-light: rgba(0, 0, 0, 0.3); /* Darker shadow */
-            --input-bg: #4A5568; /* Dark gray for input backgrounds */
-            --input-border: #6B7280; /* Slightly lighter gray for input borders */
-            --hover-bg: #4A5568; /* Dark gray for hover states */
-            --active-bg: #6B7280; /* Even darker gray for active states */
+            --light-gray-bg: #1A202C;      /* Dark background */
+            --off-white: #2D3748;          /* Darker sidebar, card, modal background */
+            --dark-text: #E2E8F0;          /* Light text */
+            --medium-gray-border: #4A5568; /* Darker border */
+            --light-blue-accent: #63B3ED;  /* Lighter blue for dark mode */
+            --success-color: #48BB78;
+            --error-color: #FC8181;
+            --warning-color: #F6AD55;
+            --info-color: #63B3ED;
+
+            /* Mapping to UI elements for Dark Mode */
+            --sidebar-bg: var(--off-white);
+            --sidebar-text: var(--dark-text);
+            --header-bg: var(--off-white);
+            --header-text: var(--dark-text);
+            --main-bg: var(--light-gray-bg);
+            --card-bg: var(--off-white);
+            --card-border: var(--medium-gray-border);
+            --button-primary-bg: var(--light-blue-accent);
+            --button-primary-text: var(--dark-text); /* White text on blue */
+            --button-secondary-bg: var(--medium-gray-border);
+            --button-secondary-text: var(--dark-text);
+            --link-color: var(--light-blue-accent);
+            --table-header-bg: #1F2937; /* Even darker for table header */
+            --table-header-text: var(--dark-text);
+            --table-row-hover-bg: #374151; /* Darker hover for dark rows */
+            --modal-bg: var(--off-white);
+            --modal-border: var(--medium-gray-border);
+            --input-border: var(--medium-gray-border);
+            --input-focus-border: var(--light-blue-accent);
+            --chart-color-booked: var(--light-blue-accent);
+            --chart-color-cancelled: var(--error-color);
+            --chart-color-platform1: #63B3ED; /* Lighter shades for dark mode charts */
+            --chart-color-platform2: #9F7AEA;
+            --chart-color-platform3: #F6AD55;
+            --chart-color-platform4: #48BB78;
+            --chart-color-platform5: #CBD5E0;
+            --chart-color-platform6: #ED8936;
+
+            /* Badge Specific Colors for Dark Mode */
+            --badge-pending-bg: #422006;
+            --badge-pending-text: #F6AD55;
+            --badge-in_progress-bg: #2B6CB0;
+            --badge-in_progress-text: #90CDF4;
+            --badge-completed-bg: #2F855A;
+            --badge-completed-text: #9AE6B4;
+            --badge-cancelled-bg: #9B2C2C;
+            --badge-cancelled-text: #FC8181;
+            --badge-amenity_request-bg: #553C9A;
+            --badge-amenity_request-text: #D6BCFA;
+            --badge-maintenance-bg: #C53030;
+            --badge-maintenance-text: #FC8181;
+            --badge-housekeeping-bg: #38A169;
+            --badge-housekeeping-text: #9AE6B4;
+            --badge-room_service-bg: #D69E2E;
+            --badge-room_service-text: #FBD38D;
+            --badge-concierge-bg: #3182CE;
+            --badge-concierge-text: #90CDF4;
+            --badge-general_inquiry-bg: #718096;
+            --badge-general_inquiry-text: #CBD5E0;
+            --badge-casual_chat-bg: #4A5568;
+            --badge-casual_chat-text: #CBD5E0;
+
+            /* Dark Mode Icon Visibility Fix */
+            .header .user-info .notification-bell,
+            .header .user-info #themeToggleButton {
+                color: var(--dark-text); /* Ensure icons are visible against dark background */
+            }
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
             margin: 0;
             padding: 0;
+            background-color: var(--main-bg);
+            color: var(--dark-text);
+            overflow-x: hidden; /* Prevent horizontal scroll */
             line-height: 1.6;
-            display: flex; /* Use flexbox for layout */
-            min-height: 100vh; /* Full viewport height */
-            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container-wrapper {
+            display: flex;
+            min-height: 100vh;
         }
 
         .sidebar {
-            width: 250px;
-            background-color: var(--card-bg); /* Use card-bg for sidebar for consistency */
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
             padding: 20px;
-            box-shadow: 2px 0 5px var(--shadow-light);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            flex-shrink: 0; /* Prevent sidebar from shrinking */
-            transition: width 0.3s ease;
-            position: fixed; /* Make sidebar fixed */
-            height: 100vh; /* Full height */
+            position: fixed; /* Fixed position */
+            height: 100vh; /* Full viewport height */
             top: 0;
             left: 0;
-            overflow-y: auto; /* Enable scrolling for sidebar content if it overflows */
-            z-index: 999; /* Ensure sidebar is above main content but below modals */
+            overflow-y: auto; /* Allow sidebar content to scroll */
+            box-sizing: border-box;
+            transition: width 0.3s ease, transform 0.3s ease;
+            z-index: 999;
         }
 
         .sidebar.collapsed {
-            width: 80px; /* Collapsed width */
+            width: 70px; /* Collapsed width */
         }
 
-        .sidebar h2 {
-            color: var(--primary);
-            text-align: center;
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 30px;
-            font-weight: 700;
-            white-space: nowrap; /* Prevent text wrapping */
-            overflow: hidden; /* Hide overflow when collapsed */
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--medium-gray-border);
         }
 
-        .sidebar.collapsed h2 {
-            font-size: 1.2em; /* Smaller font when collapsed */
+        .sidebar-header h2 {
+            margin: 0;
+            color: var(--sidebar-text);
+            font-size: 1.8em;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: opacity 0.3s ease;
         }
 
-        .sidebar nav ul {
+        .sidebar.collapsed .sidebar-header h2 {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-toggle-button {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            position: absolute; /* Position relative to sidebar */
+            bottom: 70px; /* Above logout */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000; /* Ensure it's clickable */
+        }
+
+        .sidebar-toggle-button:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .sidebar nav {
+            flex-grow: 1; /* Allows navigation to take up remaining space */
+        }
+
+        .sidebar ul {
             list-style: none;
             padding: 0;
             margin: 0;
         }
 
-        .sidebar nav ul li {
+        .sidebar ul li {
             margin-bottom: 10px;
         }
 
-        .sidebar nav ul li a {
+        .sidebar ul li a {
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            color: var(--secondary-text); /* Use secondary-text for links */
+            gap: 10px;
+            padding: 10px 15px;
+            color: var(--sidebar-text);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .sidebar nav ul li a i {
-            margin-right: 10px;
-            font-size: 1.1em;
-            transition: margin-right 0.3s ease;
-        }
-
-        .sidebar.collapsed nav ul li a i {
-            margin-right: 0; /* No margin when collapsed */
-        }
-
-        .sidebar nav ul li a span {
-            opacity: 1;
-            transition: opacity 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
         }
 
-        .sidebar.collapsed nav ul li a span {
-            opacity: 0; /* Hide text when collapsed */
-            width: 0; /* Collapse text width */
+        .sidebar.collapsed ul li a {
+            justify-content: center; /* Center icons when collapsed */
+            padding: 10px; /* Adjust padding for icon-only */
         }
 
-        .sidebar nav ul li a:hover {
-            background-color: var(--hover-bg); /* Use hover-bg */
-            color: var(--text); /* Darker text on hover */
+        .sidebar ul li a span {
+            transition: opacity 0.3s ease, width 0.3s ease;
+            flex-grow: 1; /* Allow text to take space */
         }
 
-        .sidebar nav ul li a.active {
-            background-color: var(--active-bg); /* Use active-bg */
-            color: var(--primary); /* Primary color for active link */
-            font-weight: 600;
+        .sidebar.collapsed ul li a span {
+            opacity: 0;
+            width: 0;
+            padding: 0;
         }
 
-        .logout-btn {
-            display: flex;
+        .sidebar ul li a:hover,
+        .sidebar ul li a.active {
+            background-color: var(--light-blue-accent);
+            color: var(--off-white);
+        }
+        .sidebar ul li a.active i {
+            color: var(--off-white); /* Ensure icon color matches active text */
+        }
+
+        .sidebar ul li a i {
+            font-size: 1.1em;
+            color: var(--sidebar-text);
+            transition: color 0.3s ease;
+        }
+
+        .logout-section {
+            margin-top: auto; /* Pushes logout to the bottom */
+            padding-top: 20px;
+            border-top: 1px solid var(--medium-gray-border);
+            text-align: center; /* Center the logout button */
+        }
+
+        .logout-section a {
+            display: inline-flex; /* Use inline-flex for centering */
             align-items: center;
-            justify-content: center;
-            padding: 12px 15px;
-            background-color: var(--input-bg); /* Use input-bg for logout button */
-            color: var(--secondary-text);
+            gap: 10px;
+            padding: 10px 15px;
+            color: var(--error-color);
             text-decoration: none;
             border-radius: 8px;
             transition: background-color 0.3s ease, color 0.3s ease;
-            margin-top: 20px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
-        .logout-btn:hover {
-            background-color: var(--hover-bg);
-            color: var(--text);
+        .sidebar.collapsed .logout-section a {
+            justify-content: center; /* Center icon when collapsed */
+            padding: 10px; /* Adjust padding for icon-only */
+        }
+        .sidebar.collapsed .logout-section a span {
+            opacity: 0;
+            width: 0;
+            padding: 0;
+        }
+
+        .logout-section a:hover {
+            background-color: var(--error-color);
+            color: var(--off-white);
         }
 
         .main-content {
+            margin-left: 280px; /* Initial offset for sidebar */
             flex-grow: 1;
             padding: 20px;
-            margin-left: 250px; /* Initial margin to offset fixed sidebar */
-            transition: margin-left 0.3s ease; /* Adjust margin for sidebar collapse */
+            transition: margin-left 0.3s ease;
         }
 
         .main-content.sidebar-collapsed {
-            margin-left: 80px; /* Adjust based on sidebar collapsed width */
+            margin-left: 70px; /* Adjusted offset when sidebar is collapsed */
         }
 
-        .header-main {
-            background-color: var(--card-bg);
+        .header {
+            background-color: var(--header-bg);
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px var(--shadow-light);
+            border-radius: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--medium-gray-border);
         }
 
-        .header-main h1 {
+        .header h1 {
             margin: 0;
-            color: var(--primary);
-            flex-grow: 1; /* Allow title to take space */
+            color: var(--header-text);
         }
 
-        .header-controls {
+        .header .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-left: auto; /* Push controls to the right */
         }
 
-        .header-controls span {
-            font-weight: 500;
-            color: var(--secondary-text);
-        }
-
-        .icon-button {
-            background: none;
-            border: none;
-            color: var(--secondary-text);
-            font-size: 1.2em;
-            cursor: pointer;
-            transition: color 0.3s ease;
+        .header .user-info .notification-bell,
+        .header .user-info #themeToggleButton {
             position: relative;
-            padding: 5px; /* Add padding for easier clicking */
+            cursor: pointer;
+            color: var(--dark-text); /* Default for light mode */
+            font-size: 1.5em; /* Adjusted for better visibility */
+            background: none; /* Ensure no background */
+            border: none; /* Ensure no border */
+            padding: 0; /* Remove default button padding */
+            line-height: 1; /* Align icon vertically */
         }
 
-        .icon-button:hover {
-            color: var(--primary);
-        }
-
-        .notification-badge {
+        .header .user-info .notification-bell .badge {
             position: absolute;
-            top: 0px;
-            right: 0px;
-            background-color: var(--error);
-            color: white;
+            top: -5px;
+            right: -5px;
+            background-color: var(--error-color);
+            color: var(--off-white);
             border-radius: 50%;
             padding: 3px 7px;
             font-size: 0.7em;
-            font-weight: 700;
-            display: none; /* Hidden by default */
+            line-height: 1;
+        }
+
+        .header .user-info span {
+            font-weight: 500;
+            color: var(--header-text);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjusted minmax for smaller cards */
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
         .card {
             background-color: var(--card-bg);
             padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px var(--shadow-light);
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--dark-text);
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .card p {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin: 10px 0 0;
+        }
+
+        .card.summary-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card.summary-card .icon-wrapper {
+            background-color: var(--dark-text);
+            color: var(--off-white);
+            padding: 15px;
+            border-radius: 50%;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .card.summary-card .text-content {
+            flex-grow: 1;
+        }
+
+        .card.summary-card .text-content p {
+            font-size: 1.5em;
+        }
+
+        .chart-container {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--card-border);
             margin-bottom: 20px;
         }
 
-        .card h2 {
-            color: var(--primary);
+        .chart-container h3 {
             margin-top: 0;
             margin-bottom: 20px;
-            border-bottom: 1px solid var(--border);
+            color: var(--dark-text);
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--light-gray-bg);
+            border-radius: 8px;
+            color: var(--dark-text);
+        }
+
+        /* Request Management Styles */
+        .request-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--dark-text);
+            gap: 10px; /* Increased gap between tabs */
+        }
+
+        .request-tabs a { /* Changed from button to a for routing */
+            background-color: var(--button-secondary-bg); /* Give them a button-like background */
+            border: 1px solid var(--medium-gray-border); /* Add a border */
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            color: var(--dark-text);
+            border-radius: 8px; /* Rounded corners for button look */
+            text-decoration: none; /* Remove underline */
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .request-tabs a:hover {
+            background-color: var(--table-row-hover-bg); /* Darker hover for button effect */
+            color: var(--link-color);
+        }
+
+        .request-tabs a.active {
+            background-color: var(--light-blue-accent); /* Active state background */
+            color: var(--off-white); /* Active state text */
+            border-color: var(--light-blue-accent); /* Active state border */
+            font-weight: 600;
+        }
+
+        .request-category {
+            margin-bottom: 30px;
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--card-border);
+        }
+
+        .request-category h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--dark-text);
+            font-size: 1.3em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--medium-gray-border);
             padding-bottom: 10px;
         }
 
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+        .request-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
         }
 
-        .data-table th, .data-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border);
-            text-align: left;
+        .request-item {
+            background-color: var(--light-gray-bg);
+            border: 1px solid var(--medium-gray-border);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 150px;
         }
 
-        .data-table th {
-            background-color: var(--input-bg);
-            color: var(--secondary-text);
+        .request-item p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .request-item .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
             font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.9em;
+            text-transform: capitalize;
+            margin-top: 10px;
         }
 
-        .data-table tbody tr:hover {
-            background-color: var(--hover-bg);
-        }
+        .status-badge.pending { background-color: var(--badge-pending-bg); color: var(--badge-pending-text); }
+        .status-badge.in_progress { background-color: var(--badge-in_progress-bg); color: var(--badge-in_progress-text); }
+        .status-badge.completed { background-color: var(--badge-completed-bg); color: var(--badge-completed-text); }
+        .status-badge.cancelled { background-color: var(--badge-cancelled-bg); color: var(--badge-cancelled-text); }
+        .status-badge.casual_chat { background-color: var(--badge-casual_chat-bg); color: var(--badge-casual_chat-text); }
+        .status-badge.general_inquiry { background-color: var(--badge-general_inquiry-bg); color: var(--badge-general_inquiry-text); }
+        .status-badge.amenity_request { background-color: var(--badge-amenity_request-bg); color: var(--badge-amenity_request-text); }
+        .status-badge.maintenance { background-color: var(--badge-maintenance-bg); color: var(--badge-maintenance-text); }
+        .status-badge.housekeeping { background-color: var(--badge-housekeeping-bg); color: var(--badge-housekeeping-text); }
+        .status-badge.room_service { background-color: var(--badge-room_service-bg); color: var(--badge-room_service-text); }
+        .status-badge.concierge { background-color: var(--badge-concierge-bg); color: var(--badge-concierge-text); }
 
-        .btn-group {
+
+        .request-actions {
+            margin-top: 15px;
             display: flex;
             gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .request-actions button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+        .request-actions button.view-details {
+            background-color: var(--dark-text);
+            color: var(--off-white);
+        }
+        .request-actions button.view-details:hover {
+            background-color: #4A5C6F;
+        }
+
+        .request-actions button.update-status {
+            background-color: var(--light-blue-accent);
+            color: var(--off-white);
+        }
+        .request-actions button.update-status:hover {
+            background-color: #3A7BC8;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            margin: auto;
+            padding: 30px;
+            border: 1px solid var(--modal-border);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+            border-bottom: 1px solid var(--medium-gray-border);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--dark-text);
+        }
+
+        .close-button {
+            color: var(--dark-text);
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--light-blue-accent);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-text);
+        }
+
+        .modal-body input[type="text"],
+        .modal-body input[type="email"],
+        .modal-body input[type="number"],
+        .modal-body input[type="date"],
+        .modal-body input[type="time"],
+        .modal-body textarea,
+        .modal-body select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .modal-body input[type="text"]:focus,
+        .modal-body input[type="email"]:focus,
+        .modal-body input[type="number"]:focus,
+        .modal-body input[type="date"]:focus,
+        .modal-body input[type="time"]:focus,
+        .modal-body textarea:focus,
+        .modal-body select:focus {
+            border-color: var(--input-focus-border);
+            outline: none;
+        }
+
+        .modal-body textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-check-input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--light-blue-accent);
+        }
+
+        .form-check-label {
+            margin-bottom: 0;
+            font-weight: 500;
+            color: var(--dark-text);
+            cursor: pointer;
+        }
+
+        .datetime-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
         }
 
-        .btn {
-            padding: 10px 15px;
+        .datetime-group .form-group {
+            flex: 1;
+            min-width: 120px;
+            margin-bottom: 0;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--medium-gray-border);
+            padding-top: 15px;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            white-space: nowrap; /* Prevent button text from wrapping */
-        }
-        .btn-primary {
-            background-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
-        }
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.4);
-        }
-        .btn-success {
-            background-color: var(--success);
-            color: #fff;
-        }
-        .btn-success:hover {
-            background-color: darken(var(--success), 10%);
-        }
-        .btn-danger {
-            background-color: var(--error);
-            color: #fff;
-        }
-        .btn-danger:hover {
-            background-color: darken(var(--error), 10%);
-        }
-        .btn-secondary {
-            background-color: var(--input-bg);
-            color: var(--text);
-        }
-        .btn-secondary:hover {
-            background-color: var(--hover-bg);
-        }
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 0.85em;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.85em;
-            font-weight: 600;
-            text-transform: capitalize;
+        .modal-footer button.save-button {
+            background-color: var(--button-primary-bg);
+            color: var(--button-primary-text);
         }
-        .badge-pending { background-color: #FFECB3; color: #FF8F00; } /* Warning yellow */
-        .badge-in_progress { background-color: #BBDEFB; color: #1976D2; } /* Info blue */
-        .badge-completed { background-color: #C8E6C9; color: #388E3C; } /* Success green */
-        .badge-cancelled { background-color: #FFCDD2; color: #D32F2F; } /* Error red */
 
-        /* Message Box */
-        .message-box {
+        .modal-footer button.save-button:hover {
+            background-color: #3A7BC8;
+        }
+
+        .modal-footer button.cancel-button {
+            background-color: var(--button-secondary-bg);
+            color: var(--button-secondary-text);
+        }
+
+        .modal-footer button.cancel-button:hover {
+            background-color: #C0C8D0;
+        }
+
+        /* Message Box Styles */
+        #messageBox {
+            display: none;
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 25px;
             border-radius: 8px;
-            color: #fff;
-            font-weight: 600;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
             opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            z-index: 1001; /* Above modals */
+            transition: opacity 0.5s ease-in-out;
         }
 
-        .message-box.show {
+        #messageBox.show {
             opacity: 1;
-            transform: translateY(0);
+            display: block;
         }
 
-        .message-box.success { background-color: var(--success); }
-        .message-box.error { background-color: var(--error); }
-        .message-box.info { background-color: var(--info); }
-        .message-box.warning { background-color: var(--warning); }
+        #messageBox.success {
+            background-color: var(--success-color);
+            color: var(--off-white);
+        }
+
+        #messageBox.error {
+            background-color: var(--error-color);
+            color: var(--off-white);
+        }
+
+        /* Request Details Modal Specific Styles */
+        .request-details-modal .modal-body .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed var(--medium-gray-border);
+            padding-bottom: 5px;
+        }
+
+        .request-details-modal .modal-body .detail-row strong {
+            flex: 0 0 120px;
+            color: var(--dark-text);
+        }
+
+        .request-details-modal .modal-body .detail-row span {
+            flex-grow: 1;
+            color: var(--dark-text);
+        }
+
+        .request-details-modal .chat-history-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--medium-gray-border);
+        }
+
+        .request-details-modal .chat-history-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--dark-text);
+        }
+
+        .request-details-modal .chat-messages {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--medium-gray-border);
+            border-radius: 8px;
+            padding: 10px;
+            background-color: var(--light-gray-bg);
+        }
+
+        .request-details-modal .chat-message {
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border-radius: 6px;
+        }
+
+        .request-details-modal .chat-message.user {
+            background-color: var(--off-white);
+            text-align: left;
+        }
+
+        .request-details-modal .chat-message.model {
+            background-color: #E0F2F7;
+            text-align: left;
+        }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            body {
+            .container-wrapper {
                 flex-direction: column;
             }
             .sidebar {
                 width: 100%;
                 height: auto;
-                box-shadow: 0 2px 5px var(--shadow-light);
-                position: relative; /* Make sidebar relative on mobile */
-                overflow-y: visible; /* Allow content to push height */
+                position: relative;
+                box-shadow: none;
+                border-bottom: 2px solid var(--medium-gray-border);
+                padding-bottom: 80px; /* More space for toggle and logout on mobile */
             }
             .sidebar.collapsed {
                 width: 100%;
-                height: auto;
+                padding-bottom: 80px;
             }
-            .sidebar nav ul {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
+            .sidebar-header .toggle-btn {
+                display: none; /* Hide toggle button on mobile if sidebar is always open, or reposition it */
             }
-            .sidebar nav ul li {
-                margin: 5px;
-            }
-            .sidebar nav ul li a {
-                padding: 8px 12px;
-            }
-            .sidebar nav ul li a i {
-                margin-right: 5px;
-            }
-            .sidebar.collapsed nav ul li a span {
-                opacity: 1; /* Always show text on mobile */
-                width: auto;
+            .sidebar-toggle-button {
+                position: absolute;
+                bottom: 10px; /* Adjust position for mobile */
+                right: 10px;
+                left: auto;
+                transform: none;
             }
             .main-content {
-                padding: 15px;
-                margin-left: 0; /* No margin adjustment on mobile */
+                margin-left: 0;
+                padding-top: 20px;
             }
-            .header-main {
+            .main-content.sidebar-collapsed {
+                margin-left: 0;
+            }
+            .header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 10px;
             }
-            .header-controls {
-                margin-left: 0;
+            .header .user-info {
                 width: 100%;
-                justify-content: space-between;
+                justify-content: flex-end;
             }
+            .dashboard-grid, .chart-grid, .request-list {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            .datetime-group {
+                flex-direction: column;
+                gap: 0;
+            }
+            .datetime-group .form-group {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Table styles (consolidated) */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .data-table thead {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--medium-gray-border);
+        }
+
+        .data-table tbody tr:hover {
+            background-color: var(--table-row-hover-bg);
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        /* Form control styling for filter forms - Using CSS Grid for better layout */
+        .filter-card form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            border-color: var(--input-focus-border);
+            outline: none;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .button-primary {
+            background-color: var(--button-primary-bg);
+            color: var(--button-primary-text);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-primary:hover {
+            background-color: #3A7BC8;
+        }
+
+        .button-secondary {
+            background-color: var(--button-secondary-bg);
+            color: var(--button-secondary-text);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-secondary:hover {
+            background-color: #C0C8D0;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85em;
+            margin-top: -10px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -429,83 +1033,220 @@
     {% csrf_token %} <!-- CSRF token for Django forms -->
     <div class="message-box" id="messageBox"></div>
 
-    <div class="sidebar" id="sidebar">
-        <div>
-            <h2>ConciAI</h2>
-            <nav>
-                <ul>
-                    <li><a href="{% url 'main:employee_dashboard' %}" class="{% if current_main_tab == 'employee_dashboard' %}active{% endif %}"><i class="fas fa-tasks"></i> <span>My Tasks</span></a></li>
-                    <!-- Add more navigation items as needed for employee -->
-                </ul>
-            </nav>
+    <div class="container-wrapper">
+        <div class="sidebar" id="sidebar">
+            <div>
+                <div class="sidebar-header">
+                    <h2>ConciAI</h2>
+                </div>
+                <nav>
+                    <ul>
+                        <!-- Employee dashboard has different nav items -->
+                        <li><a href="{% url 'main:employee_dashboard' %}" class="active"><i class="fas fa-tasks"></i> <span>My Tasks</span></a></li>
+                        <!-- Add other employee-specific nav items if needed -->
+                    </ul>
+                </nav>
+            </div>
+            <!-- Sidebar Toggle Button -->
+            <button id="sidebarToggle" class="sidebar-toggle-button">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="logout-section">
+                <a href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                </a>
+            </div>
         </div>
-        <!-- Sidebar Toggle Button - Moved inside sidebar -->
-        <button id="sidebarToggle" class="icon-button" style="position: absolute; bottom: 20px; right: 20px; background: var(--input-bg); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px var(--shadow-light);">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <a href="{% url 'logout' %}" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-        </a>
+
+        <div class="main-content" id="mainContent">
+            <header class="header">
+                <h1>{{ page_title }}</h1>
+                <div class="user-info">
+                    <!-- Notification Bell (if applicable for employees) -->
+                    <button id="notificationBell" class="notification-bell" style="display: none;">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">0</span>
+                    </button>
+                    <button id="themeToggleButton" class="notification-bell" style="font-size: 1.2em;">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <span>Welcome, {{ request.user.username }}</span>
+                </div>
+            </header>
+
+            <div class="card">
+                <h2>My Assigned Tasks</h2>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>Room Number</th>
+                                <th>Guest Names</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Received At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in assigned_tasks %}
+                                <tr>
+                                    <td>{{ task.id }}</td>
+                                    <td>{{ task.room_number }}</td>
+                                    <td>{{ task.guest_names|default:"N/A" }}</td>
+                                    <td>{{ task.raw_text|truncatechars:70 }}</td>
+                                    <td><span class="status-badge {{ task.status }}">{{ task.get_status_display }}</span></td>
+                                    <td>{{ task.timestamp|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        <button class="button-primary button-sm view-details" data-request-id="{{ task.id }}">View Details</button>
+                                        {% if task.status != 'completed' %}
+                                            <button class="button-secondary button-sm complete-task-button" data-request-id="{{ task.id }}">Complete</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="7" class="text-center">No assigned tasks found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="main-content" id="mainContent">
-        <header class="header-main">
-            <h1>{{ page_title }}</h1>
-            <div class="header-controls">
-                <span style="font-weight: 500;">Welcome, {{ logged_in_staff_member.user.username }}</span>
+    <!-- Request Details Modal (Re-used from staff_dashboard) -->
+    <div id="requestDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeRequestDetailsModalButton">&times;</span>
+            <div class="modal-header">
+                <h2>Request Details <small>(ID: <span id="modalRequestIdDisplay"></span>)</small></h2>
             </div>
-        </header>
+            <form id="requestUpdateForm">
+                {% csrf_token %}
+                <input type="hidden" id="modalRequestId" name="request_id">
+                <!-- Hidden fields to carry existing data for backend validation -->
+                <input type="hidden" id="modalRoomNumberHidden" name="room_number">
+                <input type="hidden" id="modalRawTextHidden" name="raw_text">
+                <input type="hidden" id="modalAmenityQuantityHidden" name="amenity_quantity">
 
-        <div class="card">
-            <h2>Assigned Tasks</h2>
-            <div class="table-responsive">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Request ID</th>
-                            <th>Room</th>
-                            <th>Guest</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                            <th>Received At</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for request in assigned_tasks %}
-                            <tr>
-                                <td>{{ request.id }}</td>
-                                <td>{{ request.room_number }}</td>
-                                <td>{{ request.guest_room_assignment.guest_names|default:"N/A" }}</td>
-                                <td>{{ request.raw_text|truncatechars:70 }}</td>
-                                <td><span class="badge badge-{{ request.status }}">{{ request.get_status_display }}</span></td>
-                                <td>{{ request.timestamp|date:"M d, Y H:i" }}</td>
-                                <td>
-                                    {% if request.status != 'completed' %}
-                                        <button class="btn btn-success btn-sm complete-task-button" data-request-id="{{ request.id }}">Mark as Complete</button>
-                                    {% else %}
-                                        <span class="badge badge-completed">Completed</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="7" class="text-center">No assigned tasks found.</td></tr>
+                <div class="modal-body">
+                    <div class="detail-row">
+                        <strong>Room Number:</strong> <span id="detailRoomNumber"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>Guest Names:</strong> <span id="detailGuestNames"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>Received At:</strong> <span id="detailTimestamp"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>Raw Request Text:</strong> <span id="detailRawText"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>ConciAI Response:</strong> <span id="detailConciResponse"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>AI Intent:</strong> <span id="detailAiIntent"></span>
+                    </div>
+                    <div class="detail-row">
+                        <strong>AI Entities:</strong> <pre id="detailAiEntities" style="white-space: pre-wrap; word-break: break-all;"></pre>
+                    </div>
+                    
+                    <!-- Amenity Details Section (Conditional Display) -->
+                    <div id="amenityDetailsSection" style="display: none; border-top: 1px solid var(--medium-gray-border); padding-top: 15px; margin-top: 15px;">
+                        <h4>Amenity Details</h4>
+                        <div class="detail-row">
+                            <strong>Amenity Name:</strong> <span id="detailAmenityName"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Quantity:</strong> <span id="detailAmenityQuantity"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Price Per Unit:</strong> <span id="detailPricePerUnit"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Total Amenity Cost:</strong> <span id="detailTotalAmenityCost"></span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Bill Added:</strong> <span id="detailBillAdded"></span>
+                        </div>
+                    </div>
+
+                    <label for="id_request_type">Request Type:</label>
+                    <select id="id_request_type" name="request_type" class="form-control" disabled>
+                        {% for value, label in guest_request_type_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    </select>
+                    <span id="request_typeErrors" class="error-message"></span>
+
+                    <label for="id_status">Status:</label>
+                    <select id="id_status" name="status" class="form-control" disabled>
+                        {% for value, label in guest_request_status_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <span id="statusErrors" class="error-message"></span>
+
+                    <label for="id_assigned_staff">Assigned Staff:</label>
+                    <select id="id_assigned_staff" name="assigned_staff" class="form-control" disabled>
+                        <option value="">Unassigned</option>
+                        {% for staff in staff_members %}
+                            <option value="{{ staff.id }}">{{ staff.user.username }} ({{ staff.get_category_display }})</option>
+                        {% endfor %}
+                    </select>
+                    <span id="assigned_staffErrors" class="error-message"></span>
+
+                    <label for="id_staff_notes">Staff Notes:</label>
+                    <textarea id="id_staff_notes" name="staff_notes" class="form-control" rows="3"></textarea>
+                    <span id="staff_notesErrors" class="error-message"></span>
+
+                    <div class="form-check">
+                        <input type="checkbox" id="modalAmenityBillAdded" name="bill_added" class="form-check-input" disabled>
+                        <label for="modalAmenityBillAdded" class="form-check-label">Bill Added</label>
+                    </div>
+
+                    <div class="chat-history-section">
+                        <h4>Chat History</h4>
+                        <div class="chat-messages" id="detailChatHistory">
+                            <!-- Chat history will be loaded here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="cancel-button" id="closeRequestDetailsModalButtonFooter">Close</button>
+                    <button type="submit" class="save-button" id="saveRequestChangesButton">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (for complete task actions) -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>Confirm Action</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="cancel-button">Cancel</button>
+                <button type="button" class="save-button" id="confirmationYesButton">Confirm</button>
             </div>
         </div>
     </div>
 
     <script defer>
-        console.log("Employee Dashboard Script loading..."); // Debugging: Check if script starts
+        console.log("Script loading...");
 
-        // Global utility function to show messages
         function showMessage(message, type) {
             const messageBox = document.getElementById('messageBox');
             if (messageBox) {
                 messageBox.textContent = message;
-                messageBox.className = ''; // Clear existing classes
+                messageBox.className = '';
                 messageBox.classList.add('show', type);
                 setTimeout(() => {
                     messageBox.classList.remove('show');
@@ -513,27 +1254,50 @@
             }
         }
 
-        // CSRF Token for AJAX requests
         const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
         const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
         console.log("CSRF Token:", csrfToken ? "Found" : "Not Found");
 
-        // Theme Toggle Logic (copied from staff_dashboard for consistency, though not directly used on employee dashboard currently)
+        const themeToggleButton = document.getElementById('themeToggleButton');
         const htmlElement = document.documentElement;
-        // The employee dashboard doesn't have a theme toggle button in the provided HTML,
-        // so we'll just set the initial theme based on localStorage.
+
         function setInitialTheme() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             htmlElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleButton(savedTheme);
             console.log("Initial theme set to:", savedTheme);
         }
 
-        // Centralized Initialization Function for Employee Dashboard
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOMContentLoaded fired for Employee Dashboard. Initializing elements...");
-            setInitialTheme(); // Set theme immediately when DOM is ready
+        function updateThemeToggleButton(theme) {
+            const icon = themeToggleButton ? themeToggleButton.querySelector('i') : null;
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            } else {
+                console.warn("Theme toggle button or its icon not found.");
+            }
+        }
 
-            // Sidebar Toggle Logic
+        if (themeToggleButton) {
+            themeToggleButton.addEventListener('click', () => {
+                let currentTheme = htmlElement.getAttribute('data-theme');
+                let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                htmlElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeToggleButton(newTheme);
+                console.log("Theme toggled to:", newTheme);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOMContentLoaded fired. Initializing dashboard elements...");
+            setInitialTheme();
+
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
             const sidebarToggle = document.getElementById('sidebarToggle');
@@ -554,44 +1318,265 @@
                     }
                     console.log("Sidebar toggled.");
                 });
-            } else {
-                console.warn("sidebarToggle not found on employee_dashboard.");
             }
 
-            // Mark as Complete Button Logic
-            document.querySelectorAll('.complete-task-button').forEach(button => {
-                console.log("Attaching listener to complete-task-button:", button); // Debugging
-                button.addEventListener('click', async (e) => {
-                    console.log("Mark as Complete button clicked."); // Debugging
-                    const requestId = e.target.dataset.requestId;
-                    const url = `/api/employee/requests/${requestId}/complete/`;
+            // Notification Bell Logic (if applicable for employees, currently hidden)
+            const notificationBell = document.getElementById('notificationBell');
+            const notificationBadge = document.getElementById('notificationBadge');
+            // No setInterval for employee dashboard as per current scope, but structure is ready.
+
+            // Modals (Common declarations and closing logic)
+            const requestDetailsModal = document.getElementById('requestDetailsModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+
+            function closeAllModals() {
+                if (requestDetailsModal) requestDetailsModal.classList.remove('show');
+                if (confirmationModal) confirmationModal.classList.remove('show');
+                document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+                console.log("All modals closed and errors cleared.");
+            }
+
+            document.querySelectorAll('.close-button').forEach(button => {
+                button.addEventListener('click', closeAllModals);
+            });
+            document.querySelectorAll('.cancel-button').forEach(button => {
+                button.addEventListener('click', closeAllModals);
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === requestDetailsModal || event.target === confirmationModal) {
+                    closeAllModals();
+                }
+            });
+
+            // Request Details Modal Logic
+            const viewDetailsButtons = document.querySelectorAll('.view-details'); 
+            
+            const requestUpdateForm = document.getElementById('requestUpdateForm');
+            const modalRequestId = document.getElementById('modalRequestId');
+            const idStaffNotes = document.getElementById('id_staff_notes'); 
+            const idStatus = document.getElementById('id_status'); 
+            const idRequestType = document.getElementById('id_request_type'); 
+            const saveRequestChangesButton = document.getElementById('saveRequestChangesButton'); 
+            const modalRoomNumberHidden = document.getElementById('modalRoomNumberHidden');
+            const modalRawTextHidden = document.getElementById('modalRawTextHidden');
+            const modalAmenityQuantityHidden = document.getElementById('modalAmenityQuantityHidden');
+            const modalAmenityBillAddedCheckbox = document.getElementById('modalAmenityBillAdded');
+
+
+            viewDetailsButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    console.log("View Details button clicked."); 
+                    const requestId = button.dataset.requestId;
+                    try {
+                        const response = await fetch(`/api/requests/${requestId}/details/`);
+                        const result = await response.json();
+
+                        if (result.success) {
+                            if (document.getElementById('modalRequestIdDisplay')) document.getElementById('modalRequestIdDisplay').textContent = requestId; 
+                            if (document.getElementById('detailRoomNumber')) document.getElementById('detailRoomNumber').textContent = result.room_number;
+                            if (document.getElementById('detailGuestNames')) document.getElementById('detailGuestNames').textContent = result.guest_names;
+                            if (document.getElementById('detailTimestamp')) document.getElementById('detailTimestamp').textContent = new Date(result.timestamp).toLocaleString();
+                            if (document.getElementById('detailRawText')) document.getElementById('detailRawText').textContent = result.raw_text;
+                            if (document.getElementById('detailConciResponse')) document.getElementById('detailConciResponse').textContent = result.conci_response_text;
+                            if (document.getElementById('detailAiIntent')) document.getElementById('detailAiIntent').textContent = result.ai_intent;
+                            
+                            const detailAiEntities = document.getElementById('detailAiEntities');
+                            if (detailAiEntities) {
+                                if (result.ai_entities && typeof result.ai_entities === 'object') {
+                                    detailAiEntities.textContent = JSON.stringify(result.ai_entities, null, 2);
+                                } else {
+                                    detailAiEntities.textContent = result.ai_entities || 'N/A';
+                                }
+                            }
+                            
+                            if (modalRequestId) modalRequestId.value = requestId; 
+                            if (idStaffNotes) idStaffNotes.value = result.staff_notes || ''; 
+                            if (idStatus) idStatus.value = result.raw_status_value; 
+                            if (idRequestType) idRequestType.value = result.raw_request_type_value; 
+
+                            // Employee dashboard only allows editing staff_notes, not assignment or status directly
+                            if (document.getElementById('id_assigned_staff')) {
+                                document.getElementById('id_assigned_staff').value = result.raw_assigned_staff_id || '';
+                            }
+                            // Ensure disabled state for fields not editable by employee
+                            if (document.getElementById('id_request_type')) document.getElementById('id_request_type').disabled = true;
+                            if (document.getElementById('id_status')) document.getElementById('id_status').disabled = true;
+                            if (document.getElementById('id_assigned_staff')) document.getElementById('id_assigned_staff').disabled = true;
+                            if (modalAmenityBillAddedCheckbox) modalAmenityBillAddedCheckbox.disabled = true;
+
+                            // Hidden fields for backend
+                            if (modalRoomNumberHidden) modalRoomNumberHidden.value = result.room_number || '';
+                            if (modalRawTextHidden) modalRawTextHidden.value = result.raw_text || '';
+                            if (modalAmenityQuantityHidden) modalAmenityQuantityHidden.value = result.amenity_quantity || 0;
+
+
+                            const amenityDetailsSection = document.getElementById('amenityDetailsSection');
+                            if (amenityDetailsSection) { 
+                                if (result.amenity_details) {
+                                    amenityDetailsSection.style.display = 'block';
+                                    if (document.getElementById('detailAmenityName')) document.getElementById('detailAmenityName').textContent = result.amenity_details.name;
+                                    if (document.getElementById('detailAmenityQuantity')) document.getElementById('detailAmenityQuantity').textContent = result.amenity_details.quantity;
+                                    if (document.getElementById('detailPricePerUnit')) document.getElementById('detailPricePerUnit').textContent = `$${result.amenity_details.price_per_unit.toFixed(2)}`;
+                                    if (document.getElementById('detailTotalAmenityCost')) document.getElementById('detailTotalAmenityCost').textContent = `$${result.amenity_details.total_amenity_cost.toFixed(2)}`;
+                                    if (document.getElementById('detailBillAdded')) document.getElementById('detailBillAdded').textContent = result.amenity_details.bill_added ? 'Yes' : 'No';
+                                } else {
+                                    amenityDetailsSection.style.display = 'none';
+                                }
+                            }
+
+                            const detailChatHistory = document.getElementById('detailChatHistory');
+                            if (detailChatHistory) { 
+                                detailChatHistory.innerHTML = ''; 
+                                if (result.chat_history && Array.isArray(result.chat_history) && result.chat_history.length > 0) {
+                                    result.chat_history.forEach(message => {
+                                        const msgDiv = document.createElement('div');
+                                        msgDiv.classList.add('chat-message', message.role);
+                                        const messageText = (message.parts && message.parts.length > 0 && message.parts[0].text) ? message.parts[0].text : 'No text content.';
+                                        msgDiv.innerHTML = `<strong>${message.role === 'user' ? 'Guest' : 'Conci'}:</strong> ${messageText}`;
+                                        detailChatHistory.appendChild(msgDiv);
+                                    });
+                                } else {
+                                    detailChatHistory.innerHTML = '<p>No detailed conversation history available.</p>';
+                                }
+                            }
+
+                            // For employee, only staff_notes is editable
+                            if (saveRequestChangesButton) {
+                                saveRequestChangesButton.disabled = false; // Enable save for staff notes
+                            }
+
+                            if (requestDetailsModal) requestDetailsModal.classList.add('show'); 
+                            console.log("Request Details modal shown."); 
+                        } else {
+                            console.error('Backend reported error for Request Details:', result.error);
+                            showMessage(result.error || 'Failed to load request details.', 'error');
+                        }
+                    }
+                    catch (error) {
+                        console.error('Error fetching request details:', error);
+                        showMessage('Network error or server issue fetching request details.', 'error');
+                    }
+                });
+            });
+
+            if (requestUpdateForm) {
+                console.log("Attaching listener to requestUpdateForm submit."); 
+                requestUpdateForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log("Request Update Form submitted."); 
+                    document.querySelectorAll('#requestUpdateForm .error-message').forEach(el => el.textContent = '');
+
+                    const requestId = modalRequestId ? modalRequestId.value : '';
+                    const url = `/api/requests/${requestId}/update/`; 
+
+                    const formData = new FormData();
+                    formData.append('request_id', requestId);
+                    
+                    // These fields are read-only for employee, but sent back for backend validation consistency
+                    formData.append('room_number', modalRoomNumberHidden ? modalRoomNumberHidden.value : '');
+                    formData.append('raw_text', modalRawTextHidden ? modalRawTextHidden.value : '');
+                    formData.append('amenity_quantity', modalAmenityQuantityHidden ? modalAmenityQuantityHidden.value : 0); 
+                    formData.append('assigned_staff', document.getElementById('id_assigned_staff') ? document.getElementById('id_assigned_staff').value : '');
+                    formData.append('status', document.getElementById('id_status') ? document.getElementById('id_status').value : ''); 
+                    formData.append('request_type', document.getElementById('id_request_type') ? document.getElementById('id_request_type').value : '');
+                    formData.append('bill_added', modalAmenityBillAddedCheckbox ? (modalAmenityBillAddedCheckbox.checked ? 'True' : 'False') : 'False');
+
+                    // Only staff_notes is truly editable by employee
+                    formData.append('staff_notes', idStaffNotes ? idStaffNotes.value : '');
+
 
                     try {
                         const response = await fetch(url, {
-                            method: 'POST',
+                            method: 'POST', 
                             headers: {
-                                'X-CSRFToken': csrfToken,
-                                'Content-Type': 'application/json' // Important for Django's JsonResponse
+                                'X-CSRFToken': csrfToken, 
                             },
-                            body: JSON.stringify({}) // Send empty JSON body
+                            body: formData
                         });
+
                         const result = await response.json();
 
                         if (result.success) {
                             showMessage(result.message, 'success');
-                            location.reload(); // Reload to reflect status change
+                            if (requestDetailsModal) requestDetailsModal.classList.remove('show');
+                            location.reload(); 
                         } else {
-                            showMessage(result.error || 'Failed to complete task.', 'error');
-                            console.error('API Error:', result.error); // Log API error
+                            let generalErrorMessage = result.error || 'Failed to update request due to validation errors.';
+                            showMessage(generalErrorMessage, 'error');
+
+                            if (result.errors) {
+                                const errors = JSON.parse(result.errors);
+                                for (const field in errors) {
+                                    const errorDiv = document.getElementById(`${field}Errors`);
+                                    if (errorDiv) {
+                                        errorDiv.textContent = errors[field][0].message;
+                                    } else {
+                                        console.error(`Unhandled form error for field ${field}:`, errors[field][0].message);
+                                        showMessage(`Error: ${errors[field][0].message}`, 'error');
+                                    }
+                                }
+                            }
                         }
                     } catch (error) {
-                        console.error('Error completing task:', error);
-                        showMessage('Network error or server issue completing task.', 'error');
+                        console.error('Error submitting request update form:', error);
+                        showMessage('Network error or server issue updating request.', 'error');
                     }
                 });
+            }
+
+            // Complete Task Logic (Employee Specific)
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            const confirmationYesButton = document.getElementById('confirmationYesButton');
+
+            let currentActionId = null; 
+            let currentActionType = null; 
+
+            function showConfirmationModal(message, id, actionType) {
+                if (confirmationMessage) confirmationMessage.textContent = message;
+                currentActionId = id;
+                currentActionType = actionType;
+                if (confirmationModal) confirmationModal.classList.add('show');
+                console.log("Confirmation modal shown for action:", actionType, "ID:", id); 
+            }
+
+            if (confirmationYesButton) { 
+                confirmationYesButton.addEventListener('click', async () => {
+                    if (confirmationModal) confirmationModal.classList.remove('show'); 
+
+                    if (currentActionType === 'complete_task') {
+                        try {
+                            const response = await fetch(`/api/employee/requests/${currentActionId}/complete/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken,
+                                    'Content-Type': 'application/json' 
+                                },
+                                body: JSON.stringify({}) 
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                showMessage(result.message, 'success');
+                                location.reload(); 
+                            } else {
+                                showMessage(result.error || 'Failed to complete task.', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error completing task:', error);
+                            showMessage('Network error or server issue completing task.', 'error');
+                        }
+                    }
+                });
+            }
+
+            document.querySelectorAll('.complete-task-button').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const requestId = e.target.dataset.requestId;
+                    showConfirmationModal('Are you sure you want to mark this task as completed?', requestId, 'complete_task');
+                });
             });
-            console.log("Employee Dashboard initialization complete.");
-        }); // End DOMContentLoaded
+            console.log("Employee Dashboard initialization complete."); 
+        });
     </script>
 </body>
 </html>
