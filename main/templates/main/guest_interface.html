@@ -21,7 +21,6 @@
             --success-color: #5cb85c;
             --error-color: #d9534f;
             --warning-color: #f0ad4e;
-            --microphone-active-color: #FF4500; /* Orange-red for active mic */
         }
 
         body {
@@ -64,7 +63,8 @@
             width: 80px;
             height: 80px;
             margin-bottom: 25px;
-            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1));
+            /* Reverted filter to original, if any, or a simple one */
+            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.1)); 
         }
 
         .input-area {
@@ -114,11 +114,6 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .input-area button.listen-btn.listening { /* Added for active mic state */
-            background-color: var(--microphone-active-color);
-            color: white;
-        }
-
         .input-area button.send-btn {
             background-color: var(--primary-color);
             color: white;
@@ -130,7 +125,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .response-area { /* This is the main message box */
+        .response-area { /* This is the main message box, renamed from .response-area to .main-message-box in JS */
             background-color: #F8F8F8; /* Lighter background for response */
             border-radius: 10px;
             padding: 15px;
@@ -140,78 +135,25 @@
             min-height: 50px; /* Ensure it has some height */
             display: flex; /* Use flex to align content vertically */
             align-items: center; /* Center content vertically */
-            justify-content: space-between; /* Space between text and speak button */
+            justify-content: flex-start; /* Align content to start */
             color: var(--light-text-color);
-        }
-
-        .response-area .speak-button { /* Styling for the speak button within response-area */
-            background: none;
-            border: none;
-            color: var(--light-text-color);
-            font-size: 1.1em;
-            cursor: pointer;
-            margin-left: 10px; /* Space from text */
-            transition: color 0.2s ease;
-            flex-shrink: 0; /* Prevent shrinking */
-        }
-
-        .response-area .speak-button:hover {
-            color: var(--primary-color);
         }
 
         /* Chat History Section */
-        .chat-history-toggle {
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
+        .chat-history-container {
+            margin-top: 25px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            max-height: 300px; /* Limit height */
+            overflow-y: auto; /* Enable scrolling */
             text-align: left;
-            font-size: 1em;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px; /* Added margin-top to separate from main message */
-            margin-bottom: 10px;
-            transition: background-color 0.3s ease;
         }
 
-        .chat-history-toggle:hover {
-            background-color: #92C7C7; /* Slightly darker teal */
-        }
-
-        .chat-history-toggle i {
-            transition: transform 0.3s ease;
-        }
-
-        .chat-history-toggle.collapsed i {
-            transform: rotate(-90deg);
-        }
-
-        .chat-history-container.collapsible { /* Added class for collapsible behavior */
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-out;
-            border-radius: 10px;
-            background-color: var(--background-color);
-            padding: 0 15px; /* Padding inside when open */
+        .chat-history-container h3 {
+            color: var(--text-color);
+            font-size: 1.2em;
             margin-bottom: 15px;
-            border: 1px solid transparent; /* Default transparent border */
-        }
-
-        .chat-history-container.collapsible.expanded {
-            max-height: 300px; /* Adjust as needed */
-            padding: 15px;
-            border: 1px solid var(--border-color); /* Visible border when expanded */
-        }
-
-        .chat-messages {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            font-weight: 600;
         }
 
         .chat-message {
@@ -221,7 +163,6 @@
             max-width: 85%;
             word-wrap: break-word;
             line-height: 1.5;
-            position: relative; /* For speak button */
         }
 
         .chat-message.user {
@@ -241,26 +182,8 @@
             margin-bottom: 0;
         }
 
-        .chat-message.model .speak-button { /* Styling for speak button within history messages */
-            position: absolute;
-            bottom: 5px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: var(--light-text-color);
-            font-size: 0.9em;
-            cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.2s ease, color 0.2s ease;
-        }
-        .chat-message.model .speak-button:hover {
-            color: var(--primary-color);
-            opacity: 1;
-        }
-
-
-        /* Feedback Message Box (for success/error/info/warning notifications) */
-        #feedbackMessageBox {
+        /* Feedback Message Box (for success/error notifications) */
+        .feedback-message-box {
             position: fixed;
             top: 20px;
             right: 20px;
@@ -275,17 +198,17 @@
             transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
             transform: translateY(-20px);
         }
-        #feedbackMessageBox.error {
+        .feedback-message-box.error {
             background-color: var(--error-color);
         }
-        #feedbackMessageBox.info {
+        .feedback-message-box.info { 
             background-color: #17a2b8; /* Info blue */
         }
-        #feedbackMessageBox.warning {
+        .feedback-message-box.warning { /* Added warning type */
             background-color: var(--warning-color);
             color: var(--text-color); /* Dark text for warning */
         }
-        #feedbackMessageBox.show {
+        .feedback-message-box.show {
             display: block;
             opacity: 1;
             transform: translateY(0);
@@ -321,7 +244,7 @@
         <h1>Welcome to Conci</h1>
         <p class="subtitle">Your intelligent assistant for Hotel {{ hotel.name }} - Room {{ room_number }}</p>
         
-        <img src="https://placehold.co/80x80/4A90E2/FFFFFF?text=AI" alt="Conci AI Icon" class="conci-icon">
+        <img src="https://placehold.co/80x80/F0AD4E/FFFFFF?text=AI" alt="Conci AI Icon" class="conci-icon">
 
         <div class="input-area">
             <input type="text" id="guestMessageInput" placeholder="Type your request or click Listen">
@@ -333,13 +256,9 @@
             Welcome! How can I assist you today?
         </div>
 
-        <!-- Collapsible Chat History Section -->
-        <button class="chat-history-toggle" id="chatHistoryToggleButton">
-            <span>Conversation History</span>
-            <i class="fas fa-chevron-down"></i>
-        </button>
-        <div class="chat-history-container collapsible" id="chatHistoryContainer">
-            <div class="chat-messages" id="chatMessagesDisplay">
+        <div class="chat-history-container">
+            <h3>Conversation History:</h3>
+            <div id="chatHistoryDisplay">
                 <!-- Chat messages will be loaded here dynamically -->
             </div>
         </div>
@@ -351,72 +270,113 @@
     {# Django CSRF token for AJAX POST requests #}
     {% csrf_token %}
 
-    <script defer>
-        console.log("Guest interface script loading...");
-
-        // --- Critical Variable Initialization and Validation ---
-        const hotelId = "{{ hotel.id }}"; // Ensure hotel.id is passed from Django context
-        if (!hotelId || hotelId === 'None' || hotelId === '') {
-            console.error("CRITICAL ERROR: Hotel ID is missing or invalid. Cannot proceed with API calls.");
-            showFeedbackMessage("Configuration Error: Hotel ID is missing. Please contact hotel staff.", "error");
-            document.getElementById('guestMessageInput').disabled = true;
-            document.getElementById('sendMessageButton').disabled = true;
-            document.getElementById('listenButton').disabled = true;
-            throw new Error("Hotel ID missing."); 
-        }
-        console.log("Hotel ID:", hotelId);
-
-        const roomNumber = "{{ room_number }}";
-        if (!roomNumber || roomNumber === 'None' || roomNumber === '') {
-            console.error("CRITICAL ERROR: Room number is missing or invalid. Cannot proceed with API calls.");
-            showFeedbackMessage("Configuration Error: Room number is missing. Please contact hotel staff.", "error");
-            document.getElementById('guestMessageInput').disabled = true;
-            document.getElementById('sendMessageButton').disabled = true;
-            document.getElementById('listenButton').disabled = true;
-            throw new Error("Room number missing."); 
-        }
-        console.log("Room Number:", roomNumber);
-
-        const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
-        const csrfToken = csrfTokenElement ? csrfTokenElement.value : '';
-        if (!csrfToken) {
-            console.error("CRITICAL ERROR: CSRF token not found. API calls may be blocked.");
-            showFeedbackMessage("Security Error: CSRF token missing. Please refresh the page.", "error");
-            document.getElementById('guestMessageInput').disabled = true;
-            document.getElementById('sendMessageButton').disabled = true;
-            document.getElementById('listenButton').disabled = true;
-            throw new Error("CSRF token missing.");
-        }
-        console.log("CSRF Token:", csrfToken ? "Found" : "Not Found");
-        // --- End Critical Variable Initialization and Validation ---
-
-        let latestRequestId = "{{ latest_request_id|default:'' }}"; // Initial request ID from backend
-
+    <script>
         const guestMessageInput = document.getElementById('guestMessageInput');
         const listenButton = document.getElementById('listenButton');
         const sendMessageButton = document.getElementById('sendMessageButton');
-        const mainResponseMessageArea = document.getElementById('mainResponseMessageArea');
+        const mainResponseMessageArea = document.getElementById('mainResponseMessageArea'); // Renamed from conciResponseArea
         const feedbackMessageBox = document.getElementById('feedbackMessageBox');
-        const chatHistoryToggleButton = document.getElementById('chatHistoryToggleButton');
-        const chatHistoryContainer = document.getElementById('chatHistoryContainer');
-        const chatHistoryIcon = chatHistoryToggleButton.querySelector('i');
-        const chatMessagesDisplay = document.getElementById('chatMessagesDisplay'); // Renamed from chatMessages
+        const chatHistoryDisplay = document.getElementById('chatHistoryDisplay');
 
-        // Initialize SpeechSynthesisUtterance for voice output
-        const synth = window.speechSynthesis;
-        let utterance = new SpeechSynthesisUtterance();
-        utterance.lang = 'en-US';
+        const hotelId = "{{ hotel.id }}";
+        const roomNumber = "{{ room_number }}";
+        let latestRequestId = "{{ latest_request_id|default:'' }}"; // Used for polling updates
+        
+        // Get CSRF token from the hidden input generated by {% csrf_token %}
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // Initialize SpeechRecognition for voice input
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
+        // Function to show feedback messages (success/error/info/warning)
+        function showFeedbackMessage(message, type = 'success') {
+            feedbackMessageBox.innerHTML = message;
+            feedbackMessageBox.className = `feedback-message-box show ${type}`;
+            setTimeout(() => {
+                feedbackMessageBox.classList.remove('show');
+                setTimeout(() => {
+                    feedbackMessageBox.style.display = 'none';
+                }, 500);
+            }, 3000);
+        }
+
+        // Function to update the main response message box
+        function updateResponseMessage(message) {
+            mainResponseMessageArea.textContent = message;
+        }
+
+        // Function to render chat history
+        function renderChatHistory(history) {
+            chatHistoryDisplay.innerHTML = ''; // Clear existing history
+            if (history && history.length > 0) {
+                history.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.classList.add('chat-message', msg.role);
+                    msgDiv.textContent = msg.parts[0].text;
+                    chatHistoryDisplay.appendChild(msgDiv);
+                });
+                chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight; // Scroll to bottom
+            } else {
+                chatHistoryDisplay.innerHTML = '<p style="color: var(--light-text-color);">No conversation yet.</p>';
+            }
+        }
+
+        // Initial render of chat history from Django context
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
+            renderChatHistory(initialChatHistory);
+        });
+
+        // --- Send Message Button Logic (Direct Send) ---
+        sendMessageButton.addEventListener('click', async () => {
+            const userRequest = guestMessageInput.value.trim();
+            if (userRequest === '') {
+                showFeedbackMessage("Please type your message before sending.", "warning");
+                return;
+            }
+
+            updateResponseMessage("Sending your request...", false);
+            guestMessageInput.value = ''; // Clear input immediately
+
+            try {
+                const response = await fetch('/api/process_command/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        message: userRequest,
+                        hotel_id: hotelId,
+                        room_number: roomNumber
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    latestRequestId = result.request_id;
+                    updateResponseMessage(result.conci_response); // Display Conci's immediate response
+                    renderChatHistory(result.chat_history); // Re-render chat history with new messages
+                    showFeedbackMessage("Request sent!", "success");
+                } else {
+                    updateResponseMessage(result.error || 'Failed to send request.');
+                    showFeedbackMessage(result.error || 'Failed to send request.', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                updateResponseMessage('Network error or server issue.');
+                showFeedbackMessage('Network error or server issue.', 'error');
+            }
+        });
+
+        // --- Listen Button Functionality (Web Speech API) ---
+        let recognition;
         let isListening = false;
 
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false; // Capture a single utterance
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false; // Listen for a single utterance
             recognition.interimResults = false; // Only return final results
-            recognition.lang = 'en-US';
+            recognition.lang = 'en-US'; // Set language
 
             recognition.onstart = () => {
                 isListening = true;
@@ -425,7 +385,6 @@
                 guestMessageInput.placeholder = "Listening...";
                 guestMessageInput.disabled = true; // Disable input while listening
                 sendMessageButton.disabled = true; // Disable send button
-                showFeedbackMessage("Listening...", "info");
             };
 
             recognition.onresult = (event) => {
@@ -435,9 +394,9 @@
             };
 
             recognition.onerror = (event) => {
-                console.error("Speech recognition error:", event.error);
+                console.error('Speech recognition error:', event.error);
                 showFeedbackMessage(`Speech recognition error: ${event.error}`, "error");
-                updateMainResponseMessage("Speech recognition failed. Please type your request.");
+                updateResponseMessage("Speech recognition failed. Please type your request.");
                 resetListenState();
             };
 
@@ -454,7 +413,7 @@
                     } catch (e) {
                         console.error("Error starting speech recognition:", e);
                         showFeedbackMessage("Could not start listening. Please check microphone permissions.", "error");
-                        updateMainResponseMessage("Microphone access denied or not supported.");
+                        updateResponseMessage("Microphone access denied or not supported.");
                         resetListenState();
                     }
                 }
@@ -477,171 +436,35 @@
             console.warn("Web Speech API (webkitSpeechRecognition) not supported in this browser.");
         }
 
-
-        // Function to update the main response message box and add speak button
-        function updateMainResponseMessage(message) {
-            mainResponseMessageArea.innerHTML = `${message} <button class="speak-button"><i class="fas fa-volume-up"></i></button>`;
-            const newSpeakButton = mainResponseMessageArea.querySelector('.speak-button');
-            if (newSpeakButton) {
-                newSpeakButton.addEventListener('click', () => speakText(message));
-            }
-            speakText(message); // Speak the message automatically
-        }
-
-        // Function to render chat history
-        function renderChatHistory(history) {
-            chatMessagesDisplay.innerHTML = ''; // Clear existing history
-            if (history && history.length > 0) {
-                history.forEach(msg => {
-                    const msgDiv = document.createElement('div');
-                    msgDiv.classList.add('chat-message', msg.role);
-                    const messageText = (msg.parts && msg.parts.length > 0 && msg.parts[0].text) ? msg.parts[0].text : 'No text content.';
-                    msgDiv.textContent = messageText;
-
-                    if (msg.role === 'model') {
-                        const speakBtn = document.createElement('button');
-                        speakBtn.classList.add('speak-button');
-                        speakBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-                        speakBtn.addEventListener('click', () => speakText(messageText));
-                        msgDiv.appendChild(speakBtn);
-                    }
-                    chatMessagesDisplay.appendChild(msgDiv);
-                });
-                chatMessagesDisplay.scrollTop = chatMessagesDisplay.scrollHeight; // Scroll to bottom
-            } else {
-                chatMessagesDisplay.innerHTML = '<p style="color: var(--light-text-color);">No conversation yet.</p>';
-            }
-        }
-
-        // Function for Text-to-Speech (TTS)
-        function speakText(text) {
-            if (synth.speaking) {
-                synth.cancel(); // Stop any current speech
-            }
-            utterance.text = text;
-            synth.speak(utterance);
-        }
-
-        // Initial render of chat history from Django context
-        // This block now safely parses chat_history and renders it.
-        const initialChatHistoryString = '{{ chat_history|escapejs }}';
-        let initialChatHistory = [];
-        try {
-            if (initialChatHistoryString && initialChatHistoryString !== 'None' && initialChatHistoryString !== '[]') {
-                initialChatHistory = JSON.parse(initialChatHistoryString);
-            }
-        } catch (e) {
-            console.error("Error parsing initial chat history:", e);
-            showFeedbackMessage("Error loading chat history. It might be malformed.", "error");
-        }
-        renderChatHistory(initialChatHistory);
-        // Update the main message box with the latest ConciAI response from initial history
-        const latestConciResponseOnLoad = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
-        if (latestConciResponseOnLoad) {
-            updateMainResponseMessage(latestConciResponseOnLoad.parts[0].text);
-        }
-
-
-        // Toggle chat history visibility
-        chatHistoryToggleButton.addEventListener('click', () => {
-            chatHistoryContainer.classList.toggle('expanded');
-            chatHistoryIcon.classList.toggle('fa-chevron-down');
-            chatHistoryIcon.classList.toggle('fa-chevron-up');
-            if (chatHistoryContainer.classList.contains('expanded')) {
-                // Set max-height dynamically based on content for smooth transition
-                chatHistoryContainer.style.maxHeight = chatHistoryContainer.scrollHeight + "px";
-            } else {
-                chatHistoryContainer.style.maxHeight = "0";
-            }
-        });
-
-        // Event listener for sending message by pressing Enter
-        guestMessageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessageButton.click(); // Trigger send button click
-            }
-        });
-
-        // --- Send Message Logic ---
-        sendMessageButton.addEventListener('click', async () => {
-            const userRequest = guestMessageInput.value.trim();
-            if (userRequest === '') {
-                showFeedbackMessage("Please type your message or use voice input.", "warning");
-                return;
-            }
-
-            updateMainResponseMessage("Processing your request..."); // Show immediate feedback
-            guestMessageInput.value = ''; // Clear input immediately
-
-            try {
-                console.log("Sending message to API. URL:", `/api/guest/send_message/${roomNumber}/`, "Message:", userRequest, "Request ID:", latestRequestId);
-                const response = await fetch(`/api/guest/send_message/${roomNumber}/`, { // Corrected URL
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    body: JSON.stringify({ message: userRequest, request_id: latestRequestId })
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-                }
-
-                const result = await response.json();
-                console.log("API response received:", result);
-
-                if (result.success) {
-                    latestRequestId = result.request_id; // Update latest request ID
-                    updateMainResponseMessage(result.conci_response); // Update main message box and speak
-                    renderChatHistory(result.chat_history); // Re-render full chat history
-                } else {
-                    showFeedbackMessage(result.error || "Failed to send message. Server reported an issue.", "error");
-                    updateMainResponseMessage(result.error || "Failed to get response."); // Update main message box with error
-                }
-            } catch (error) {
-                console.error('Error sending message:', error);
-                showFeedbackMessage("Network error or server issue sending message. Please check console for details.", "error");
-                updateMainResponseMessage("Network error. Please try again."); // Update main message box with network error
-            }
-        });
-
-        // Polling for updates
+        // Polling for new updates from staff (Conci's responses)
         async function checkForNewUpdates() {
             try {
-                console.log("Checking for new updates. URL:", `/api/guest/${hotelId}/room/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, "Last Request ID:", latestRequestId);
-                const response = await fetch(`/api/guest/${hotelId}/room/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, { // Corrected URL
+                const response = await fetch(`/api/guest/${hotelId}/room/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-                }
-
                 const result = await response.json();
-                console.log("Polling response received:", result);
 
                 if (result.has_new_updates) {
+                    // Update latestRequestId from the backend's latest request ID
                     latestRequestId = result.updated_request_id; 
                     
+                    // Update the main message box with the latest Conci response
                     const latestConciResponse = result.new_messages.slice().reverse().find(msg => msg.role === 'model');
                     if (latestConciResponse) {
-                        updateMainResponseMessage(latestConciResponse.parts[0].text); // Update main message box and speak
+                        updateResponseMessage(latestConciResponse.parts[0].text);
                     } else {
-                        updateMainResponseMessage("Welcome! How can I assist you today?");
+                        // If no model response, revert to default message
+                        updateResponseMessage("Welcome! How can I assist you today?");
                     }
 
+                    // Re-render chat history with the full updated history
                     renderChatHistory(result.new_messages);
                 }
             } catch (error) {
                 console.error('Error checking for new updates:', error);
-                // Only show system message if it's not the initial load and there's a real issue
-                // showFeedbackMessage("Network error checking for updates. See console.", "error"); // Commented out to avoid spamming for polling
             }
         }
 
