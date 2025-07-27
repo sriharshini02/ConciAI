@@ -487,20 +487,26 @@
         }
 
         // Initial render of chat history if available
-        {% if chat_history %}
-            try {
-                const initialChatHistory = JSON.parse('{{ chat_history|escapejs }}');
-                renderChatHistory(initialChatHistory);
-                // Update the main message box with the latest ConciAI response from initial history
-                const latestConciResponse = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
-                if (latestConciResponse) {
-                    updateResponseMessage(latestConciResponse.parts[0].text);
-                }
-            } catch (e) {
-                console.error("Error parsing initial chat history:", e);
-                showSystemMessage("Error loading chat history.", "error");
+        // Changed this block to always initialize chat_history as an array
+        // and parse it in JS, avoiding Django template if conditions inside script.
+        const initialChatHistoryString = '{{ chat_history|escapejs }}';
+        let initialChatHistory = [];
+        try {
+            // Check if initialChatHistoryString is not empty before parsing
+            if (initialChatHistoryString && initialChatHistoryString !== 'None') {
+                initialChatHistory = JSON.parse(initialChatHistoryString);
             }
-        {% endif %}
+        } catch (e) {
+            console.error("Error parsing initial chat history:", e);
+            showSystemMessage("Error loading chat history. It might be malformed.", "error");
+        }
+        renderChatHistory(initialChatHistory);
+        // Update the main message box with the latest ConciAI response from initial history
+        const latestConciResponseOnLoad = initialChatHistory.slice().reverse().find(msg => msg.role === 'model');
+        if (latestConciResponseOnLoad) {
+            updateResponseMessage(latestConciResponseOnLoad.parts[0].text);
+        }
+
 
         // Toggle chat history visibility
         chatHistoryToggleButton.addEventListener('click', () => {
@@ -539,8 +545,8 @@
             userInput.value = ''; // Clear input
 
             try {
-                console.log("Sending message to API:", message, "Request ID:", latestRequestId);
-                const response = await fetch(`/api/guest/send_message/${roomNumber}/`, {
+                console.log("Sending message to API. URL:", `/api/guest/send_message/${roomNumber}/`, "Message:", message, "Request ID:", latestRequestId);
+                const response = await fetch(`/api/guest/send_message/${roomNumber}/`, { // Corrected URL
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -576,8 +582,8 @@
         // Polling for updates
         async function checkForNewUpdates() {
             try {
-                console.log("Checking for new updates. Last Request ID:", latestRequestId);
-                const response = await fetch(`/api/guest/check_updates/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, {
+                console.log("Checking for new updates. URL:", `/api/guest/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, "Last Request ID:", latestRequestId);
+                const response = await fetch(`/api/guest/${roomNumber}/check_updates/?last_request_id=${latestRequestId}`, { // Corrected URL
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -614,12 +620,6 @@
 
         // Poll every 5 seconds (adjust as needed)
         setInterval(checkForNewUpdates, 5000);
-
-        // Ensure initial history is rendered and main message is set on load
-        document.addEventListener('DOMContentLoaded', () => {
-            // This part is already handled by the {% if chat_history %} block directly in the HTML.
-            // No need for duplicate logic here unless there's a specific reason.
-        });
     </script>
 </body>
 </html>
